@@ -1,6 +1,6 @@
 {
   "name": "vitek-plugin",
-  "version": "0.1.0",
+  "version": "0.1.0-beta",
   "description": "Vite plugin for file-based HTTP API generation",
   "type": "module",
   "main": "./dist/index.js",
