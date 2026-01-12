@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vitek Basic JS Example</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        line-height: 1.6;
+      }
+      h1 {
+        color: #333;
+      }
+      .section {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: #f5f5f5;
+        border-radius: 8px;
+      }
+      .section h2 {
+        margin-top: 0;
+        color: #555;
+      }
+      pre {
+        background: #fff;
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        border: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vitek Basic JS Example</h1>
+    <p>Basic example demonstrating the use of Vitek in pure JavaScript, without frameworks.</p>
+
+    <div class="section" style="background: #e8f5e9;">
+      <h2>📚 How to Use the Endpoints</h2>
+      <h3>Option 1: Direct Fetch API</h3>
+      <pre style="background: #fff; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.9rem;">// GET /api/health
+const health = await fetch('/api/health').then(res => res.json());
+
+// GET /api/users/:id
+const user = await fetch('/api/users/123').then(res => res.json());
+
+// GET /api/posts with query params
+const posts = await fetch('/api/posts?limit=5').then(res => res.json());
+
+// POST /api/posts
+const newPost = await fetch('/api/posts', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ title: 'My Post', content: 'Content', authorId: 1 }),
+}).then(res => res.json());</pre>
+      
+      <h3 style="margin-top: 1.5rem;">Option 2: Generated services</h3>
+      <pre style="background: #fff; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.9rem;">import { getHealth, getUsersId, getPosts, postPosts } from './api.services.js';
+
+// GET /api/health
+const health = await getHealth();
+
+// GET /api/users/:id
+const user = await getUsersId({ id: '123' });
+
+// GET /api/posts
+const posts = await getPosts();
+
+// POST /api/posts
+const newPost = await postPosts({ title: 'My Post', content: 'Content', authorId: 1 });</pre>
+      <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+        <strong>Note:</strong> Services are automatically generated in <code>src/api.services.js</code> when you run the server.
+      </p>
+    </div>
+
+  </body>
+</html>

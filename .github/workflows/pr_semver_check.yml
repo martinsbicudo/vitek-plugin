@@ -1,0 +1,22 @@
+name: PR Semver Check 🪖
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, labeled, unlabeled]
+
+jobs:
+  semver_labels:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: mheap/github-action-required-labels@v4
+        with:
+          mode: exactly
+          count: 1
+          add_comment: true
+          labels: "semver:patch,semver:minor,semver:major,semver:prerelease,semver:bypass"
+          message: "This PR is being prevented from merging because you haven't added **one** of required labels: {{ provided }}. You'll need to add it before this PR can be merged :no_entry_sign:"
+          token: ${{ secrets.AUTH_GITHUB_TOKEN }}

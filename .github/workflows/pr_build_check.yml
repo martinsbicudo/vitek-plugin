@@ -1,0 +1,25 @@
+name: PR Build Check 🚧
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, synchronize]
+
+jobs:
+  build_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Initializing
+        uses: actions/checkout@v3
+        with:
+          ref: "main"
+          token: ${{ secrets.AUTH_GITHUB_TOKEN }}
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install dependencies
+        run: npm ci
+      - name: Check build
+        run: npm run build

@@ -1,0 +1,65 @@
+name: PR Release Check 📄
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, edited]
+
+env:
+  MESSAGE_ERROR: |
+    This PR is being prevented from merging because you haven't added the **release** section on description :no_entry_sign:
+
+    Example:
+
+    ````
+    ## Release
+
+    ```
+    - example change 1
+    - example change 2
+    ```
+    ````
+
+jobs:
+  release_section:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get release section
+        uses: actions-ecosystem/action-regex-match@v2
+        id: match
+        with:
+          text: ${{ github.event.pull_request.body }}
+          regex: '#+\s*Release\s*\n\`{3}\s*\n([\S\s]*)\n\`{3}\s*\n*'
+          flags: gm
+      - name: Find comment
+        uses: peter-evans/find-comment@v2
+        id: comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: ${{ env.MESSAGE_ERROR }}
+      - name: Get variables
+        id: variables
+        run: |
+          echo "createComment=${{ steps.comment.outputs.comment-id == '' && steps.match.outputs.group1 == '' }}" >> $GITHUB_OUTPUT
+          echo "deleteComment=${{ steps.comment.outputs.comment-id != '' && steps.match.outputs.group1 != '' }}" >> $GITHUB_OUTPUT
+      - name: Create comment
+        if: ${{ steps.variables.outputs.createComment == 'true' }}
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ env.MESSAGE_ERROR }}
+          token: ${{ secrets.AUTH_GITHUB_TOKEN }}
+      - name: Delete comment
+        if: ${{ steps.variables.outputs.deleteComment == 'true' }}
+        uses: sandeshjangam/comment-actions@v1
+        with:
+          type: "delete"
+          comment_id: ${{ steps.comment.outputs.comment-id }}
+          token: ${{ secrets.AUTH_GITHUB_TOKEN }}
+      - name: Result
+        run: |
+          if ${{(steps.match.outputs.group1 != '')}} == 'true';then
+            exit 0
+          else
+            exit 1
+          fi

@@ -1,0 +1,48 @@
+{
+  "name": "vitek-plugin",
+  "version": "0.1.0",
+  "description": "Vite plugin for file-based HTTP API generation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "vite",
+    "plugin",
+    "api",
+    "file-based",
+    "routing"
+  ],
+  "author": "Victor Bicudo <victor.mbicudo@gmail.com> (https://github.com/martinsbicudo)",
+  "license": "MIT",
+  "homepage": "https://github.com/martinsbicudo/vitek-plugin#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/martinsbicudo/vitek-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/martinsbicudo/vitek-plugin/issues"
+  },
+  "peerDependencies": {
+    "vite": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  }
+}
+

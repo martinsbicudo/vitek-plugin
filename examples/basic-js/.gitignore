@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+# Arquivos gerados automaticamente pelo Vitek
+# (gerados como .ts mas não necessários para este exemplo JavaScript puro)
+src/api.types.ts
+src/api.services.ts
