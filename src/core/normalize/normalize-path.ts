@@ -8,11 +8,12 @@ import { PARAM_PATTERN } from '../../shared/constants.js';
 
 /**
  * Converts a file path to a normalized HTTP route
- * 
+ *
  * Examples:
  * - users/[id].get.ts -> users/:id
  * - posts/[...ids].get.ts -> posts/*ids
  * - health.get.ts -> health
+ * - execute/index.post.ts -> execute (index treated as directory index)
  */
 export function normalizeRoutePath(filePath: string): string {
   // Remove extensions (.ts, .js) and HTTP method
@@ -38,8 +39,14 @@ export function normalizeRoutePath(filePath: string): string {
     }
     return `:${paramName}`;
   });
-  
-  // Return without normalizing (without adding /), as it will be used in patternToRegex
+
+  if (path === 'index') {
+    return '';
+  }
+  if (path.endsWith('/index')) {
+    path = path.slice(0, -6);
+  }
+
   return path;
 }
 
