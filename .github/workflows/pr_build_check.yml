@@ -9,11 +9,8 @@ jobs:
   build_check:
     runs-on: ubuntu-latest
     steps:
-      - name: Initializing
-        uses: actions/checkout@v3
-        with:
-          ref: "main"
-          token: ${{ secrets.AUTH_GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Setup node
         uses: actions/setup-node@v3
         with:
