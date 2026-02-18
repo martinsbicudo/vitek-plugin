@@ -10,14 +10,15 @@ jobs:
   generate_semver:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       version: ${{ steps.version.outputs.value }}
     steps:
-      - name: Initializing
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          ref: "main"
-          token: ${{ secrets.AUTH_GITHUB_TOKEN }}
+          ref: main
       - name: Get semver label
         id: label
         uses: zwaldowski/match-label-action@v4
@@ -52,8 +53,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: "main"
-          token: ${{ secrets.AUTH_GITHUB_TOKEN }}
+          ref: main
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -75,6 +75,8 @@ jobs:
   generate_release:
     needs: [generate_semver, publish_package]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Get Release Changes
         uses: actions-ecosystem/action-regex-match@v2
@@ -89,4 +91,4 @@ jobs:
           body: "# Changes\n\n${{ steps.match.outputs.group1 }}"
           name: v${{ needs.generate_semver.outputs.version }}
           tag: v${{ needs.generate_semver.outputs.version }}
-          token: ${{ secrets.AUTH_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
