@@ -288,7 +288,7 @@ export type VitekRoute =
       params: FilesIdOptionsParams;
     }
   | {
-      pattern: 'files/index';
+      pattern: 'files';
       method: 'post';
       params: FilesPostParams;
     }
@@ -298,7 +298,7 @@ export type VitekRoute =
       params: HealthGetParams;
     }
   | {
-      pattern: 'notifications/index';
+      pattern: 'notifications';
       method: 'post';
       params: NotificationsPostParams;
     }
@@ -333,12 +333,12 @@ export type VitekRoute =
       params: PostsIdPutParams;
     }
   | {
-      pattern: 'posts/index';
+      pattern: 'posts';
       method: 'get';
       params: PostsGetParams;
     }
   | {
-      pattern: 'posts/index';
+      pattern: 'posts';
       method: 'post';
       params: PostsPostParams;
     }

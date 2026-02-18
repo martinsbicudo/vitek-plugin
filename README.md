@@ -14,11 +14,13 @@
 
 ---
 
-Vitek is a Vite plugin that turns a folder of files into an HTTP API. Write endpoints as `[name].[method].ts` (or `.js`) under `src/api`, and get automatic routing, type generation, and typed client helpers. No separate server, no extra config.
+Vitek is a Vite plugin that turns a folder of files into an HTTP API.
+
+**Note:** The API currently runs only with the Vite **development server** (`npm run dev` / `pnpm dev`). It does not run in production builds (`vite build`) or with `vite preview`. Production support is still in progress. Write endpoints as `[name].[method].ts` (or `.js`) under `src/api`, and get automatic routing, type generation, and typed client helpers. No separate server, no extra config.
 
 **Full documentation:** [docs/](./docs/) · [View online](https://martinsbicudo.github.io/vitek-plugin/) (VitePress — run `npm run docs:dev` or `pnpm docs:dev` to view locally).
 
-**Examples:** [examples/](./examples/) — `basic-js`, `js-react`, and `typescript-react`.
+**Examples:** [examples/](./examples/) — `basic-js`, `js-react`, `typescript-react`, and `docker`.
 
 ---
 
@@ -56,7 +58,7 @@ Then `npm run dev` and open `http://localhost:5173/api/health`.
 ## Links
 
 - [Documentation](./docs/) — [view online](https://martinsbicudo.github.io/vitek-plugin/) · guides, API reference, configuration, examples
-- [Examples](./examples/) — basic-js, js-react, typescript-react
+- [Examples](./examples/) — basic-js, js-react, typescript-react, docker
 - [GitHub](https://github.com/martinsbicudo/vitek-plugin)
 - [NPM](https://www.npmjs.com/package/vitek-plugin)
 - [License](LICENSE)

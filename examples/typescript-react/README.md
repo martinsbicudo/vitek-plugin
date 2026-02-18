@@ -177,3 +177,4 @@ This is the most complete example and demonstrates:
 - **basic-js**: Minimal example in pure JavaScript, without frameworks
 - **js-react**: Example with React in JavaScript (without TypeScript)
 - **typescript-react** (this): Complete example with TypeScript and React, showing all features
+- **docker**: TypeScript + React with Docker and docker-compose (pnpm)

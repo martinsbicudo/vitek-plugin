@@ -90,6 +90,31 @@ The most comprehensive example showcasing all Vitek features with full type-safe
 
 ---
 
+### [docker](./docker/)
+
+**TypeScript + React with Docker and docker-compose**
+
+Same app as typescript-react, runnable in a container. Uses pnpm for install and scripts. No database.
+
+**Key Features:**
+- ✅ Same as typescript-react (TypeScript, React, full type-safety)
+- ✅ Dockerfile and docker-compose for containerized dev
+- ✅ pnpm for install and run inside the container
+- ✅ No database or extra services
+
+**Best for:**
+- Containerized development or deployment
+- Teams standardizing on Docker
+- CI environments
+
+**Tech Stack:**
+- TypeScript, React, Vite, TSX
+- Docker, docker-compose, pnpm
+
+**Run with Docker:** From `examples/docker`, run `docker compose up --build`, then open `http://localhost:5173`. No need to build the plugin from the repo root.
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -109,8 +134,9 @@ pnpm build
    ```bash
    cd examples/basic-js  # or js-react, or typescript-react
    ```
+   **docker:** From `examples/docker`, run `docker compose up --build` (uses pnpm inside the container). No need to build the plugin from the repo root.
 
-2. Install dependencies:
+2. Install dependencies (skip for docker):
    ```bash
    npm install
    # or
@@ -132,20 +158,21 @@ pnpm build
 
 ## 📊 Comparison Table
 
-| Feature | basic-js | js-react | typescript-react |
-|---------|----------|----------|------------------|
-| **Language** | JavaScript | JavaScript | TypeScript |
-| **Framework** | None | React | React |
-| **Type Safety** | ❌ | ❌ | ✅ |
-| **Response Helpers** | ❌ | ❌ | ✅ |
-| **Error Classes** | ❌ | ❌ | ✅ |
-| **Validation** | ❌ | ❌ | ✅ |
-| **Generated Types** | ❌ | ❌ | ✅ |
-| **Generated Services** | ✅ (JS) | ✅ (JS) | ✅ (TS) |
-| **Middlewares** | ❌ | ❌ | ✅ |
-| **HTTP Methods** | GET, POST | GET, POST | All methods |
-| **Complexity** | ⭐ | ⭐⭐ | ⭐⭐⭐ |
-| **Best For** | Learning | React (JS) | Production |
+| Feature | basic-js | js-react | typescript-react | docker |
+|---------|----------|----------|------------------|--------|
+| **Language** | JavaScript | JavaScript | TypeScript | TypeScript |
+| **Framework** | None | React | React | React |
+| **Type Safety** | ❌ | ❌ | ✅ | ✅ |
+| **Response Helpers** | ❌ | ❌ | ✅ | ✅ |
+| **Error Classes** | ❌ | ❌ | ✅ | ✅ |
+| **Validation** | ❌ | ❌ | ✅ | ✅ |
+| **Generated Types** | ❌ | ❌ | ✅ | ✅ |
+| **Generated Services** | ✅ (JS) | ✅ (JS) | ✅ (TS) | ✅ (TS) |
+| **Middlewares** | ❌ | ❌ | ✅ | ✅ |
+| **HTTP Methods** | GET, POST | GET, POST | All methods | All methods |
+| **Docker** | ❌ | ❌ | ❌ | ✅ |
+| **Complexity** | ⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
+| **Best For** | Learning | React (JS) | Production | Docker / containerized dev |
 
 ---
 
@@ -168,6 +195,11 @@ pnpm build
 - You want full type-safety
 - You need all Vitek features
 - You want the complete reference implementation
+
+### Use `docker` if:
+- You want to run the app in a container
+- You're standardizing on Docker
+- You need containerized dev or CI
 
 ---
 
@@ -199,13 +231,14 @@ example-name/
 - [basic-js README](./basic-js/README.md) - Detailed basic-js documentation
 - [js-react README](./js-react/README.md) - Detailed js-react documentation
 - [typescript-react README](./typescript-react/README.md) - Detailed typescript-react documentation
+- [docker README](./docker/README.md) - TypeScript + React with Docker and docker-compose (pnpm)
 
 ---
 
 ## 💡 Tips
 
 1. **Start Simple**: Begin with `basic-js` to understand the core concepts
-2. **Build the Plugin First**: Always build the plugin from the root before running examples
+2. **Build the Plugin First**: Build the plugin from the root before running examples (except **docker**, which uses the published npm package)
 3. **Check the Console**: Vitek logs useful information about registered routes
 4. **Explore Generated Files**: Look at `api.services.js/ts` to see how services are generated
 5. **Try Modifying Routes**: Add new routes and see them appear automatically

@@ -67,7 +67,7 @@ The "tek" suffix is commonly used in technology naming to denote tools and frame
 
 - [Getting Started](/guide/getting-started) - Set up your first route in minutes
 - [API Reference](/api/) - Plugin options and exports
-- [Examples](/examples) - basic-js, js-react, typescript-react
+- [Examples](/examples) - basic-js, js-react, typescript-react, docker
 - [GitHub](https://github.com/martinsbicudo/vitek-plugin)
 - [NPM](https://www.npmjs.com/package/vitek-plugin)
 

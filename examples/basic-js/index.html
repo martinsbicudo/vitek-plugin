@@ -71,6 +71,15 @@ const posts = await getPosts();
 
 // POST /api/posts
 const newPost = await postPosts({ title: 'My Post', content: 'Content', authorId: 1 });</pre>
+
+      <h3 style="margin-top: 1.5rem;">Available Routes</h3>
+      <ul style="line-height: 1.8; margin-top: 0.5rem;">
+        <li><strong>GET</strong> /api/health</li>
+        <li><strong>GET</strong> /api/users/:id</li>
+        <li><strong>GET</strong> /api/posts (query params: limit, offset)</li>
+        <li><strong>POST</strong> /api/posts</li>
+      </ul>
+
       <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
         <strong>Note:</strong> Services are automatically generated in <code>src/api.services.js</code> when you run the server.
       </p>

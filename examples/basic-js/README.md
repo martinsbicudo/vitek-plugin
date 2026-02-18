@@ -123,6 +123,7 @@ This is the simplest example and demonstrates:
 - **basic-js** (this): Minimal example in pure JavaScript, without frameworks
 - **js-react**: Example with React in JavaScript (without TypeScript)
 - **typescript-react**: Complete example with TypeScript and React, showing all features
+- **docker**: TypeScript + React with Docker and docker-compose (pnpm)
 
 ## When to Use This Example
 
