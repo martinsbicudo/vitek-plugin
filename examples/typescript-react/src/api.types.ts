@@ -143,7 +143,7 @@ export type UsersIdSettingsPatchQuery = {
 };
 
 export interface AnalyticsGetParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface CommentsPostIdCommentIdDeleteParams extends VitekParams {
@@ -157,7 +157,7 @@ export interface CommentsPostIdCommentIdGetParams extends VitekParams {
 }
 
 export interface CorsOptionsParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface FilesIdHeadParams extends VitekParams {
@@ -169,15 +169,15 @@ export interface FilesIdOptionsParams extends VitekParams {
 }
 
 export interface FilesPostParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface HealthGetParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface NotificationsPostParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface PostsIdsGetParams extends VitekParams {
@@ -205,19 +205,19 @@ export interface PostsIdPutParams extends VitekParams {
 }
 
 export interface PostsGetParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface PostsPostParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface SearchGetParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface SettingsPutParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface UsersIdPostsGetParams extends VitekParams {
@@ -253,7 +253,7 @@ export interface UsersIdPutParams extends VitekParams {
 }
 
 export interface VersionGetParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export type VitekRoute =

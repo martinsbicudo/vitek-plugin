@@ -29,34 +29,30 @@ function generateEntryContent(
 ): string {
   const lines: string[] = [];
 
-  // Import route handlers (relative to entry so esbuild resolves correctly)
   scanResult.routes.forEach((parsed, i) => {
     const rel = path.relative(entryDir, parsed.file).replace(/\\/g, '/');
     const importPath = rel.startsWith('.') ? rel : `./${rel}`;
     lines.push(`import handler_${i} from ${JSON.stringify(importPath)};`);
   });
 
-  // Import middleware modules
   scanResult.middlewares.forEach((mw, i) => {
     const rel = path.relative(entryDir, mw.path).replace(/\\/g, '/');
     const importPath = rel.startsWith('.') ? rel : `./${rel}`;
     lines.push(`import mw_${i} from ${JSON.stringify(importPath)};`);
   });
 
-  // Build routes array: { pattern, method, handler, params, file, regex }
   const routeEntries = scanResult.routes.map((parsed, i) => {
     const regex = patternToRegex(parsed.pattern);
     const regexSource = regex.source;
-    return `  { pattern: ${JSON.stringify(parsed.pattern)}, method: ${JSON.stringify(parsed.method)}, params: ${JSON.stringify(parsed.params)}, file: ${JSON.stringify(parsed.file)}, regex: new RegExp(${JSON.stringify(regexSource)}), handler: (handler_${i}.default ?? handler_${i}.handler ?? handler_${i}[${JSON.stringify(parsed.method)}]) }`;
+    return `  { pattern: ${JSON.stringify(parsed.pattern)}, method: ${JSON.stringify(parsed.method)}, params: ${JSON.stringify(parsed.params)}, file: ${JSON.stringify(parsed.file)}, regex: new RegExp(${JSON.stringify(regexSource)}), handler: (() => { const m = handler_${i}; return typeof m === 'function' ? m : (m.default ?? m.handler ?? m[${JSON.stringify(parsed.method)}]); })() }`;
   });
   lines.push('');
   lines.push('const routes = [');
   lines.push(routeEntries.join(',\n'));
   lines.push('];');
 
-  // Build middlewares array: { basePattern, middleware: Middleware[] }
   const mwEntries = scanResult.middlewares.map((mw, i) => {
-    return `  { basePattern: ${JSON.stringify(mw.basePattern)}, middleware: (() => { const m = mw_${i}.default ?? mw_${i}.middleware; return Array.isArray(m) ? m : [m]; })() }`;
+    return `  { basePattern: ${JSON.stringify(mw.basePattern)}, middleware: (() => { const m = mw_${i}; const fn = typeof m === 'function' || Array.isArray(m) ? m : (m.default ?? m.middleware); return Array.isArray(fn) ? fn : [fn]; })() }`;
   });
   lines.push('');
   lines.push('const middlewares = [');
@@ -118,7 +114,6 @@ export async function buildApiBundle(options: BuildApiBundleOptions): Promise<st
         fs.rmdirSync(tmpDir);
       }
     } catch {
-      // ignore cleanup errors
     }
   }
 }

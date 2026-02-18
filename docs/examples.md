@@ -56,7 +56,7 @@ Same app as typescript-react, runnable in a container. Uses pnpm for install and
 
 **Tech stack:** TypeScript, React, Vite, TSX, Docker, docker-compose, pnpm.
 
-**Run with Docker:** From `examples/docker`, run `docker compose up --build`, then open `http://localhost:5173`. No need to build the plugin from the repo root—the example uses the published vitek-plugin from npm.
+**Run with Docker:** From `examples/docker`, run `docker compose up --build`, then open `http://localhost:5173`. No need to build the plugin from the repo root—the example uses the published vitek-plugin from npm. All examples include a **start** script (vitek-serve) for production: after `vite build`, run `pnpm start` to serve static + API. The [docker example](../../examples/docker/README.md) documents production with Docker (vitek-serve).
 
 ---
 
@@ -106,6 +106,8 @@ Same app as typescript-react, runnable in a container. Uses pnpm for install and
    ```
 
 4. Open your browser at `http://localhost:5173`.
+
+5. **Production (optional):** Run `pnpm run build` then `pnpm run start` (vitek-serve) to serve the built app with the API. See [Production server](/guide/production-server).
 
 ---
 

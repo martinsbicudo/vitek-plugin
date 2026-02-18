@@ -111,7 +111,7 @@ Same app as typescript-react, runnable in a container. Uses pnpm for install and
 - TypeScript, React, Vite, TSX
 - Docker, docker-compose, pnpm
 
-**Run with Docker:** From `examples/docker`, run `docker compose up --build`, then open `http://localhost:5173`. No need to build the plugin from the repo root.
+**Run with Docker (dev):** From `examples/docker`, run `docker compose up --build`, then open `http://localhost:5173`. This runs the development server only. No need to build the plugin from the repo root. For production in Docker (build + vitek-serve), see [docker README](./docker/README.md) ("Production with Docker").
 
 ---
 
@@ -153,6 +153,8 @@ pnpm build
 4. Open your browser:
    - Visit `http://localhost:5173`
    - Check the console for API route information
+
+   For production-style (static + API), run **`pnpm run build`** then **`pnpm run start`** (vitek-serve). `vite preview` is for quick local preview of the static build only.
 
 ---
 
@@ -225,6 +227,24 @@ example-name/
 
 ---
 
+## Uso fora dos examples
+
+No seu próprio projeto (fora desta pasta de examples), depois de instalar o plugin com `npm install vitek-plugin` ou `pnpm add vitek-plugin`, você pode subir o servidor de produção (static + API) assim:
+
+No `package.json`:
+```json
+"scripts": {
+  "start": "pnpx vitek-serve"
+}
+```
+Depois: `pnpm run build` e `pnpm start`. Para expor em todas as interfaces (ex.: Docker): `pnpx vitek-serve --port=5173 --host=0.0.0.0`.
+
+Alternativa (caminho direto ao CLI): `"start": "node ./node_modules/vitek-plugin/dist/cli/serve.js"`.
+
+Nos exemplos usamos `pnpx vitek-serve`; é necessário rodar `pnpm build` na raiz do plugin antes de `pnpm start` quando o plugin estiver como `file:../..`.
+
+---
+
 ## 🔗 Links
 
 - [Main README](../README.md) - Full Vitek documentation
@@ -239,9 +259,10 @@ example-name/
 
 1. **Start Simple**: Begin with `basic-js` to understand the core concepts
 2. **Build the Plugin First**: Build the plugin from the root before running examples (except **docker**, which uses the published npm package)
-3. **Check the Console**: Vitek logs useful information about registered routes
-4. **Explore Generated Files**: Look at `api.services.js/ts` to see how services are generated
-5. **Try Modifying Routes**: Add new routes and see them appear automatically
+3. **Production server**: Run `pnpm run build` then `pnpm run start` (vitek-serve) in any example to serve static + API
+4. **Check the Console**: Vitek logs useful information about registered routes
+5. **Explore Generated Files**: Look at `api.services.js/ts` to see how services are generated
+6. **Try Modifying Routes**: Add new routes and see them appear automatically
 
 ---
 
@@ -265,6 +286,12 @@ npm run build
 - Ensure `tsconfig.json` exists in the example directory
 - Check that route files have proper TypeScript syntax
 - Restart the dev server
+
+### CLI not found when running `pnpm start`
+**Solution**: Run `pnpm build` in the plugin root (`vitek-plugin/`), then run `pnpm start` again in the example. The start script runs `pnpx vitek-serve`, which uses the plugin's bin; the CLI (`dist/cli/serve.js`) exists only after the plugin is built.
+
+### Docker example: `vitek-serve` not found or CLI missing
+**Solution**: The Docker example assumes the published npm package includes the CLI. Either publish a new version after running `pnpm build` at the plugin root, or for local testing use `"vitek-plugin": "file:../.."` in the docker example and build the plugin at repo root.
 
 ---
 

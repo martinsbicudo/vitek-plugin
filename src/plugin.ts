@@ -11,7 +11,8 @@ import { createViteDevServerMiddleware } from './adapters/vite/dev-server.js';
 import { createViteLogger } from './adapters/vite/logger.js';
 import { createRequestHandler } from './core/server/request-handler.js';
 import { buildApiBundle, getApiBundleFilename } from './build/build-api-bundle.js';
-import { API_DIR_NAME } from './shared/constants.js';
+import { API_BASE_PATH, API_DIR_NAME } from './shared/constants.js';
+import type { RequestHandlerOptions } from './core/server/request-handler.js';
 
 export interface VitekOptions {
   /** API directory (relative to root) */
@@ -53,16 +54,14 @@ export function vitek(options: VitekOptions = {}): Plugin {
     
     configureServer(server) {
       const fullApiDir = path.resolve(root, apiDirOption);
-      
-      // Check if directory exists
+
       if (!fs.existsSync(fullApiDir)) {
         server.config.logger.warn(
           `[vitek] API directory not found: ${fullApiDir}`
         );
         return;
       }
-      
-      // Create logger and middleware
+
       const logger = createViteLogger(server.config.logger, options.logging);
       const { middleware, cleanup } = createViteDevServerMiddleware({
         root,
@@ -73,12 +72,10 @@ export function vitek(options: VitekOptions = {}): Plugin {
       });
       
       cleanupFn = cleanup;
-      
-      // Register middleware in Vite server
+
       server.middlewares.use(middleware);
-      
+
       logger.info('Vitek plugin initialized');
-      // Show relative path to root
       const relativeApiDir = path.relative(root, fullApiDir);
       logger.info(`API directory: ./${relativeApiDir.replace(/\\/g, '/')}`);
     },
@@ -95,35 +92,50 @@ export function vitek(options: VitekOptions = {}): Plugin {
         return;
       }
       const bundleUrl = pathToFileURL(bundlePath).href;
-      return import(bundleUrl).then(
-        (mod: { routes: unknown[]; middlewares: unknown[] }) => {
-          const handler = createRequestHandler({
-            routes: mod.routes as import('./core/server/request-handler.js').RequestHandlerOptions['routes'],
-            middlewares: mod.middlewares as import('./core/server/request-handler.js').RequestHandlerOptions['middlewares'],
-          });
-          server.middlewares.use(handler);
-          server.config.logger.info('[vitek] API middleware registered for preview');
-        },
-        (err) => {
-          server.config.logger.error(
-            `[vitek] Failed to load API bundle: ${err instanceof Error ? err.message : String(err)}`
-          );
+      const bundleLoadPromise = import(bundleUrl) as Promise<{
+        routes: RequestHandlerOptions['routes'];
+        middlewares: RequestHandlerOptions['middlewares'];
+      }>;
+
+      let apiHandler: ReturnType<typeof createRequestHandler> | null = null;
+
+      const apiMiddleware = (req: import('http').IncomingMessage, res: import('http').ServerResponse, next: () => void) => {
+        if (!req.url?.startsWith(API_BASE_PATH)) {
+          return next();
         }
-      );
+        bundleLoadPromise
+          .then((mod) => {
+            if (!apiHandler) {
+              apiHandler = createRequestHandler({
+                routes: mod.routes,
+                middlewares: mod.middlewares,
+              });
+              server.config.logger.info('[vitek] API middleware registered for preview');
+            }
+            apiHandler(req, res, next);
+          })
+          .catch((err) => {
+            server.config.logger.error(
+              `[vitek] Failed to load API bundle: ${err instanceof Error ? err.message : String(err)}`
+            );
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Internal server error', message: 'Failed to load API bundle' }));
+          });
+      };
+
+      server.middlewares.use(apiMiddleware);
     },
 
     async closeBundle() {
       if (buildApi) {
         const fullApiDir = path.resolve(root, apiDirOption);
         try {
-          const outFile = await buildApiBundle({
+          await buildApiBundle({
             root,
             apiDir: fullApiDir,
             outDir: buildOutDir,
           });
-          if (outFile) {
-            // Optional: could log via config.logger in build mode
-          }
         } catch (err) {
           console.error('[vitek] Failed to build API bundle:', err instanceof Error ? err.message : err);
         }
@@ -131,7 +143,6 @@ export function vitek(options: VitekOptions = {}): Plugin {
     },
 
     buildEnd() {
-      // Clean up resources when build ends
       if (cleanupFn) {
         cleanupFn();
         cleanupFn = null;

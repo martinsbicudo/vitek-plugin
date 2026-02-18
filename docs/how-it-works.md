@@ -24,6 +24,6 @@ A middleware is registered on the Vite dev server that intercepts requests under
 
 The plugin watches the API directory. When you add, change, or remove route or middleware files, routes and generated types/services are updated and the dev server reflects the changes without a full restart.
 
-## 7. Build and preview
+## 7. Build and production
 
-When you run `vite build` (and `buildApi` is not disabled), the plugin also bundles your API into `dist/vitek-api.mjs`. When you run `vite preview`, that bundle is loaded and the same middleware serves `/api/*` alongside the static assets. The same bundle can be used in production by serving `dist` with a server that loads it.
+When you run `vite build` (and `buildApi` is not disabled), the plugin also bundles your API into `dist/vitek-api.mjs`. For production (or local production-like runs), use **vitek-serve**: it serves static assets and the API from one Node process. See [Production server](/guide/production-server). `vite preview` is for quick local preview of the static build only.

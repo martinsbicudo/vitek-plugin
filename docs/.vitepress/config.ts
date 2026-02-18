@@ -40,6 +40,8 @@ export default defineConfig({
           { text: 'Request Validation', link: '/guide/request-validation' },
           { text: 'Type Generation', link: '/guide/type-generation' },
           { text: 'Configuration', link: '/guide/configuration' },
+          { text: 'Production server', link: '/guide/production-server' },
+          { text: 'Deployment & integrations', link: '/guide/production-deploy' },
         ],
       },
       {

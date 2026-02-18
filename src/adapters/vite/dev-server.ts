@@ -38,7 +38,7 @@ export interface ViteDevServerOptions {
  */
 class DevServerState {
   routes: Route[] = [];
-  middlewares: LoadedMiddleware[] = []; // Loaded hierarchical middlewares
+  middlewares: LoadedMiddleware[] = [];
   watcher: ApiWatcher | null = null;
   
   constructor(
@@ -60,19 +60,14 @@ class DevServerState {
     if (showReloadLog) {
       this.options.logger.info('Reloading API routes...');
     }
-    
-    // Scan directory
+
     const scanResult = scanApiDirectory(this.options.apiDir);
-    
-    // Load hierarchical middlewares
-    this.middlewares = [];
+
+    this.middlewares.length = 0;
     for (const middlewareInfo of scanResult.middlewares) {
       try {
-        // Convert absolute path to relative path to Vite root (format /src/api/posts/middleware.ts)
         const relativePath = path.relative(this.options.root, middlewareInfo.path);
         const vitePath = `/${relativePath.replace(/\\/g, '/')}`;
-        
-        // Use Vite's ssrLoadModule to process TypeScript
         const middlewareModule = await this.options.viteServer.ssrLoadModule(vitePath);
         const middleware = middlewareModule.default || middlewareModule.middleware;
         
@@ -95,19 +90,15 @@ class DevServerState {
         );
       }
     }
-    
+
     const totalMiddlewareCount = this.middlewares.reduce((sum, m) => sum + m.middleware.length, 0);
     this.options.logger.middlewareLoaded(totalMiddlewareCount);
-    
-    // Load routes
-    this.routes = [];
+
+    this.routes.length = 0;
     for (const parsedRoute of scanResult.routes) {
       try {
-        // Convert absolute path to relative path to Vite root (format /src/api/users/[id].get.ts)
         const relativePath = path.relative(this.options.root, parsedRoute.file);
         const vitePath = `/${relativePath.replace(/\\/g, '/')}`;
-        
-        // Use Vite's ssrLoadModule to process TypeScript
         const handlerModule = await this.options.viteServer.ssrLoadModule(vitePath);
         const handler: RouteHandler = handlerModule.default || handlerModule.handler || handlerModule[parsedRoute.method];
         
@@ -117,12 +108,9 @@ class DevServerState {
           );
           continue;
         }
-        
-        // Extract bodyType from file (looking for export type Body or export interface Body)
+
         const bodyType = extractBodyTypeFromFile(parsedRoute.file);
-        // Extract queryType from file (looking for export type Query or export interface Query)
         const queryType = extractQueryTypeFromFile(parsedRoute.file);
-        
         const route = createRoute(parsedRoute, handler, bodyType, queryType);
         this.routes.push(route);
       } catch (error) {
@@ -131,15 +119,12 @@ class DevServerState {
         );
       }
     }
-    
-    // Log registered routes (consolidated)
+
     const routesInfo = this.routes.map(r => ({
       method: r.method,
       pattern: r.pattern,
     }));
     this.options.logger.routesRegistered(routesInfo, API_BASE_PATH);
-    
-    // Generate types
     await this.generateTypes();
   }
   
@@ -164,16 +149,14 @@ class DevServerState {
     try {
       const schema = routesToSchema(this.routes);
       const isTypeScript = isTypeScriptProject(this.options.root);
-      
-      // Generate api.types.ts only if it's a TypeScript project
+
       if (isTypeScript) {
         const typesPath = path.join(this.options.root, 'src', GENERATED_TYPES_FILE);
         await generateTypesFile(typesPath, schema, API_BASE_PATH);
         const relativeTypesPath = path.relative(this.options.root, typesPath);
         this.options.logger.typesGenerated(`./${relativeTypesPath.replace(/\\/g, '/')}`);
       }
-      
-      // Generate api.services.ts or api.services.js depending on the project
+
       const servicesFileName = isTypeScript ? GENERATED_SERVICES_FILE : 'api.services.js';
       const servicesPath = path.join(this.options.root, 'src', servicesFileName);
       await generateServicesFile(servicesPath, schema, API_BASE_PATH, isTypeScript);
@@ -217,28 +200,19 @@ function extractQueryTypeFromFile(filePath: string): string | undefined {
 }
 
 /**
- * Helper function to extract a type from a file
- * Uses regex-based extraction (synchronous)
- * 
- * Note: AST-based extraction using ts-morph would be more robust but requires:
- * 1. Making this function async
- * 2. Adding ts-morph as optional dependency
- * 3. Updating call sites to handle async
- * This can be implemented in a future version when needed.
+ * Extracts a type (Body or Query) from a route file via regex. AST-based extraction could be used in a future version.
  */
 function extractTypeFromFile(filePath: string, typeName: string): string | undefined {
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
-    
-    // Look for export type {TypeName} = ...
+
     const typeStart = content.indexOf(`export type ${typeName}`);
     if (typeStart !== -1) {
       const afterStart = content.substring(typeStart);
       const equalsIndex = afterStart.indexOf('=');
       if (equalsIndex !== -1) {
         const afterEquals = afterStart.substring(equalsIndex + 1).trimStart();
-        
-        // If it starts with {, need to count braces to find the correct closing
+
         if (afterEquals.startsWith('{')) {
           let braceCount = 0;
           let i = 0;
@@ -261,8 +235,6 @@ function extractTypeFromFile(filePath: string, typeName: string): string | undef
             return typeBody;
           }
         } else {
-          // If it doesn't start with {, it's a simple type alias (e.g., string, number, etc)
-          // Get until the first ; (but may have line breaks)
           const semicolonIndex = afterEquals.indexOf(';');
           if (semicolonIndex !== -1) {
             return afterEquals.substring(0, semicolonIndex).trim();
@@ -270,8 +242,7 @@ function extractTypeFromFile(filePath: string, typeName: string): string | undef
         }
       }
     }
-    
-    // Look for export interface {TypeName} { ... }
+
     const interfaceStart = content.indexOf(`export interface ${typeName}`);
     if (interfaceStart !== -1) {
       const afterStart = content.substring(interfaceStart);
@@ -301,8 +272,7 @@ function extractTypeFromFile(filePath: string, typeName: string): string | undef
     }
     
     return undefined;
-  } catch (error) {
-    // If unable to read the file, return undefined
+  } catch {
     return undefined;
   }
 }
@@ -312,8 +282,6 @@ function extractTypeFromFile(filePath: string, typeName: string): string | undef
  */
 export function createViteDevServerMiddleware(options: ViteDevServerOptions) {
   const state = new DevServerState(options);
-
-  // Initialize when middleware is created
   state.initialize().catch(error => {
     options.logger.error(`Failed to initialize Vitek: ${error instanceof Error ? error.message : String(error)}`);
   });
