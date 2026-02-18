@@ -41,7 +41,7 @@ export default defineConfig({
 
 When `buildApi` is `true` (default), running `vite build` also produces an API bundle (`dist/vitek-api.mjs`).
 
-- **Production:** Run `vite build`, then **vitek-serve** (e.g. `npx vitek-plugin serve` or `pnpm start`). vitek-serve serves both static assets and the API at `/api/*` from a single Node process. See [Production server](/guide/production-server) for details.
+- **Production:** Run `vite build`, then **vitek-serve** (add `"start": "vitek-serve"` and run `pnpm start`). vitek-serve serves both static assets and the API at `/api/*` from a single Node process. See [Production server](/guide/production-server) for details.
 - **Preview:** `vite preview` is optional for a quick local preview of the static build only; for static + API use vitek-serve.
 
 Set `buildApi: false` if you only want the API in development.

@@ -234,14 +234,14 @@ No seu próprio projeto (fora desta pasta de examples), depois de instalar o plu
 No `package.json`:
 ```json
 "scripts": {
-  "start": "pnpx vitek-serve"
+  "start": "vitek-serve"
 }
 ```
-Depois: `pnpm run build` e `pnpm start`. Para expor em todas as interfaces (ex.: Docker): `pnpx vitek-serve --port=5173 --host=0.0.0.0`.
+Depois: `pnpm run build` e `pnpm start`. Para expor em todas as interfaces (ex.: Docker): `vitek-serve --port=5173 --host=0.0.0.0`.
 
 Alternativa (caminho direto ao CLI): `"start": "node ./node_modules/vitek-plugin/dist/cli/serve.js"`.
 
-Nos exemplos usamos `pnpx vitek-serve`; é necessário rodar `pnpm build` na raiz do plugin antes de `pnpm start` quando o plugin estiver como `file:../..`.
+Nos exemplos usamos `vitek-serve`; é necessário rodar `pnpm build` na raiz do plugin antes de `pnpm start` quando o plugin estiver como `file:../..`.
 
 ---
 
@@ -288,7 +288,7 @@ npm run build
 - Restart the dev server
 
 ### CLI not found when running `pnpm start`
-**Solution**: Run `pnpm build` in the plugin root (`vitek-plugin/`), then run `pnpm start` again in the example. The start script runs `pnpx vitek-serve`, which uses the plugin's bin; the CLI (`dist/cli/serve.js`) exists only after the plugin is built.
+**Solution**: Run `pnpm build` in the plugin root (`vitek-plugin/`), then run `pnpm start` again in the example. The start script runs `vitek-serve` (the plugin's bin); the CLI (`dist/cli/serve.js`) exists only after the plugin is built.
 
 ### Docker example: `vitek-serve` not found or CLI missing
 **Solution**: The Docker example assumes the published npm package includes the CLI. Either publish a new version after running `pnpm build` at the plugin root, or for local testing use `"vitek-plugin": "file:../.."` in the docker example and build the plugin at repo root.
