@@ -1,0 +1,176 @@
+/**
+ * Shared request handler for API routes
+ * Used by both dev server and preview/production server
+ */
+
+import type { IncomingMessage, ServerResponse } from 'http';
+import type { Connect } from 'vite';
+import { matchRoute } from '../routing/route-matcher.js';
+import { createContext, isVitekResponse, type VitekResponse } from '../context/create-context.js';
+import { getApplicableMiddlewares } from '../middleware/get-applicable-middlewares.js';
+import { compose } from '../middleware/compose.js';
+import { API_BASE_PATH } from '../../shared/constants.js';
+import { HttpError } from '../../shared/errors.js';
+import type { Route } from '../routing/route-types.js';
+import type { LoadedMiddleware } from '../middleware/get-applicable-middlewares.js';
+
+export interface RequestHandlerOptions {
+  routes: Route[];
+  middlewares: LoadedMiddleware[];
+  logger?: {
+    routeMatched?(pattern: string, method: string): void;
+    request?(method: string, path: string, statusCode: number, duration?: number): void;
+    warn?(message: string, data?: Record<string, unknown>): void;
+    error?(message: string, data?: Record<string, unknown>): void;
+  };
+}
+
+const noop = () => {};
+
+/**
+ * Creates a Connect-style middleware that handles /api/* requests using the given routes and middlewares.
+ */
+export function createRequestHandler(options: RequestHandlerOptions): (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => Promise<void> {
+  const { routes, middlewares, logger } = options;
+  const logRouteMatched = logger?.routeMatched ?? noop;
+  const logRequest = logger?.request ?? noop;
+  const logWarn = logger?.warn ?? noop;
+  const logError = logger?.error ?? noop;
+
+  return async (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => {
+    if (!req.url?.startsWith(API_BASE_PATH)) {
+      return next();
+    }
+
+    const startTime = Date.now();
+    const requestMethod = req.method?.toLowerCase() || 'get';
+    const requestPath = req.url.split('?')[0];
+
+    try {
+      const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      const routePath = url.pathname.replace(API_BASE_PATH, '') || '/';
+      const method = requestMethod;
+
+      const match = matchRoute(routes, routePath, method);
+
+      if (!match) {
+        const duration = Date.now() - startTime;
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'Route not found' }));
+        logRequest(requestMethod, requestPath, 404, duration);
+        return;
+      }
+
+      logRouteMatched(match.route.pattern, method);
+
+      const query: Record<string, string | string[]> = {};
+      url.searchParams.forEach((value, key) => {
+        if (query[key]) {
+          const existing = query[key];
+          query[key] = Array.isArray(existing) ? [...existing, value] : [existing as string, value];
+        } else {
+          query[key] = value;
+        }
+      });
+
+      let body: unknown;
+      if (['post', 'put', 'patch'].includes(method)) {
+        body = await new Promise((resolve) => {
+          const chunks: Buffer[] = [];
+          req.on('data', (chunk: Buffer) => chunks.push(chunk));
+          req.on('end', () => {
+            const rawBody = Buffer.concat(chunks).toString();
+            if (!rawBody) {
+              resolve(undefined);
+              return;
+            }
+            try {
+              resolve(JSON.parse(rawBody));
+            } catch {
+              resolve(rawBody);
+            }
+          });
+        });
+      }
+
+      const context = createContext(
+        {
+          url: req.url,
+          method,
+          headers: (req.headers || {}) as Record<string, string>,
+          body,
+        },
+        match.params,
+        query
+      );
+
+      const applicableMiddlewares = getApplicableMiddlewares(middlewares, match.route.pattern);
+      const composed = compose(applicableMiddlewares);
+      const handler = async () => {
+        const result = await match.route.handler(context);
+
+        if (isVitekResponse(result)) {
+          const response = result as VitekResponse;
+          const statusCode = response.status || 200;
+
+          if (response.headers) {
+            for (const [key, value] of Object.entries(response.headers)) {
+              res.setHeader(key, value);
+            }
+          }
+          if (!response.headers || !response.headers['Content-Type']) {
+            if (response.body !== undefined) {
+              res.setHeader('Content-Type', 'application/json');
+            }
+          }
+          res.statusCode = statusCode;
+          if (response.body === undefined) {
+            res.end();
+          } else if (typeof response.body === 'string') {
+            res.end(response.body);
+          } else {
+            res.end(JSON.stringify(response.body));
+          }
+          logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
+        } else {
+          res.setHeader('Content-Type', 'application/json');
+          res.statusCode = 200;
+          res.end(JSON.stringify(result));
+          logRequest(requestMethod, requestPath, 200, Date.now() - startTime);
+        }
+      };
+
+      await composed(context, handler);
+    } catch (error) {
+      const duration = Date.now() - startTime;
+
+      if (error instanceof HttpError) {
+        const httpError = error as HttpError;
+        logWarn(`HTTP Error ${httpError.statusCode}: ${httpError.message}`);
+        res.statusCode = httpError.statusCode;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(
+          JSON.stringify({
+            error: httpError.name,
+            message: httpError.message,
+            code: httpError.code,
+          })
+        );
+        logRequest(requestMethod, requestPath, httpError.statusCode, duration);
+      } else {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logError(`Error handling request: ${errorMessage}`);
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(
+          JSON.stringify({
+            error: 'Internal server error',
+            message: errorMessage,
+          })
+        );
+        logRequest(requestMethod, requestPath, 500, duration);
+      }
+    }
+  };
+}

@@ -16,7 +16,7 @@
 
 Vitek is a Vite plugin that turns a folder of files into an HTTP API.
 
-**Note:** The API currently runs only with the Vite **development server** (`npm run dev` / `pnpm dev`). It does not run in production builds (`vite build`) or with `vite preview`. Production support is still in progress. Write endpoints as `[name].[method].ts` (or `.js`) under `src/api`, and get automatic routing, type generation, and typed client helpers. No separate server, no extra config.
+**Note:** The API runs with the Vite **development server** (`npm run dev` / `pnpm dev`). For **production**, run `vite build` then **vitek-serve** (add `"start": "vitek-serve"` to your scripts and run `pnpm start`)—this serves both static assets and the API from one process. `vite preview` is for quick local preview of the static build only; for static + API use vitek-serve. Set `buildApi: false` if you do not want the API in build/production. Write endpoints as `[name].[method].ts` (or `.js`) under `src/api`, and get automatic routing, type generation, and typed client helpers.
 
 **Full documentation:** [docs/](./docs/) · [View online](https://martinsbicudo.github.io/vitek-plugin/) (VitePress — run `npm run docs:dev` or `pnpm docs:dev` to view locally).
 

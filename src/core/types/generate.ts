@@ -288,9 +288,8 @@ function generateUniqueTypeName(
  */
 function generateParamsType(params: string[]): string {
   if (params.length === 0) {
-    return '  // No dynamic params';
+    return '';
   }
-  
   return params.map(param => `  ${param}: string;`).join('\n');
 }
 
