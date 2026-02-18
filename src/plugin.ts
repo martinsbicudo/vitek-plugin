@@ -6,8 +6,11 @@
 import type { Plugin } from 'vite';
 import * as path from 'path';
 import * as fs from 'fs';
+import { pathToFileURL } from 'url';
 import { createViteDevServerMiddleware } from './adapters/vite/dev-server.js';
 import { createViteLogger } from './adapters/vite/logger.js';
+import { createRequestHandler } from './core/server/request-handler.js';
+import { buildApiBundle, getApiBundleFilename } from './build/build-api-bundle.js';
 import { API_DIR_NAME } from './shared/constants.js';
 
 export interface VitekOptions {
@@ -15,6 +18,8 @@ export interface VitekOptions {
   apiDir?: string;
   /** API base path (default: /api) */
   apiBasePath?: string;
+  /** Build API bundle for preview/production (default: true). Set to false to skip. */
+  buildApi?: boolean;
   /** Enable request validation (default: false) */
   enableValidation?: boolean;
   /** Logging configuration */
@@ -32,19 +37,22 @@ export interface VitekOptions {
  * Vite plugin for Vitek
  */
 export function vitek(options: VitekOptions = {}): Plugin {
-  const apiDir = options.apiDir || `src/${API_DIR_NAME}`;
+  const apiDirOption = options.apiDir || `src/${API_DIR_NAME}`;
+  const buildApi = options.buildApi !== false;
   let root: string;
+  let buildOutDir: string;
   let cleanupFn: (() => void) | null = null;
-  
+
   return {
     name: 'vitek',
-    
+
     configResolved(config) {
       root = config.root;
+      buildOutDir = path.resolve(root, config.build?.outDir ?? 'dist');
     },
     
     configureServer(server) {
-      const fullApiDir = path.resolve(root, apiDir);
+      const fullApiDir = path.resolve(root, apiDirOption);
       
       // Check if directory exists
       if (!fs.existsSync(fullApiDir)) {
@@ -74,7 +82,54 @@ export function vitek(options: VitekOptions = {}): Plugin {
       const relativeApiDir = path.relative(root, fullApiDir);
       logger.info(`API directory: ./${relativeApiDir.replace(/\\/g, '/')}`);
     },
-    
+
+    configurePreviewServer(server) {
+      if (!buildApi) {
+        return;
+      }
+      const bundlePath = path.join(buildOutDir, getApiBundleFilename());
+      if (!fs.existsSync(bundlePath)) {
+        server.config.logger.warn(
+          '[vitek] API bundle not found; preview serving static assets only. Run `vite build` first.'
+        );
+        return;
+      }
+      const bundleUrl = pathToFileURL(bundlePath).href;
+      return import(bundleUrl).then(
+        (mod: { routes: unknown[]; middlewares: unknown[] }) => {
+          const handler = createRequestHandler({
+            routes: mod.routes as import('./core/server/request-handler.js').RequestHandlerOptions['routes'],
+            middlewares: mod.middlewares as import('./core/server/request-handler.js').RequestHandlerOptions['middlewares'],
+          });
+          server.middlewares.use(handler);
+          server.config.logger.info('[vitek] API middleware registered for preview');
+        },
+        (err) => {
+          server.config.logger.error(
+            `[vitek] Failed to load API bundle: ${err instanceof Error ? err.message : String(err)}`
+          );
+        }
+      );
+    },
+
+    async closeBundle() {
+      if (buildApi) {
+        const fullApiDir = path.resolve(root, apiDirOption);
+        try {
+          const outFile = await buildApiBundle({
+            root,
+            apiDir: fullApiDir,
+            outDir: buildOutDir,
+          });
+          if (outFile) {
+            // Optional: could log via config.logger in build mode
+          }
+        } catch (err) {
+          console.error('[vitek] Failed to build API bundle:', err instanceof Error ? err.message : err);
+        }
+      }
+    },
+
     buildEnd() {
       // Clean up resources when build ends
       if (cleanupFn) {

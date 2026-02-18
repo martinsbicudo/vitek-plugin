@@ -23,3 +23,7 @@ A middleware is registered on the Vite dev server that intercepts requests under
 ## 6. Hot Reload
 
 The plugin watches the API directory. When you add, change, or remove route or middleware files, routes and generated types/services are updated and the dev server reflects the changes without a full restart.
+
+## 7. Build and preview
+
+When you run `vite build` (and `buildApi` is not disabled), the plugin also bundles your API into `dist/vitek-api.mjs`. When you run `vite preview`, that bundle is loaded and the same middleware serves `/api/*` alongside the static assets. The same bundle can be used in production by serving `dist` with a server that loads it.
