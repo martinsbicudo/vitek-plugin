@@ -4,6 +4,9 @@ export default defineConfig({
   title: 'Vitek Plugin',
   description: 'File-based HTTP API generation for Vite',
   base: '/vitek-plugin/',
+  head: [
+    ['link', { rel: 'icon', type: 'image/webp', href: '/vitek-plugin/logo.webp' }],
+  ],
   appearance: false,
   themeConfig: {
     logo: '/logo.webp',

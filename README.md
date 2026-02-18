@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./src/assets/logo.webp" alt="Vitek Plugin Logo" width="200" height="200" />
+  <img src="./docs/public/logo.webp" alt="Vitek Plugin Logo" width="200" height="200" />
   
   # Vitek Plugin
   
