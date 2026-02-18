@@ -1,14 +1,14 @@
 /**
- * Export público do pacote Vitek
+ * Public exports for the Vitek package
  */
 
 export { vitek } from './plugin.js';
 export type { VitekOptions } from './plugin.js';
 
-// Re-export types úteis do core (opcional, para uso avançado)
 export type {
   VitekContext,
   VitekRequest,
+  VitekResponse,
 } from './core/context/create-context.js';
 
 export type {
@@ -17,4 +17,41 @@ export type {
   Middleware,
   RouteMatch,
 } from './core/routing/route-types.js';
+
+export {
+  json,
+  ok,
+  created,
+  noContent,
+  badRequest,
+  unauthorized,
+  forbidden,
+  notFound,
+  conflict,
+  unprocessableEntity,
+  tooManyRequests,
+  internalServerError,
+  redirect,
+} from './shared/response-helpers.js';
+
+export {
+  VitekError,
+  HttpError,
+  BadRequestError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
+  ValidationError,
+  TooManyRequestsError,
+  InternalServerError,
+} from './shared/errors.js';
+
+export {
+  validate,
+  validateOrThrow,
+  validateBody,
+  validateQuery,
+} from './core/validation/validator.js';
+export type { ValidationSchema, ValidationRule, ValidationResult } from './core/validation/types.js';
 
