@@ -14,6 +14,7 @@ jobs:
       contents: write
     outputs:
       version: ${{ steps.version.outputs.value }}
+      should_publish: ${{ steps.label.outputs.match != 'semver:bypass' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,8 +47,10 @@ jobs:
       - name: Push version
         if: ${{ steps.label.outputs.match != 'semver:bypass' }}
         run: git push --follow-tags
+
   publish_package:
     needs: generate_semver
+    if: needs.generate_semver.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -72,8 +75,10 @@ jobs:
         run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+
   generate_release:
     needs: [generate_semver, publish_package]
+    if: needs.generate_semver.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
