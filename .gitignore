@@ -8,3 +8,4 @@ dist-ssr
 .idea
 .venv
 .pnpm-store
+coverage/

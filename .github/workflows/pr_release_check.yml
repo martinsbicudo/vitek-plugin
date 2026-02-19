@@ -23,6 +23,9 @@ env:
 jobs:
   release_section:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
       - name: Get release section
         uses: actions-ecosystem/action-regex-match@v2
@@ -37,6 +40,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: ${{ env.MESSAGE_ERROR }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Get variables
         id: variables
         run: |
@@ -48,14 +52,14 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: ${{ env.MESSAGE_ERROR }}
-          token: ${{ secrets.AUTH_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Delete comment
         if: ${{ steps.variables.outputs.deleteComment == 'true' }}
         uses: sandeshjangam/comment-actions@v1
         with:
           type: "delete"
           comment_id: ${{ steps.comment.outputs.comment-id }}
-          token: ${{ secrets.AUTH_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Result
         run: |
           if ${{(steps.match.outputs.group1 != '')}} == 'true';then
