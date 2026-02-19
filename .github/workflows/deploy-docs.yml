@@ -38,8 +38,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+
       - name: Build docs
         run: pnpm docs:build
+
+      - name: Copy coverage report to docs
+        run: |
+          mkdir -p docs/.vitepress/dist/coverage
+          cp -r coverage/* docs/.vitepress/dist/coverage/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
