@@ -43,6 +43,7 @@ export default defineConfig({
           { text: 'Configuration', link: '/guide/configuration' },
           { text: 'Production server', link: '/guide/production-server' },
           { text: 'Deployment & integrations', link: '/guide/production-deploy' },
+          { text: 'Testing', link: '/guide/testing' },
         ],
       },
       {
