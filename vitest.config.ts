@@ -16,6 +16,12 @@ export default defineConfig({
         'docs/',
         'examples/',
       ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 75,
+        statements: 80,
+      },
     },
     include: ['src/**/*.test.ts'],
   },
