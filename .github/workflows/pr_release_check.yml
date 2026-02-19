@@ -29,14 +29,17 @@ jobs:
     steps:
       - name: Check for semver:bypass label
         id: bypass
-        run: |
-          labels='${{ toJson(github.event.pull_request.labels) }}'
-          if echo "$labels" | grep -q '"name":"semver:bypass"'; then
-            echo "bypass=true" >> $GITHUB_OUTPUT
-            echo "semver:bypass label found - skipping release section check"
-          else
-            echo "bypass=false" >> $GITHUB_OUTPUT
-          fi
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.pull_request.labels;
+            const hasBypass = labels.some(label => label.name === 'semver:bypass');
+            core.setOutput('bypass', hasBypass ? 'true' : 'false');
+            if (hasBypass) {
+              core.info('✅ semver:bypass label found - skipping release section check');
+            } else {
+              core.info('⏳ No semver:bypass label - checking release section');
+            }
 
       - name: Get release section
         if: ${{ steps.bypass.outputs.bypass == 'false' }}
