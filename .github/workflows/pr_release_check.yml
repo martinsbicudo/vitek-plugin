@@ -3,7 +3,7 @@ on:
   pull_request:
     branches:
       - main
-    types: [opened, reopened, edited]
+    types: [opened, reopened, edited, labeled, unlabeled]
 
 env:
   MESSAGE_ERROR: |
@@ -27,43 +27,67 @@ jobs:
       issues: write
       pull-requests: write
     steps:
+      - name: Check for semver:bypass label
+        id: bypass
+        run: |
+          labels='${{ toJson(github.event.pull_request.labels) }}'
+          if echo "$labels" | grep -q '"name":"semver:bypass"'; then
+            echo "bypass=true" >> $GITHUB_OUTPUT
+            echo "semver:bypass label found - skipping release section check"
+          else
+            echo "bypass=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Get release section
+        if: ${{ steps.bypass.outputs.bypass == 'false' }}
         uses: actions-ecosystem/action-regex-match@v2
         id: match
         with:
           text: ${{ github.event.pull_request.body }}
           regex: '#+\s*Release\s*\n\`{3}\s*\n([\S\s]*)\n\`{3}\s*\n*'
           flags: gm
+
       - name: Find comment
+        if: ${{ steps.bypass.outputs.bypass == 'false' }}
         uses: peter-evans/find-comment@v2
         id: comment
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: ${{ env.MESSAGE_ERROR }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Get variables
+        if: ${{ steps.bypass.outputs.bypass == 'false' }}
         id: variables
         run: |
           echo "createComment=${{ steps.comment.outputs.comment-id == '' && steps.match.outputs.group1 == '' }}" >> $GITHUB_OUTPUT
           echo "deleteComment=${{ steps.comment.outputs.comment-id != '' && steps.match.outputs.group1 != '' }}" >> $GITHUB_OUTPUT
+
       - name: Create comment
-        if: ${{ steps.variables.outputs.createComment == 'true' }}
+        if: ${{ steps.bypass.outputs.bypass == 'false' && steps.variables.outputs.createComment == 'true' }}
         uses: peter-evans/create-or-update-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: ${{ env.MESSAGE_ERROR }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Delete comment
-        if: ${{ steps.variables.outputs.deleteComment == 'true' }}
+        if: ${{ steps.bypass.outputs.bypass == 'false' && steps.variables.outputs.deleteComment == 'true' }}
         uses: sandeshjangam/comment-actions@v1
         with:
           type: "delete"
           comment_id: ${{ steps.comment.outputs.comment-id }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Result
         run: |
-          if ${{(steps.match.outputs.group1 != '')}} == 'true';then
+          if ${{ steps.bypass.outputs.bypass == 'true' }}; then
+            echo "✅ semver:bypass label found - skipping release section check"
+            exit 0
+          elif ${{ steps.match.outputs.group1 != '' }}; then
+            echo "✅ Release section found"
             exit 0
           else
+            echo "❌ Release section not found"
             exit 1
           fi
