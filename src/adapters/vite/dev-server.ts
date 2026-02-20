@@ -188,11 +188,6 @@ class DevServerState {
     try {
       const openApiOptions: OpenApiOptions = typeof openApi === 'boolean' 
         ? {
-            info: {
-              title: 'Vitek API',
-              version: '1.0.0',
-              description: 'Auto-generated API documentation',
-            },
             apiBasePath: API_BASE_PATH,
           }
         : { ...openApi, apiBasePath: API_BASE_PATH };
@@ -205,7 +200,8 @@ class DevServerState {
 
       // Generate Swagger UI HTML
       const swaggerUiPath = path.join(this.options.root, 'public', 'api-docs.html');
-      const swaggerHtml = generateSwaggerUiHtml('/openapi.json', openApiOptions.info.title);
+      const title = openApiOptions.info?.title || 'Vitek API';
+      const swaggerHtml = generateSwaggerUiHtml('/openapi.json', title);
       fs.writeFileSync(swaggerUiPath, swaggerHtml, 'utf-8');
       const relativeSwaggerPath = path.relative(this.options.root, swaggerUiPath);
       this.options.logger.info(`Swagger UI available at: ./${relativeSwaggerPath.replace(/\\/g, '/')} → http://localhost:${this.options.viteServer.config.server?.port || 5173}/api-docs.html`);

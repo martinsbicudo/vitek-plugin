@@ -28,8 +28,11 @@ export interface OpenApiServer {
  * OpenAPI specification options
  */
 export interface OpenApiOptions {
-  info: OpenApiInfo;
+  /** API information. Uses defaults if not provided. */
+  info?: OpenApiInfo;
+  /** Server URLs for the API. Defaults to current URL if not provided. */
   servers?: OpenApiServer[];
+  /** Base path for API routes. Defaults to "/api". */
   apiBasePath?: string;
 }
 
@@ -56,13 +59,22 @@ export interface ResponseMetadata {
   example?: unknown;
 }
 
+/** Default OpenAPI info values */
+const DEFAULT_OPENAPI_INFO: OpenApiInfo = {
+  title: 'Vitek API',
+  version: '1.0.0',
+  description: 'Auto-generated API documentation',
+};
+
 /**
  * Generates a complete OpenAPI 3.0 specification
  */
 export function generateOpenApiSpec(routes: Route[], options: OpenApiOptions): object {
+  const info = { ...DEFAULT_OPENAPI_INFO, ...options.info };
+  
   const spec: Record<string, unknown> = {
     openapi: '3.0.3',
-    info: options.info,
+    info,
     paths: generatePaths(routes, options),
     components: {
       schemas: generateSchemas(routes),

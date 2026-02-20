@@ -25,6 +25,22 @@ This generates:
 
 Access your docs at: `http://localhost:5173/api-docs.html`
 
+### All-Defaults Configuration
+
+Even simpler - just enable with an empty object:
+
+```typescript
+vitek({
+  openApi: {} // Uses all defaults
+})
+```
+
+Defaults used:
+- **Title:** "Vitek API"
+- **Version:** "1.0.0"
+- **Description:** "Auto-generated API documentation"
+- **Servers:** Current URL (where Swagger UI is accessed)
+
 ## Configuration Options
 
 ### Basic Configuration
@@ -47,13 +63,14 @@ vitek({
 
 ### Options Reference
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `info.title` | `string` | API title (required) |
-| `info.version` | `string` | API version (required) |
-| `info.description` | `string` | API description |
-| `servers` | `array` | List of server URLs |
-| `apiBasePath` | `string` | Base path for API (auto-detected) |
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `info` | `object` | No | See below | API information |
+| `info.title` | `string` | No | `"Vitek API"` | API title |
+| `info.version` | `string` | No | `"1.0.0"` | API version |
+| `info.description` | `string` | No | `"Auto-generated API documentation"` | API description |
+| `servers` | `array` | No | Current URL | List of server URLs |
+| `apiBasePath` | `string` | No | `"/api"` | Base path for API |
 
 ## Documenting Your Routes
 
