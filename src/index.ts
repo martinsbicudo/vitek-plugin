@@ -55,3 +55,5 @@ export {
 } from './core/validation/validator.js';
 export type { ValidationSchema, ValidationRule, ValidationResult } from './core/validation/types.js';
 
+export type { OpenApiOptions, OpenApiInfo, OpenApiServer } from './core/openapi/generate.js';
+

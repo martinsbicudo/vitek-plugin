@@ -20,7 +20,9 @@ import { createRoute } from '../../core/routing/route-parser.js';
 import { createRequestHandler } from '../../core/server/request-handler.js';
 import { routesToSchema } from '../../core/types/schema.js';
 import { generateTypesFile, generateServicesFile } from '../../core/types/generate.js';
+import { generateOpenApiFile, generateSwaggerUiHtml } from '../../core/openapi/generate.js';
 import { API_BASE_PATH, GENERATED_TYPES_FILE, GENERATED_SERVICES_FILE } from '../../shared/constants.js';
+import type { OpenApiOptions } from '../../core/openapi/generate.js';
 import type { Route, RouteHandler, Middleware } from '../../core/routing/route-types.js';
 import type { LoadedMiddleware } from '../../core/middleware/get-applicable-middlewares.js';
 import type { VitekLogger } from './logger.js';
@@ -31,6 +33,7 @@ export interface ViteDevServerOptions {
   logger: VitekLogger;
   viteServer: ViteDevServer;
   enableValidation?: boolean;
+  openApi?: OpenApiOptions | boolean;
 }
 
 /**
@@ -163,9 +166,52 @@ class DevServerState {
       
       const relativeServicesPath = path.relative(this.options.root, servicesPath);
       this.options.logger.servicesGenerated(`./${relativeServicesPath.replace(/\\/g, '/')}`);
+
+      // Generate OpenAPI spec if enabled
+      await this.generateOpenApi();
     } catch (error) {
       this.options.logger.error(
         `Failed to generate types: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Generates OpenAPI specification and Swagger UI
+   */
+  async generateOpenApi() {
+    const { openApi } = this.options;
+    if (!openApi) {
+      return;
+    }
+
+    try {
+      const openApiOptions: OpenApiOptions = typeof openApi === 'boolean' 
+        ? {
+            info: {
+              title: 'Vitek API',
+              version: '1.0.0',
+              description: 'Auto-generated API documentation',
+            },
+            apiBasePath: API_BASE_PATH,
+          }
+        : { ...openApi, apiBasePath: API_BASE_PATH };
+
+      // Generate openapi.json
+      const openApiPath = path.join(this.options.root, 'public', 'openapi.json');
+      await generateOpenApiFile(openApiPath, this.routes, openApiOptions);
+      const relativeOpenApiPath = path.relative(this.options.root, openApiPath);
+      this.options.logger.info(`OpenAPI spec generated: ./${relativeOpenApiPath.replace(/\\/g, '/')}`);
+
+      // Generate Swagger UI HTML
+      const swaggerUiPath = path.join(this.options.root, 'public', 'api-docs.html');
+      const swaggerHtml = generateSwaggerUiHtml('/openapi.json', openApiOptions.info.title);
+      fs.writeFileSync(swaggerUiPath, swaggerHtml, 'utf-8');
+      const relativeSwaggerPath = path.relative(this.options.root, swaggerUiPath);
+      this.options.logger.info(`Swagger UI available at: ./${relativeSwaggerPath.replace(/\\/g, '/')} → http://localhost:${this.options.viteServer.config.server?.port || 5173}/api-docs.html`);
+    } catch (error) {
+      this.options.logger.warn(
+        `Failed to generate OpenAPI spec: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }
