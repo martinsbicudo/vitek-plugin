@@ -13,6 +13,7 @@ import { createRequestHandler } from './core/server/request-handler.js';
 import { buildApiBundle, getApiBundleFilename } from './build/build-api-bundle.js';
 import { API_BASE_PATH, API_DIR_NAME } from './shared/constants.js';
 import type { RequestHandlerOptions } from './core/server/request-handler.js';
+import type { OpenApiOptions } from './core/openapi/generate.js';
 
 export interface VitekOptions {
   /** API directory (relative to root) */
@@ -32,6 +33,8 @@ export interface VitekOptions {
     /** Enable route matching logs (default: true) */
     enableRouteLogging?: boolean;
   };
+  /** Enable OpenAPI/Swagger documentation generation */
+  openApi?: OpenApiOptions | boolean;
 }
 
 /**
@@ -69,6 +72,7 @@ export function vitek(options: VitekOptions = {}): Plugin {
         logger,
         viteServer: server,
         enableValidation: options.enableValidation || false,
+        openApi: options.openApi,
       });
       
       cleanupFn = cleanup;
@@ -100,7 +104,8 @@ export function vitek(options: VitekOptions = {}): Plugin {
       let apiHandler: ReturnType<typeof createRequestHandler> | null = null;
 
       const apiMiddleware = (req: import('http').IncomingMessage, res: import('http').ServerResponse, next: () => void) => {
-        if (!req.url?.startsWith(API_BASE_PATH)) {
+        const pathname = req.url?.split('?')[0] ?? '';
+        if (pathname !== API_BASE_PATH && !pathname.startsWith(API_BASE_PATH + '/')) {
           return next();
         }
         bundleLoadPromise

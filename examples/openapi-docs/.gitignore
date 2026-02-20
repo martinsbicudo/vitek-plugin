@@ -1,0 +1,8 @@
+node_modules
+dist
+public/openapi.json
+public/api-docs.html
+src/api.types.ts
+src/api.services.ts
+.DS_Store
+*.log
