@@ -38,13 +38,15 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
   const logError = logger?.error ?? noop;
 
   return async (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => {
-    if (!req.url?.startsWith(API_BASE_PATH)) {
+    if (!req.url) return next();
+    const pathname = req.url.split('?')[0];
+    if (pathname !== API_BASE_PATH && !pathname.startsWith(API_BASE_PATH + '/')) {
       return next();
     }
 
     const startTime = Date.now();
     const requestMethod = req.method?.toLowerCase() || 'get';
-    const requestPath = req.url.split('?')[0];
+    const requestPath = pathname;
 
     try {
       const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);

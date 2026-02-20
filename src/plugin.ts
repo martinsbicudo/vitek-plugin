@@ -104,7 +104,8 @@ export function vitek(options: VitekOptions = {}): Plugin {
       let apiHandler: ReturnType<typeof createRequestHandler> | null = null;
 
       const apiMiddleware = (req: import('http').IncomingMessage, res: import('http').ServerResponse, next: () => void) => {
-        if (!req.url?.startsWith(API_BASE_PATH)) {
+        const pathname = req.url?.split('?')[0] ?? '';
+        if (pathname !== API_BASE_PATH && !pathname.startsWith(API_BASE_PATH + '/')) {
           return next();
         }
         bundleLoadPromise
