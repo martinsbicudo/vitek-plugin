@@ -5,9 +5,16 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { ROUTE_FILE_PATTERN, MIDDLEWARE_FILE_PATTERN, PARAM_PATTERN } from '../../shared/constants.js';
+import {
+  ROUTE_FILE_PATTERN,
+  MIDDLEWARE_FILE_PATTERN,
+  SOCKET_FILE_PATTERN,
+  PARAM_PATTERN,
+} from '../../shared/constants.js';
 import type { ParsedRoute } from '../routing/route-parser.js';
 import { parseRouteFile } from '../routing/route-parser.js';
+import type { ParsedSocket } from '../routing/socket-parser.js';
+import { parseSocketFile } from '../routing/socket-parser.js';
 
 /**
  * Information about a found middleware
@@ -25,6 +32,7 @@ export interface MiddlewareInfo {
 export interface ScanResult {
   routes: ParsedRoute[];
   middlewares: MiddlewareInfo[];
+  sockets: ParsedSocket[];
 }
 
 /**
@@ -69,9 +77,10 @@ function calculateMiddlewareBasePattern(middlewarePath: string, apiDir: string):
 export function scanApiDirectory(apiDir: string): ScanResult {
   const routes: ParsedRoute[] = [];
   const middlewares: MiddlewareInfo[] = [];
-  
+  const sockets: ParsedSocket[] = [];
+
   if (!fs.existsSync(apiDir)) {
-    return { routes, middlewares };
+    return { routes, middlewares, sockets };
   }
   
   function scanDir(currentDir: string): void {
@@ -93,6 +102,15 @@ export function scanApiDirectory(apiDir: string): ScanResult {
           continue;
         }
         
+        // Check if it's a socket file
+        if (SOCKET_FILE_PATTERN.test(entry.name)) {
+          const parsed = parseSocketFile(fullPath, apiDir);
+          if (parsed) {
+            sockets.push(parsed);
+          }
+          continue;
+        }
+
         // Check if it's a route file
         if (ROUTE_FILE_PATTERN.test(entry.name)) {
           const parsed = parseRouteFile(fullPath, apiDir);
@@ -113,7 +131,14 @@ export function scanApiDirectory(apiDir: string): ScanResult {
     const bDepth = b.basePattern ? b.basePattern.split('/').length : 0;
     return aDepth - bDepth;
   });
-  
-  return { routes, middlewares };
+
+  // Sort sockets by depth for match priority
+  sockets.sort((a, b) => {
+    const aDepth = a.pattern ? a.pattern.split('/').length : 0;
+    const bDepth = b.pattern ? b.pattern.split('/').length : 0;
+    return aDepth - bDepth;
+  });
+
+  return { routes, middlewares, sockets };
 }
 
