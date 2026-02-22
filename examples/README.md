@@ -4,6 +4,30 @@ This directory contains complete, working examples demonstrating different use c
 
 ## 📚 Available Examples
 
+### [socket-only](./socket-only/)
+
+**WebSocket-only example**
+
+Minimal example focused on WebSocket endpoints. No HTTP API routes—only socket files under `/ws/*`.
+
+**Key Features:**
+- ✅ Pure JavaScript
+- ✅ WebSocket-only (`*.socket.js`)
+- ✅ Generated socket services (`socket.services.js`)
+- ✅ Simple HTML demo with live connection
+
+**Best for:**
+- Learning WebSocket routing with Vitek
+- Real-time apps (chat, notifications, etc.)
+- Understanding socket file conventions
+
+**Tech Stack:**
+- JavaScript
+- Vite
+- HTML
+
+---
+
 ### [basic-js](./basic-js/)
 
 **Pure JavaScript, no frameworks**
@@ -15,6 +39,7 @@ The simplest example to get started with Vitek. Perfect for understanding the fu
 - ✅ No frameworks (no React, Vue, etc.)
 - ✅ Simple HTML page with fetch API
 - ✅ Basic routes demonstration
+- ✅ WebSocket socket (chat.socket.js)
 - ✅ Generated JavaScript services (`api.services.js`)
 
 **Best for:**
@@ -40,6 +65,7 @@ A practical example showing how to integrate Vitek with React while keeping Java
 - ✅ React with JavaScript (JSX)
 - ✅ No TypeScript
 - ✅ Generated JavaScript services
+- ✅ WebSocket socket (chat.socket.js)
 - ✅ React Hooks integration examples
 - ✅ Intermediate complexity
 
@@ -75,6 +101,7 @@ The most comprehensive example showcasing all Vitek features with full type-safe
 - ✅ Response helpers (custom status codes and headers)
 - ✅ HTTP error classes
 - ✅ Request validation
+- ✅ WebSocket sockets (index.socket.ts, chat.socket.ts)
 
 **Best for:**
 - Production-ready applications
@@ -97,7 +124,7 @@ The most comprehensive example showcasing all Vitek features with full type-safe
 Same app as typescript-react, runnable in a container. Uses pnpm for install and scripts. No database.
 
 **Key Features:**
-- ✅ Same as typescript-react (TypeScript, React, full type-safety)
+- ✅ Same as typescript-react (TypeScript, React, full type-safety, WebSockets)
 - ✅ Dockerfile and docker-compose for containerized dev
 - ✅ pnpm for install and run inside the container
 - ✅ No database or extra services
@@ -132,7 +159,7 @@ pnpm build
 
 1. Navigate to the example directory:
    ```bash
-   cd examples/basic-js  # or js-react, or typescript-react
+   cd examples/socket-only  # or basic-js, js-react, typescript-react
    ```
    **docker:** From `examples/docker`, run `docker compose up --build` (uses pnpm inside the container). No need to build the plugin from the repo root.
 
@@ -160,25 +187,32 @@ pnpm build
 
 ## 📊 Comparison Table
 
-| Feature | basic-js | js-react | typescript-react | docker |
-|---------|----------|----------|------------------|--------|
-| **Language** | JavaScript | JavaScript | TypeScript | TypeScript |
-| **Framework** | None | React | React | React |
-| **Type Safety** | ❌ | ❌ | ✅ | ✅ |
-| **Response Helpers** | ❌ | ❌ | ✅ | ✅ |
-| **Error Classes** | ❌ | ❌ | ✅ | ✅ |
-| **Validation** | ❌ | ❌ | ✅ | ✅ |
-| **Generated Types** | ❌ | ❌ | ✅ | ✅ |
-| **Generated Services** | ✅ (JS) | ✅ (JS) | ✅ (TS) | ✅ (TS) |
-| **Middlewares** | ❌ | ❌ | ✅ | ✅ |
-| **HTTP Methods** | GET, POST | GET, POST | All methods | All methods |
-| **Docker** | ❌ | ❌ | ❌ | ✅ |
-| **Complexity** | ⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
-| **Best For** | Learning | React (JS) | Production | Docker / containerized dev |
+| Feature | socket-only | basic-js | js-react | typescript-react | docker |
+|---------|-------------|----------|----------|------------------|--------|
+| **Focus** | WebSockets only | HTTP + Sockets | HTTP + Sockets | HTTP + Sockets | HTTP + Sockets |
+| **Language** | JavaScript | JavaScript | JavaScript | TypeScript | TypeScript |
+| **Framework** | None | None | React | React | React |
+| **Type Safety** | ❌ | ❌ | ❌ | ✅ | ✅ |
+| **Response Helpers** | ❌ | ❌ | ❌ | ✅ | ✅ |
+| **Error Classes** | ❌ | ❌ | ❌ | ✅ | ✅ |
+| **Validation** | ❌ | ❌ | ❌ | ✅ | ✅ |
+| **Generated Types** | ❌ | ❌ | ❌ | ✅ | ✅ |
+| **Generated Services** | ✅ (socket) | ✅ (JS) | ✅ (JS) | ✅ (TS) | ✅ (TS) |
+| **Middlewares** | ❌ | ❌ | ❌ | ✅ | ✅ |
+| **HTTP Methods** | None | GET, POST | GET, POST | All methods | All methods |
+| **Docker** | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **WebSockets** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Complexity** | ⭐ | ⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
+| **Best For** | WebSockets | Learning | React (JS) | Production | Docker |
 
 ---
 
 ## 🎯 Which Example Should I Use?
+
+### Start with `socket-only` if:
+- You want to focus on WebSockets
+- You're building a real-time app (chat, live updates)
+- You want the simplest socket example
 
 ### Start with `basic-js` if:
 - You're new to Vitek
@@ -212,17 +246,19 @@ Each example follows a similar structure:
 ```
 example-name/
 ├── src/
-│   ├── api/              # API routes (file-based)
-│   │   ├── *.get.js/ts   # GET endpoints
-│   │   ├── *.post.js/ts  # POST endpoints
+│   ├── api/                  # API routes + sockets (file-based)
+│   │   ├── *.get.js/ts       # GET endpoints
+│   │   ├── *.post.js/ts      # POST endpoints
+│   │   ├── *.socket.js/ts    # WebSocket endpoints (/ws/*)
 │   │   └── middleware.js/ts  # Middlewares (if applicable)
-│   ├── api.services.js/ts  # Generated services
-│   ├── api.types.ts      # Generated types (TypeScript only)
-│   └── App.jsx/tsx       # Main component (React examples)
-├── index.html            # Entry HTML
-├── vite.config.js/ts     # Vite configuration
-├── package.json          # Dependencies
-└── README.md            # Example-specific documentation
+│   ├── api.services.js/ts    # Generated HTTP services
+│   ├── socket.services.js/ts # Generated socket services
+│   ├── api.types.ts          # Generated types (TypeScript only)
+│   └── App.jsx/tsx           # Main component (React examples)
+├── index.html                # Entry HTML
+├── vite.config.js/ts         # Vite configuration
+├── package.json              # Dependencies
+└── README.md                 # Example-specific documentation
 ```
 
 ---
@@ -248,6 +284,7 @@ Nos exemplos usamos `vitek-serve`; é necessário rodar `pnpm build` na raiz do 
 ## 🔗 Links
 
 - [Main README](../README.md) - Full Vitek documentation
+- [socket-only README](./socket-only/README.md) - WebSocket-only example
 - [basic-js README](./basic-js/README.md) - Detailed basic-js documentation
 - [js-react README](./js-react/README.md) - Detailed js-react documentation
 - [typescript-react README](./typescript-react/README.md) - Detailed typescript-react documentation

@@ -10,6 +10,7 @@ Basic example demonstrating the use of Vitek in pure JavaScript, without framewo
 - ✅ **Dynamic parameters**: Example with `[id]`
 - ✅ **Query parameters**: Query params demonstration
 - ✅ **HTTP methods**: GET and POST
+- ✅ **WebSocket**: chat.socket.js at /ws/chat
 
 ## Structure
 
@@ -19,6 +20,7 @@ src/
       ├── health.get.js       # GET /api/health
       ├── users/
       │   └── [id].get.js     # GET /api/users/:id
+      ├── chat.socket.js      # WS /ws/chat
       └── posts/
           ├── index.get.js    # GET /api/posts
           └── index.post.js   # POST /api/posts
@@ -55,6 +57,7 @@ Visit `http://localhost:5173` to see the HTML page with endpoint documentation.
 ## Endpoints
 
 - `GET /api/health` - Health check
+- `WS /ws/chat` - WebSocket (echo)
 - `GET /api/users/:id` - Get user by ID
 - `GET /api/posts?limit=5&offset=0` - List posts (with query params)
 - `POST /api/posts` - Create post (with body)
