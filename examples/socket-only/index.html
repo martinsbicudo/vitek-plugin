@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vitek Socket Example</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        line-height: 1.6;
+      }
+      h1 {
+        color: #333;
+      }
+      .section {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: #f5f5f5;
+        border-radius: 8px;
+      }
+      .section h2 {
+        margin-top: 0;
+        color: #555;
+      }
+      input, button {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        margin-right: 0.5rem;
+      }
+      #messages {
+        background: #fff;
+        padding: 1rem;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        min-height: 200px;
+        max-height: 300px;
+        overflow-y: auto;
+        font-family: monospace;
+        font-size: 0.9rem;
+      }
+      .msg { margin: 0.25rem 0; }
+      .msg.sent { color: #1976d2; }
+      .msg.received { color: #388e3c; }
+      pre {
+        background: #fff;
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        border: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vitek Socket Example</h1>
+    <p>WebSocket-only example. Connect to <code>/ws</code> (root) or <code>/ws/chat</code>.</p>
+
+    <div class="section">
+      <h2>Live demo</h2>
+      <p>
+        <select id="endpoint">
+          <option value="/ws">/ws (root)</option>
+          <option value="/ws/chat">/ws/chat</option>
+        </select>
+        <input type="text" id="input" placeholder="Type a message..." style="width: 200px;" />
+        <button id="connect">Connect</button>
+        <button id="send" disabled>Send</button>
+        <button id="disconnect" disabled>Disconnect</button>
+      </p>
+      <div id="messages"></div>
+    </div>
+
+    <div class="section">
+      <h2>Using generated services</h2>
+      <pre>import { connect, connectChat } from './socket.services.js';
+
+// Connect to root ws
+const ws = connect();
+ws.onmessage = (e) => console.log(e.data);
+ws.send('Hello');
+
+// Connect to chat
+const chat = connectChat();
+chat.onmessage = (e) => console.log(e.data);</pre>
+    </div>
+
+    <script type="module">
+      const endpointSelect = document.getElementById('endpoint');
+      const input = document.getElementById('input');
+      const connectBtn = document.getElementById('connect');
+      const sendBtn = document.getElementById('send');
+      const disconnectBtn = document.getElementById('disconnect');
+      const messages = document.getElementById('messages');
+
+      let ws = null;
+
+      function addMsg(text, type = 'received') {
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.textContent = `${new Date().toLocaleTimeString()} ${text}`;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+      }
+
+      connectBtn.addEventListener('click', () => {
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const url = `${protocol}//${location.host}${endpointSelect.value}`;
+        ws = new WebSocket(url);
+        ws.onopen = () => {
+          addMsg('Connected');
+          connectBtn.disabled = true;
+          sendBtn.disabled = false;
+          disconnectBtn.disabled = false;
+        };
+        ws.onmessage = (e) => addMsg(`← ${e.data}`, 'received');
+        ws.onclose = () => {
+          addMsg('Disconnected');
+          connectBtn.disabled = false;
+          sendBtn.disabled = true;
+          disconnectBtn.disabled = true;
+        };
+      });
+
+      sendBtn.addEventListener('click', () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          const text = input.value || 'Hello';
+          ws.send(text);
+          addMsg(`→ ${text}`, 'sent');
+        }
+      });
+
+      disconnectBtn.addEventListener('click', () => {
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
+      });
+    </script>
+  </body>
+</html>
