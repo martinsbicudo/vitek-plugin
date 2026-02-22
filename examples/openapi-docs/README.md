@@ -22,6 +22,8 @@ Then open:
 
 ## API Endpoints
 
+### HTTP (documented in OpenAPI/Swagger)
+
 ### GET /api/health
 Health check endpoint.
 
@@ -33,6 +35,27 @@ Create a new user with typed request body.
 
 ### GET /api/posts
 List posts with query parameters.
+
+## WebSocket Endpoints
+
+This example also includes WebSocket endpoints. They are not part of the OpenAPI spec (OpenAPI focuses on HTTP), but are available at runtime:
+
+| Path      | Description           |
+|-----------|-----------------------|
+| `/ws`     | Root WebSocket (echo) |
+| `/ws/chat`| Chat WebSocket (echo) |
+
+Use the generated `socket.services.ts` for typed client connections:
+
+```typescript
+import { connect, connectChat } from './socket.services';
+
+const ws = connect();
+ws.onmessage = (e) => console.log(e.data);
+
+const chat = connectChat();
+chat.onmessage = (e) => console.log(e.data);
+```
 
 ## Documentation Structure
 
