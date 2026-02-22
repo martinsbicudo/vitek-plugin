@@ -20,8 +20,19 @@ import { createRoute } from '../../core/routing/route-parser.js';
 import { createRequestHandler } from '../../core/server/request-handler.js';
 import { routesToSchema } from '../../core/types/schema.js';
 import { generateTypesFile, generateServicesFile } from '../../core/types/generate.js';
+import { generateSocketTypesFile } from '../../core/types/generate-socket-types.js';
+import { generateSocketServicesFile } from '../../core/types/generate-socket-services.js';
+import { patternToRegex } from '../../core/normalize/normalize-path.js';
+import { createSocketHandler, type SocketEntry } from '../../core/socket/socket-handler.js';
 import { generateOpenApiFile, generateSwaggerUiHtml } from '../../core/openapi/generate.js';
-import { API_BASE_PATH, GENERATED_TYPES_FILE, GENERATED_SERVICES_FILE } from '../../shared/constants.js';
+import {
+  API_BASE_PATH,
+  SOCKET_BASE_PATH,
+  GENERATED_TYPES_FILE,
+  GENERATED_SERVICES_FILE,
+  GENERATED_SOCKET_TYPES_FILE,
+  GENERATED_SOCKET_SERVICES_FILE,
+} from '../../shared/constants.js';
 import type { OpenApiOptions } from '../../core/openapi/generate.js';
 import type { Route, RouteHandler, Middleware } from '../../core/routing/route-types.js';
 import type { LoadedMiddleware } from '../../core/middleware/get-applicable-middlewares.js';
@@ -34,6 +45,7 @@ export interface ViteDevServerOptions {
   viteServer: ViteDevServer;
   enableValidation?: boolean;
   openApi?: OpenApiOptions | boolean;
+  sockets?: boolean;
 }
 
 /**
@@ -42,6 +54,7 @@ export interface ViteDevServerOptions {
 class DevServerState {
   routes: Route[] = [];
   middlewares: LoadedMiddleware[] = [];
+  sockets: SocketEntry[] = [];
   watcher: ApiWatcher | null = null;
   
   constructor(
@@ -128,6 +141,38 @@ class DevServerState {
       pattern: r.pattern,
     }));
     this.options.logger.routesRegistered(routesInfo, API_BASE_PATH);
+
+    this.sockets.length = 0;
+    const socketsEnabled = this.options.sockets !== false;
+    if (socketsEnabled) {
+      for (const parsedSocket of scanResult.sockets) {
+        try {
+          const relativePath = path.relative(this.options.root, parsedSocket.file);
+          const vitePath = `/${relativePath.replace(/\\/g, '/')}`;
+          const handlerModule = await this.options.viteServer.ssrLoadModule(vitePath);
+          const handler = handlerModule.default ?? handlerModule.handler;
+          if (typeof handler !== 'function') {
+            this.options.logger.warn(
+              `Socket file ${parsedSocket.file} does not export a handler function`
+            );
+            continue;
+          }
+          const regex = patternToRegex(parsedSocket.pattern);
+          this.sockets.push({
+            pattern: parsedSocket.pattern,
+            params: parsedSocket.params,
+            file: parsedSocket.file,
+            regex,
+            handler,
+          });
+        } catch (error) {
+          this.options.logger.error(
+            `Failed to load socket ${parsedSocket.file}: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+    }
+
     await this.generateTypes();
   }
   
@@ -166,6 +211,24 @@ class DevServerState {
       
       const relativeServicesPath = path.relative(this.options.root, servicesPath);
       this.options.logger.servicesGenerated(`./${relativeServicesPath.replace(/\\/g, '/')}`);
+
+      if (this.sockets.length > 0) {
+        const socketSchema = this.sockets.map((s) => ({
+          pattern: s.pattern,
+          params: s.params,
+          file: s.file,
+        }));
+        const socketTypesPath = path.join(this.options.root, 'src', GENERATED_SOCKET_TYPES_FILE);
+        await generateSocketTypesFile(socketTypesPath, socketSchema, SOCKET_BASE_PATH);
+        const relativeSocketTypesPath = path.relative(this.options.root, socketTypesPath);
+        this.options.logger.typesGenerated(`./${relativeSocketTypesPath.replace(/\\/g, '/')}`);
+
+        const socketServicesFileName = isTypeScript ? GENERATED_SOCKET_SERVICES_FILE : 'socket.services.js';
+        const socketServicesPath = path.join(this.options.root, 'src', socketServicesFileName);
+        await generateSocketServicesFile(socketServicesPath, socketSchema, SOCKET_BASE_PATH, isTypeScript);
+        const relativeSocketServicesPath = path.relative(this.options.root, socketServicesPath);
+        this.options.logger.servicesGenerated(`./${relativeSocketServicesPath.replace(/\\/g, '/')}`);
+      }
 
       // Generate OpenAPI spec if enabled
       await this.generateOpenApi();
@@ -336,6 +399,15 @@ export function createViteDevServerMiddleware(options: ViteDevServerOptions) {
     }),
     cleanup: () => state.cleanup(),
     reload: () => state.reload(),
+    setupSockets: (httpServer: { on(event: 'upgrade', listener: (req: import('http').IncomingMessage, socket: import('stream').Duplex, head: Buffer) => void): void }) => {
+      if (options.sockets !== false && state.sockets.length > 0) {
+        const handler = createSocketHandler({
+          sockets: state.sockets,
+          socketBasePath: SOCKET_BASE_PATH,
+        });
+        httpServer.on('upgrade', handler);
+      }
+    },
   };
 }
 

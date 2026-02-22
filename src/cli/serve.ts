@@ -11,8 +11,10 @@ import { pathToFileURL } from 'url';
 import connect from 'connect';
 import serveStatic from 'serve-static';
 import { createRequestHandler } from '../core/server/request-handler.js';
+import { createSocketHandler } from '../core/socket/socket-handler.js';
 import { API_BASE_PATH } from '../shared/constants.js';
 import { getApiBundleFilename } from '../build/build-api-bundle.js';
+import { getSocketsBundleFilename } from '../build/build-sockets-bundle.js';
 
 function parseArgs(): { dir: string; port: number; host: string } {
   let dir = 'dist';
@@ -71,6 +73,19 @@ async function main(): Promise<void> {
   });
 
   const server = http.createServer(app);
+
+  const socketsBundlePath = path.join(distDir, getSocketsBundleFilename());
+  if (fs.existsSync(socketsBundlePath)) {
+    try {
+      const socketsUrl = pathToFileURL(socketsBundlePath).href;
+      const mod = await import(socketsUrl) as { sockets: Parameters<typeof createSocketHandler>[0]['sockets'] };
+      const handler = createSocketHandler({ sockets: mod.sockets });
+      server.on('upgrade', handler);
+    } catch (err) {
+      console.warn('[vitek-serve] Failed to load sockets bundle:', err instanceof Error ? err.message : String(err));
+    }
+  }
+
   server.listen(port, host, () => {
     const base = `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`;
     console.log(`[vitek-serve] Ready at ${base}`);

@@ -18,6 +18,8 @@ export type {
   RouteMatch,
 } from './core/routing/route-types.js';
 
+export type { VitekSocketContext } from './core/socket/socket-handler.js';
+
 export {
   json,
   ok,

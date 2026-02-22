@@ -11,7 +11,9 @@ import { createViteDevServerMiddleware } from './adapters/vite/dev-server.js';
 import { createViteLogger } from './adapters/vite/logger.js';
 import { createRequestHandler } from './core/server/request-handler.js';
 import { buildApiBundle, getApiBundleFilename } from './build/build-api-bundle.js';
-import { API_BASE_PATH, API_DIR_NAME } from './shared/constants.js';
+import { buildSocketsBundle, getSocketsBundleFilename } from './build/build-sockets-bundle.js';
+import { createSocketHandler } from './core/socket/socket-handler.js';
+import { API_BASE_PATH, API_DIR_NAME, SOCKET_BASE_PATH } from './shared/constants.js';
 import type { RequestHandlerOptions } from './core/server/request-handler.js';
 import type { OpenApiOptions } from './core/openapi/generate.js';
 
@@ -35,6 +37,8 @@ export interface VitekOptions {
   };
   /** Enable OpenAPI/Swagger documentation generation */
   openApi?: OpenApiOptions | boolean;
+  /** Enable WebSocket sockets (default: true). Set to false to disable, or { path: '/ws' } to customize base path. */
+  sockets?: boolean | { path?: string };
 }
 
 /**
@@ -66,25 +70,31 @@ export function vitek(options: VitekOptions = {}): Plugin {
       }
 
       const logger = createViteLogger(server.config.logger, options.logging);
-      const { middleware, cleanup } = createViteDevServerMiddleware({
+      const socketsEnabled = options.sockets !== false;
+      const { middleware, cleanup, setupSockets } = createViteDevServerMiddleware({
         root,
         apiDir: fullApiDir,
         logger,
         viteServer: server,
         enableValidation: options.enableValidation || false,
         openApi: options.openApi,
+        sockets: socketsEnabled,
       });
-      
+
       cleanupFn = cleanup;
 
       server.middlewares.use(middleware);
+
+      if (socketsEnabled && server.httpServer) {
+        setupSockets(server.httpServer);
+      }
 
       logger.info('Vitek plugin initialized');
       const relativeApiDir = path.relative(root, fullApiDir);
       logger.info(`API directory: ./${relativeApiDir.replace(/\\/g, '/')}`);
     },
 
-    configurePreviewServer(server) {
+    async configurePreviewServer(server) {
       if (!buildApi) {
         return;
       }
@@ -130,6 +140,28 @@ export function vitek(options: VitekOptions = {}): Plugin {
       };
 
       server.middlewares.use(apiMiddleware);
+
+      const socketsEnabled = options.sockets !== false;
+      const socketBasePath = typeof options.sockets === 'object' && options.sockets?.path
+        ? options.sockets.path
+        : SOCKET_BASE_PATH;
+      const socketsBundlePath = path.join(buildOutDir, getSocketsBundleFilename());
+      if (socketsEnabled && fs.existsSync(socketsBundlePath)) {
+        try {
+          const socketsUrl = pathToFileURL(socketsBundlePath).href;
+          const mod = await import(socketsUrl) as { sockets: Parameters<typeof createSocketHandler>[0]['sockets'] };
+          const handler = createSocketHandler({
+            sockets: mod.sockets,
+            socketBasePath,
+          });
+          server.httpServer?.on('upgrade', handler);
+          server.config.logger.info('[vitek] WebSocket sockets registered for preview');
+        } catch (err) {
+          server.config.logger.warn(
+            `[vitek] Failed to load sockets bundle: ${err instanceof Error ? err.message : String(err)}`
+          );
+        }
+      }
     },
 
     async closeBundle() {
@@ -143,6 +175,18 @@ export function vitek(options: VitekOptions = {}): Plugin {
           });
         } catch (err) {
           console.error('[vitek] Failed to build API bundle:', err instanceof Error ? err.message : err);
+        }
+        const socketsEnabled = options.sockets !== false;
+        if (socketsEnabled && fs.existsSync(fullApiDir)) {
+          try {
+            await buildSocketsBundle({
+              root,
+              apiDir: fullApiDir,
+              outDir: buildOutDir,
+            });
+          } catch (err) {
+            console.error('[vitek] Failed to build sockets bundle:', err instanceof Error ? err.message : err);
+          }
         }
       }
     },
