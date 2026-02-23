@@ -46,7 +46,9 @@ jobs:
           echo "value=$(cat package.json | jq -r '.version')" >> $GITHUB_OUTPUT
       - name: Push version
         if: ${{ steps.label.outputs.match != 'semver:bypass' }}
-        run: git push --follow-tags
+        run: git push --follow-tags -f
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
 
   publish_package:
     needs: generate_semver
