@@ -40,6 +40,25 @@ import type { Route, RouteHandler, Middleware } from '../../core/routing/route-t
 import type { LoadedMiddleware } from '../../core/middleware/get-applicable-middlewares.js';
 import type { VitekLogger } from './logger.js';
 
+function deduplicateRoutesByKey(routes: Route[]): Route[] {
+  const seen = new Set<string>();
+  return routes.filter((r) => {
+    const key = `${r.method}:${r.pattern}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function deduplicateSocketsByPattern<T extends { pattern: string }>(sockets: T[]): T[] {
+  const seen = new Set<string>();
+  return sockets.filter((s) => {
+    if (seen.has(s.pattern)) return false;
+    seen.add(s.pattern);
+    return true;
+  });
+}
+
 export interface ViteDevServerOptions {
   root: string;
   apiDir: string;
@@ -140,6 +159,8 @@ class DevServerState {
       }
     }
 
+    this.routes = deduplicateRoutesByKey(this.routes);
+
     const routesInfo = this.routes.map(r => ({
       method: r.method,
       pattern: r.pattern,
@@ -176,6 +197,8 @@ class DevServerState {
         }
       }
     }
+
+    this.sockets = deduplicateSocketsByPattern(this.sockets);
 
     const socketBasePath = this.options.socketBasePath ?? SOCKET_BASE_PATH;
     this.options.logger.socketsRegistered(
