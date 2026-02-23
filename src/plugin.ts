@@ -6,7 +6,7 @@
 import type { Plugin } from 'vite';
 import * as path from 'path';
 import * as fs from 'fs';
-import { pathToFileURL } from 'url';
+import { pathToFileURL, fileURLToPath } from 'url';
 import { createViteDevServerMiddleware } from './adapters/vite/dev-server.js';
 import { createViteLogger } from './adapters/vite/logger.js';
 import { createRequestHandler } from './core/server/request-handler.js';
@@ -54,12 +54,70 @@ export function vitek(options: VitekOptions = {}): Plugin {
 
   return {
     name: 'vitek',
+    enforce: 'pre',
 
     configResolved(config) {
       root = config.root;
       buildOutDir = path.resolve(root, config.build?.outDir ?? 'dist');
     },
-    
+
+    resolveId(id, importer) {
+      if (!id.startsWith('.') || !importer) return null;
+      const fullApiDir = path.resolve(root, apiDirOption);
+      let importerPath: string;
+      if (importer.startsWith('file:')) {
+        importerPath = fileURLToPath(importer);
+      } else if (importer.startsWith('/')) {
+        const virtualPath = path.join(root, importer.replace(/^\//, ''));
+        importerPath = fs.existsSync(virtualPath) ? virtualPath : path.resolve(importer);
+      } else {
+        importerPath = path.resolve(importer);
+      }
+      const normalizedApiDir = path.resolve(fullApiDir);
+      const normalizedImporter = path.resolve(importerPath);
+      if (!normalizedImporter.startsWith(normalizedApiDir)) return null;
+      let resolved = path.resolve(path.dirname(normalizedImporter), id);
+      if (!fs.existsSync(resolved)) {
+        const ext = ['.ts', '.tsx', '.mts', '.js', '.jsx', '.mjs'].find((e) =>
+          fs.existsSync(resolved + e)
+        );
+        if (ext) resolved += ext;
+      }
+      return fs.existsSync(resolved) ? pathToFileURL(resolved).href : null;
+    },
+
+    transform(code, id) {
+      const idPath = id.startsWith('file:') ? fileURLToPath(id) : id;
+      const fullApiDir = path.resolve(root, apiDirOption);
+      const virtualCandidate = idPath.startsWith('/') ? path.join(root, idPath.replace(/^\//, '')) : null;
+      const normalizedId = virtualCandidate != null && fs.existsSync(virtualCandidate)
+        ? virtualCandidate
+        : path.resolve(idPath);
+      if (!normalizedId.startsWith(fullApiDir)) return null;
+      const dir = path.dirname(normalizedId);
+      const rootSlash = path.resolve(root) + path.sep;
+      const rewritten = code.replace(
+        /from\s+['"](\.\.?[^'"]+)['"]/g,
+        (match, specifier: string) => {
+          const resolved = path.resolve(dir, specifier);
+          if (!resolved.startsWith(rootSlash)) return match;
+          let target = resolved;
+          if (!fs.existsSync(target)) {
+            const ext = ['.ts', '.tsx', '.mts', '.js', '.jsx', '.mjs'].find((e) =>
+              fs.existsSync(target + e)
+            );
+            if (ext) target += ext;
+          }
+          if (!fs.existsSync(target)) return match;
+          const rootRelative = path.relative(root, target).replace(/\\/g, '/');
+          const newSpecifier = `/${rootRelative}`;
+          const quote = match.includes('"') ? '"' : "'";
+          return `from ${quote}${newSpecifier}${quote}`;
+        }
+      );
+      return rewritten !== code ? { code: rewritten, map: null } : null;
+    },
+
     async configureServer(server) {
       const fullApiDir = path.resolve(root, apiDirOption);
 

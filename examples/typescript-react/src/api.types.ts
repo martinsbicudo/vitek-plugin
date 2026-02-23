@@ -32,9 +32,13 @@ export type PostsIdPutBody = {
 };
 
 export type PostsPostBody = {
+  /** Post title (required) */
   title: string;
+  /** Post content in markdown */
   content: string;
+  /** Author ID number */
   authorId: number;
+  /** Optional tags for categorization */
   tags?: string[];
 };
 
