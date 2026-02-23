@@ -1,11 +1,41 @@
-# general
+# Dependencies and build
 node_modules
 dist
 dist-ssr
+.pnpm-store
+
+# Logs
+logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS and editors
 .DS_Store
 .vscode
 .idea
 .venv
-.pnpm-store
+*.local
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Test coverage
 coverage/
+
+# VitePress cache
+docs/.vitepress/cache/
+
+# Generated files in examples (OpenAPI/AsyncAPI and generated types/services)
+examples/*/public/openapi.json
+examples/*/public/api-docs.html
+examples/*/public/asyncapi.json
+examples/*/src/api.types.ts
+examples/*/src/api.services.ts
+examples/*/src/socket.types.ts
+examples/*/src/socket.services.ts

@@ -5,7 +5,19 @@ Overview of the public API provided by `vitek-plugin`. Import from `vitek-plugin
 ## Plugin
 
 - **`vitek(options?)`** - Returns a Vite plugin. Call from `vite.config.ts` in the `plugins` array.
-- **`VitekOptions`** - Type for plugin options: `apiDir`, `apiBasePath`, `enableValidation`, `logging`. See [Configuration](/guide/configuration).
+- **`VitekOptions`** - Type for plugin options: `apiDir`, `apiBasePath`, `openApi`, `enableValidation`, `logging`, `sockets`, `socketBasePath`, etc. See [Configuration](/guide/configuration).
+
+## Documentation (OpenAPI / AsyncAPI)
+
+When using `openApi: true` (or an options object) in plugin options:
+
+- **`OpenApiOptions`** - Options for OpenAPI generation: `info`, `servers`, `apiBasePath`.
+- **`OpenApiInfo`** - API info: `title`, `version`, `description`.
+- **`OpenApiServer`** - Server entry: `url`, `description`.
+- **`AsyncApiOptions`** - Options for AsyncAPI generation (used internally when sockets exist): `info`, `serverUrl`.
+- **`AsyncApiInfo`** - AsyncAPI info: `title`, `version`, `description`.
+
+See [OpenAPI / Swagger + AsyncAPI](/guide/openapi) for the full guide.
 
 ## Types
 
@@ -64,3 +76,9 @@ See [Error Handling](/guide/error-handling) for usage.
 - **`ValidationResult`** - Type returned by `validate`.
 
 See [Request Validation](/guide/request-validation) for usage.
+
+## WebSockets
+
+- **Socket handler context** – The argument to `*.socket.ts`/`*.socket.js` handlers: `socket`, `req`, `params`, `path`, and optionally **`api`** (internal API client). See [WebSockets](/guide/websockets).
+- **`ctx.api`** – When present, provides **`fetch(path, options?)`** to call REST endpoints internally from a socket handler. Path is relative to the API base path.
+- **`context.sockets`** – In HTTP route handlers, when provided: **`emit(pattern, data)`** to push data to WebSocket clients connected to that socket path (`pattern` = `''` for root, `'chat'` for `/api/ws/chat`, etc.).

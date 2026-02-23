@@ -18,6 +18,10 @@ export type {
   RouteMatch,
 } from './core/routing/route-types.js';
 
+export type { VitekSocketContext } from './core/socket/socket-handler.js';
+
+export type { SocketEmitter, ApiClient, VitekApp } from './core/shared/vitek-app.js';
+
 export {
   json,
   ok,
@@ -56,4 +60,5 @@ export {
 export type { ValidationSchema, ValidationRule, ValidationResult } from './core/validation/types.js';
 
 export type { OpenApiOptions, OpenApiInfo, OpenApiServer } from './core/openapi/generate.js';
+export type { AsyncApiOptions, AsyncApiInfo } from './core/asyncapi/generate.js';
 

@@ -617,6 +617,18 @@ packages:
     peerDependencies:
       vite: ^5.0.0
 
+  ws@8.19.0:
+    resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
 snapshots:
 
   '@esbuild/aix-ppc64@0.21.5':
@@ -1062,5 +1074,10 @@ snapshots:
       esbuild: 0.24.2
       serve-static: 1.16.3
       vite: 5.4.21
+      ws: 8.19.0
     transitivePeerDependencies:
+      - bufferutil
       - supports-color
+      - utf-8-validate
+
+  ws@8.19.0: {}

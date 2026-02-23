@@ -13,16 +13,20 @@ import { API_BASE_PATH } from '../../shared/constants.js';
 import { HttpError } from '../../shared/errors.js';
 import type { Route } from '../routing/route-types.js';
 import type { LoadedMiddleware } from '../middleware/get-applicable-middlewares.js';
+import type { SocketEmitter } from '../shared/vitek-app.js';
 
 export interface RequestHandlerOptions {
   routes: Route[];
   middlewares: LoadedMiddleware[];
   logger?: {
     routeMatched?(pattern: string, method: string): void;
+    requestStart?(method: string, path: string): void;
     request?(method: string, path: string, statusCode: number, duration?: number): void;
     warn?(message: string, data?: Record<string, unknown>): void;
     error?(message: string, data?: Record<string, unknown>): void;
   };
+  /** When provided, context.sockets is set so route handlers can emit to WebSocket clients. */
+  shared?: { sockets: SocketEmitter };
 }
 
 const noop = () => {};
@@ -31,8 +35,9 @@ const noop = () => {};
  * Creates a Connect-style middleware that handles /api/* requests using the given routes and middlewares.
  */
 export function createRequestHandler(options: RequestHandlerOptions): (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => Promise<void> {
-  const { routes, middlewares, logger } = options;
+  const { routes, middlewares, logger, shared } = options;
   const logRouteMatched = logger?.routeMatched ?? noop;
+  const logRequestStart = logger?.requestStart ?? noop;
   const logRequest = logger?.request ?? noop;
   const logWarn = logger?.warn ?? noop;
   const logError = logger?.error ?? noop;
@@ -65,6 +70,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
       }
 
       logRouteMatched(match.route.pattern, method);
+      logRequestStart(requestMethod, requestPath);
 
       const query: Record<string, string | string[]> = {};
       url.searchParams.forEach((value, key) => {
@@ -106,6 +112,9 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         match.params,
         query
       );
+      if (shared?.sockets) {
+        context.sockets = shared.sockets;
+      }
 
       const applicableMiddlewares = getApplicableMiddlewares(middlewares, match.route.pattern);
       const composed = compose(applicableMiddlewares);

@@ -10,6 +10,7 @@ Example demonstrating the use of Vitek with React in JavaScript (without TypeScr
 - ✅ **Dynamic parameters**: Example with `[id]`
 - ✅ **Query parameters**: Query params demonstration
 - ✅ **HTTP methods**: GET and POST
+- ✅ **WebSocket**: chat.socket.js at /ws/chat
 
 ## Structure
 
@@ -17,6 +18,7 @@ Example demonstrating the use of Vitek with React in JavaScript (without TypeScr
 src/
   ├── api/                    # API file-based
   │   ├── health.get.js       # GET /api/health
+  │   ├── chat.socket.js      # WS /ws/chat
   │   ├── users/
   │   │   └── [id].get.js     # GET /api/users/:id
   │   └── posts/
@@ -57,6 +59,7 @@ Visit `http://localhost:5173` to see the React application with endpoint documen
 ## Endpoints
 
 - `GET /api/health` - Health check
+- `WS /ws/chat` - WebSocket (echo)
 - `GET /api/users/:id` - Get user by ID
 - `GET /api/posts?limit=5&offset=0` - List posts (with query params)
 - `POST /api/posts` - Create post (with body)
