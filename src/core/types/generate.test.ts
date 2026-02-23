@@ -108,6 +108,13 @@ describe('generateServicesContent', () => {
     expect(names).toHaveLength(0);
   });
 
+  it('uses extensionless import for api.types (for Vite resolution)', () => {
+    const routes = [route('health', 'get')];
+    const content = generateServicesContent(routes, API_BASE, true);
+    expect(content).toContain("from './api.types'");
+    expect(content).not.toContain("from './api.types.js'");
+  });
+
   it('generates exactly one function per unique route', () => {
     const routes = [
       route('health', 'get'),
