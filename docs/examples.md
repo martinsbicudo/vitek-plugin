@@ -60,29 +60,46 @@ Same app as typescript-react, runnable in a container. Uses pnpm for install and
 
 ---
 
+## api-docs
+
+**API documentation (REST + WebSockets)**
+
+Example with OpenAPI and AsyncAPI generation enabled. Single docs page with REST (Swagger UI) and WebSockets (AsyncAPI) tabs.
+
+**Key features:** OpenAPI 3.0, AsyncAPI 2.x, Swagger UI, TypeScript.
+
+**When to use:** Adding API documentation (HTTP and WebSockets) to your project.
+
+**Tech stack:** TypeScript, Vite. See [OpenAPI](/guide/openapi) for the guide.
+
+---
+
 ## Comparison Table
 
-| Feature | basic-js | js-react | typescript-react | docker |
-|---------|----------|----------|------------------|--------|
-| Language | JavaScript | JavaScript | TypeScript | TypeScript |
-| Framework | None | React | React | React |
-| Type Safety | No | No | Yes | Yes |
-| Response Helpers | No | No | Yes | Yes |
-| Error Classes | No | No | Yes | Yes |
-| Validation | No | No | Yes | Yes |
-| Generated Types | No | No | Yes | Yes |
-| Generated Services | Yes (JS) | Yes (JS) | Yes (TS) | Yes (TS) |
-| Middlewares | No | No | Yes | Yes |
-| HTTP Methods | GET, POST | GET, POST | All methods | All methods |
-| Docker | No | No | No | Yes |
-| Complexity | Low | Medium | High | High |
-| Best For | Learning | React (JS) | Production | Docker / containerized dev |
+| Feature            | socket-only | basic-js   | js-react   | typescript-react | docker      | api-docs     |
+| ------------------ | ----------- | ---------- | ---------- | ---------------- | ----------- | ------------ |
+| Language           | JavaScript  | JavaScript | JavaScript | TypeScript       | TypeScript  | TypeScript   |
+| Framework          | None        | None       | React      | React            | React       | —            |
+| WebSockets         | Yes (focus) | Yes        | Yes        | Yes              | Yes         | Yes          |
+| Type Safety        | No          | No         | No         | Yes              | Yes         | Yes          |
+| Response Helpers   | No          | No         | No         | Yes              | Yes         | Yes          |
+| Error Classes      | No          | No         | No         | Yes              | Yes         | Yes          |
+| Validation         | No          | No         | No         | Yes              | Yes         | Yes          |
+| Generated Types    | No          | No         | No         | Yes              | Yes         | Yes          |
+| Generated Services | Socket (JS) | Yes (JS)   | Yes (JS)   | Yes (TS)         | Yes (TS)    | Yes (TS)     |
+| Middlewares        | No          | No         | No         | Yes              | Yes         | —            |
+| HTTP Methods       | Optional    | GET, POST  | GET, POST  | All methods      | All methods | —            |
+| Docker             | No          | No         | No         | No               | Yes         | No           |
+| OpenAPI            | No          | No         | No         | No               | No          | Yes          |
+| Complexity         | Low         | Low        | Medium     | High             | High        | Low          |
+| Best For           | WebSockets  | Learning   | React (JS) | Production       | Docker      | API docs     |
 
 ---
 
 ## Quick Start
 
 1. **Build the plugin** from the project root:
+
    ```bash
    npm run build
    # or
@@ -90,15 +107,18 @@ Same app as typescript-react, runnable in a container. Uses pnpm for install and
    ```
 
 2. **Go to an example** and install (for **docker**, skip to step 2b if using Docker):
+
    ```bash
-   cd examples/basic-js   # or js-react, or typescript-react
+   cd examples/socket-only   # or basic-js, js-react, typescript-react
    npm install
    # or
    pnpm install
    ```
+
    **docker only:** From `examples/docker`, run `docker compose up --build` (uses pnpm inside the container). No need to build the plugin from the repo root.
 
 3. **Start the dev server:**
+
    ```bash
    npm run dev
    # or
@@ -113,10 +133,12 @@ Same app as typescript-react, runnable in a container. Uses pnpm for install and
 
 ## Links to Example READMEs
 
+- [socket-only](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/socket-only) - WebSocket-only example, API ↔ socket integration
 - [basic-js](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/basic-js) - Detailed basic-js documentation
 - [js-react](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/js-react) - Detailed js-react documentation
 - [typescript-react](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/typescript-react) - Detailed typescript-react documentation
 - [docker](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/docker) - TypeScript + React with Docker and docker-compose (pnpm)
+- [api-docs](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/api-docs) - API docs (REST + WebSockets)
 
 ---
 

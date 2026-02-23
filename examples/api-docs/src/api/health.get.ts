@@ -17,6 +17,6 @@ export default function handler(_context: VitekContext) {
   return {
     status: 'ok',
     timestamp: new Date().toISOString(),
-    service: 'vitek-openapi-example',
+    service: 'vitek-api-docs-example',
   };
 }

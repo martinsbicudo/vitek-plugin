@@ -9,7 +9,7 @@ export default defineConfig({
       // All fields are optional - uses sensible defaults
       openApi: {
         info: {
-          title: 'Vitek OpenAPI Example',
+          title: 'Vitek API Docs Example',
           version: '1.0.0',
           description: 'Example API demonstrating automatic OpenAPI/Swagger documentation generation with Vitek',
         },

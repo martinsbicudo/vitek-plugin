@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vitek API Docs Example</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        line-height: 1.6;
+      }
+      h1 { color: #333; }
+      a { color: #646cff; }
+      .section {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: #f5f5f5;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vitek API Docs Example</h1>
+    <p>This example demonstrates automatic API documentation (REST + WebSockets) with Vitek.</p>
+
+    <div class="section">
+      <h2>Documentation</h2>
+      <ul>
+        <li><a href="/api-docs.html">API docs</a> – REST (Swagger UI) and WebSockets (AsyncAPI) tabs</li>
+        <li><a href="/openapi.json">OpenAPI JSON</a> – Raw OpenAPI 3.0 spec</li>
+        <li><a href="/asyncapi.json">AsyncAPI JSON</a> – Raw AsyncAPI 2.x spec</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>API</h2>
+      <p>Try the endpoints via Swagger UI or directly:</p>
+      <ul>
+        <li><code>GET /api/health</code></li>
+        <li><code>GET /api/users/:id</code></li>
+        <li><code>POST /api/users</code></li>
+        <li><code>GET /api/posts</code></li>
+      </ul>
+    </div>
+  </body>
+</html>

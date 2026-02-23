@@ -1,11 +1,11 @@
-# OpenAPI Documentation Example
+# API Docs Example (REST + WebSockets)
 
-This example demonstrates Vitek's automatic OpenAPI/Swagger documentation generation.
+This example demonstrates Vitek's automatic API documentation: OpenAPI/Swagger for REST and AsyncAPI for WebSockets.
 
 ## Features
 
-- Automatic `openapi.json` generation
-- Interactive Swagger UI at `/api-docs.html`
+- Automatic `openapi.json` (REST) and `asyncapi.json` (WebSockets) generation
+- Single docs page at `/api-docs.html` with **REST** and **WebSockets** tabs (Swagger UI + AsyncAPI)
 - JSDoc-based documentation
 - Type-safe API schemas
 
@@ -17,8 +17,9 @@ pnpm dev
 ```
 
 Then open:
-- Swagger UI: http://localhost:5173/api-docs.html
+- API docs (REST + WebSockets): http://localhost:5173/api-docs.html
 - OpenAPI JSON: http://localhost:5173/openapi.json
+- AsyncAPI JSON: http://localhost:5173/asyncapi.json
 
 ## API Endpoints
 
@@ -38,12 +39,12 @@ List posts with query parameters.
 
 ## WebSocket Endpoints
 
-This example also includes WebSocket endpoints. They are not part of the OpenAPI spec (OpenAPI focuses on HTTP), but are available at runtime:
+WebSocket endpoints are documented in the **WebSockets** tab of `/api-docs.html` (AsyncAPI). At runtime:
 
-| Path      | Description           |
-|-----------|-----------------------|
-| `/ws`     | Root WebSocket (echo) |
-| `/ws/chat`| Chat WebSocket (echo) |
+| Path         | Description           |
+|--------------|-----------------------|
+| `/api/ws`    | Root WebSocket (echo) |
+| `/api/ws/chat` | Chat WebSocket (echo) |
 
 Use the generated `socket.services.ts` for typed client connections:
 
