@@ -70,7 +70,7 @@
 
 - Need server-side rendering (use Next.js, Remix, or SvelteKit)
 - Want GraphQL (use Apollo Server or similar)
-- Need advanced features like WebSockets out of the box (use Express/Fastify with Socket.io)
+- Need protocols beyond HTTP/WebSocket (e.g. raw TCP, Socket.io namespaces)
 - Are building a full-stack framework from scratch (use Hono, Express, or Fastify)
 - Need production-ready server features (use Express, Fastify, or Hono with proper setup)
 

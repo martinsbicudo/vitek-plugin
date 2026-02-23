@@ -35,7 +35,7 @@ The "tek" suffix is commonly used in technology naming to denote tools and frame
 - **Hot Reload**: Automatic reloading of routes and middlewares on file changes
 - **Type-Safe**: Full TypeScript support with auto-generated types and client helpers
 - **Developer Experience**: Generated client helpers for seamless frontend integration
-- **Auto Documentation**: OpenAPI/Swagger docs generated from your code
+- **Auto Documentation**: OpenAPI/Swagger and AsyncAPI (WebSockets) docs generated from your code
 - **Modular Architecture**: Core logic is runtime-agnostic, ready for other environments
 - **Lightweight**: Minimal overhead, runs directly in Vite's dev server
 - **Unified Development**: Same server for frontend and backend during development
@@ -61,16 +61,17 @@ The "tek" suffix is commonly used in technology naming to denote tools and frame
 - **HTTP error classes**: Built-in error classes with automatic status code mapping
 - **Request validation**: Optional runtime validation for body and query parameters
 - **Enhanced logging**: Configurable log levels and request/response logging
-- **OpenAPI/Swagger docs**: Auto-generates API documentation with interactive UI
+- **OpenAPI/Swagger + AsyncAPI docs**: Auto-generates REST and WebSocket documentation with interactive UI (Swagger + AsyncAPI tabs)
 
 ---
 
 ## Quick links
 
 - [Getting Started](/guide/getting-started) - Set up your first route in minutes
-- [OpenAPI/Swagger](/guide/openapi) - Auto-generate API documentation (NEW ✨)
+- [WebSockets](/guide/websockets) - File-based WebSocket routes, socket ↔ API integration
+- [OpenAPI / Swagger + AsyncAPI](/guide/openapi) - Auto-generate API docs (REST + WebSockets)
 - [API Reference](/api/) - Plugin options and exports
-- [Examples](/examples) - basic-js, js-react, typescript-react, docker, openapi-docs
+- [Examples](/examples) - socket-only, basic-js, js-react, typescript-react, docker, api-docs
 - [GitHub](https://github.com/martinsbicudo/vitek-plugin)
 - [NPM](https://www.npmjs.com/package/vitek-plugin)
 

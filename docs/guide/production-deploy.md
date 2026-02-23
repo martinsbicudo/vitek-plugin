@@ -36,7 +36,7 @@ vitek-serve --port 3000
 
 Caddy can proxy and handle TLS automatically:
 
-```caddy
+```text
 myapp.example.com {
   reverse_proxy localhost:3000
 }

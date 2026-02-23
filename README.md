@@ -20,7 +20,7 @@ Vitek is a Vite plugin that turns a folder of files into an HTTP API.
 
 **Full documentation:** [docs/](./docs/) · [View online](https://martinsbicudo.github.io/vitek-plugin/) (VitePress — run `npm run docs:dev` or `pnpm docs:dev` to view locally).
 
-**Examples:** [examples/](./examples/) — `basic-js`, `js-react`, `typescript-react`, `docker`, and `openapi-docs`.
+**Examples:** [examples/](./examples/) — `basic-js`, `js-react`, `typescript-react`, `docker`, and `api-docs`.
 
 ---
 
@@ -55,9 +55,9 @@ Then `npm run dev` and open `http://localhost:5173/api/health`.
 
 ---
 
-## OpenAPI / Swagger Documentation (New ✨)
+## API documentation (OpenAPI + AsyncAPI)
 
-Vitek can automatically generate OpenAPI 3.0 specifications and serve interactive Swagger UI documentation:
+Vitek can automatically generate OpenAPI 3.0 (REST) and AsyncAPI 2.x (WebSockets) specifications and serve interactive documentation:
 
 ```typescript
 import { defineConfig } from "vite";
@@ -75,10 +75,12 @@ export default defineConfig({
 
 Then open `http://localhost:5173/api-docs.html` for interactive API documentation.
 
-- **Automatic generation** from your route files
-- **JSDoc support** - Document with `@summary`, `@tag`, `@response`, etc.
-- **Type extraction** - Body and Query types become schemas
-- **Zero config required** - Works out of the box with sensible defaults
+- **REST (OpenAPI)** – Swagger UI with "Try it out"
+- **WebSockets (AsyncAPI)** – When you have socket routes, the same page gets a **WebSockets** tab with AsyncAPI docs
+- **Automatic generation** from your route and socket files
+- **JSDoc support** – Document with `@summary`, `@tag`, `@response`, etc.
+- **Type extraction** – Body and Query types become schemas
+- **Zero config required** – Works out of the box with sensible defaults
 
 [Learn more →](./docs/guide/openapi.md)
 
@@ -87,8 +89,8 @@ Then open `http://localhost:5173/api-docs.html` for interactive API documentatio
 ## Links
 
 - [Documentation](./docs/) — [view online](https://martinsbicudo.github.io/vitek-plugin/) · guides, API reference, configuration, examples
-- [OpenAPI/Swagger Guide](./docs/guide/openapi.md) — Auto-generate API documentation
-- [Examples](./examples/) — basic-js, js-react, typescript-react, docker, openapi-docs
+- [OpenAPI / Swagger + AsyncAPI](./docs/guide/openapi.md) — Auto-generate API docs (REST + WebSockets)
+- [Examples](./examples/) — socket-only, basic-js, js-react, typescript-react, docker, api-docs
 - [GitHub](https://github.com/martinsbicudo/vitek-plugin)
 - [NPM](https://www.npmjs.com/package/vitek-plugin)
 - [License](LICENSE)

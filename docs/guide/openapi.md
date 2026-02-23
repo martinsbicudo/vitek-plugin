@@ -25,6 +25,14 @@ This generates:
 
 Access your docs at: `http://localhost:5173/api-docs.html`
 
+When you have [WebSocket routes](./websockets.md), the plugin also generates:
+- `public/asyncapi.json` - AsyncAPI 2.x specification for WebSocket endpoints
+- The same `api-docs.html` page gains **REST** and **WebSockets** tabs: Swagger UI for HTTP and AsyncAPI documentation for WebSockets.
+
+### AsyncAPI (WebSockets)
+
+If your project has socket routes (`.socket.ts` / `.socket.js`), the plugin generates an AsyncAPI 2.4.0 spec from them. Each socket path becomes a channel (subscribe/publish). The **WebSockets** tab in `api-docs.html` loads this spec and renders it with the AsyncAPI React component. The server URL in the spec uses your socket base path (e.g. `ws://localhost:5173/api/ws`). There is no separate configuration for AsyncAPI; it is generated whenever `openApi` is enabled and at least one socket route exists.
+
 ### All-Defaults Configuration
 
 Even simpler - just enable with an empty object:
@@ -218,7 +226,7 @@ The generated `openapi.json` follows the OpenAPI 3.0.3 specification and include
 - Response codes and descriptions from JSDoc
 - Tags for grouping operations
 
-## Swagger UI
+## REST tab (Swagger UI)
 
 The generated Swagger UI provides:
 
@@ -228,11 +236,11 @@ The generated Swagger UI provides:
 - Code samples in multiple languages
 - Search and filter capabilities
 
-Access it at `http://localhost:5173/api-docs.html` (or your dev server URL).
+Access it at `http://localhost:5173/api-docs.html` (or your dev server URL). When you have WebSocket routes, the same page includes a **WebSockets** tab with AsyncAPI documentation.
 
 ## Production Considerations
 
-The OpenAPI files are generated in the `public/` directory, so they are:
+The API documentation files (`openapi.json`, `asyncapi.json`, and `api-docs.html`) are generated in the `public/` directory, so they are:
 - Available during development
 - Copied to the build output
 - Served as static files in production
@@ -244,7 +252,7 @@ To exclude from production builds:
 export default defineConfig({
   build: {
     rollupOptions: {
-      external: ['**/openapi.json', '**/api-docs.html'],
+      external: ['**/openapi.json', '**/asyncapi.json', '**/api-docs.html'],
     },
   },
 });
@@ -252,10 +260,10 @@ export default defineConfig({
 
 ## TypeScript Support
 
-Import OpenAPI types if needed:
+Import OpenAPI and AsyncAPI types if needed:
 
 ```typescript
-import type { OpenApiOptions, OpenApiInfo } from 'vitek-plugin';
+import type { OpenApiOptions, OpenApiInfo, AsyncApiOptions, AsyncApiInfo } from 'vitek-plugin';
 
 const openApiConfig: OpenApiOptions = {
   info: {
