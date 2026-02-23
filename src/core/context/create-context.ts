@@ -3,6 +3,8 @@
  * Core logic - runtime agnostic
  */
 
+import type { SocketEmitter } from '../shared/vitek-app.js';
+
 export interface VitekContext {
   url: string;
   method: string;
@@ -11,6 +13,8 @@ export interface VitekContext {
   params: Record<string, string>;
   headers: Record<string, string>;
   body?: any;
+  /** When the app runs with shared context (dev, preview, serve), use to broadcast to WebSocket clients. */
+  sockets?: SocketEmitter;
 }
 
 export interface VitekRequest {

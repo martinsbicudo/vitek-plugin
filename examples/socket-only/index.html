@@ -55,14 +55,14 @@
   </head>
   <body>
     <h1>Vitek Socket Example</h1>
-    <p>WebSocket-only example. Connect to <code>/ws</code> (root) or <code>/ws/chat</code>.</p>
+    <p>WebSocket-only example. Connect to <code>/api/ws</code> (root) or <code>/api/ws/chat</code>.</p>
 
     <div class="section">
       <h2>Live demo</h2>
       <p>
         <select id="endpoint">
-          <option value="/ws">/ws (root)</option>
-          <option value="/ws/chat">/ws/chat</option>
+          <option value="/api/ws">/api/ws (root)</option>
+          <option value="/api/ws/chat">/api/ws/chat</option>
         </select>
         <input type="text" id="input" placeholder="Type a message..." style="width: 200px;" />
         <button id="connect">Connect</button>
@@ -70,6 +70,20 @@
         <button id="disconnect" disabled>Disconnect</button>
       </p>
       <div id="messages"></div>
+    </div>
+
+    <div class="section">
+      <h2>Notify via API</h2>
+      <p>Call <code>POST /api/notify</code> to push a message to connected WebSocket clients. Connect above first, then send.</p>
+      <p>
+        <input type="text" id="notifyMessage" placeholder="Message to broadcast" style="width: 220px;" value="Hello from the API!" />
+        <select id="notifyTarget">
+          <option value="root">/api/ws (root)</option>
+          <option value="chat">/api/ws/chat</option>
+        </select>
+        <button id="notifyBtn">Send via API</button>
+      </p>
+      <div id="apiLog" style="font-size: 0.85rem; color: #666;"></div>
     </div>
 
     <div class="section">
@@ -104,6 +118,14 @@ chat.onmessage = (e) => console.log(e.data);</pre>
         messages.scrollTop = messages.scrollHeight;
       }
 
+      function formatReceived(data) {
+        try {
+          const obj = JSON.parse(data);
+          if (obj.type === 'notify' && obj.message != null) return `← [API] ${obj.message}`;
+        } catch (_) {}
+        return `← ${data}`;
+      }
+
       connectBtn.addEventListener('click', () => {
         const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         const url = `${protocol}//${location.host}${endpointSelect.value}`;
@@ -114,7 +136,7 @@ chat.onmessage = (e) => console.log(e.data);</pre>
           sendBtn.disabled = false;
           disconnectBtn.disabled = false;
         };
-        ws.onmessage = (e) => addMsg(`← ${e.data}`, 'received');
+        ws.onmessage = (e) => addMsg(formatReceived(e.data), 'received');
         ws.onclose = () => {
           addMsg('Disconnected');
           connectBtn.disabled = false;
@@ -135,6 +157,28 @@ chat.onmessage = (e) => console.log(e.data);</pre>
         if (ws) {
           ws.close();
           ws = null;
+        }
+      });
+
+      const notifyMessage = document.getElementById('notifyMessage');
+      const notifyTarget = document.getElementById('notifyTarget');
+      const notifyBtn = document.getElementById('notifyBtn');
+      const apiLog = document.getElementById('apiLog');
+
+      notifyBtn.addEventListener('click', async () => {
+        const message = notifyMessage.value.trim() || 'Hello from the API!';
+        const target = notifyTarget.value;
+        apiLog.textContent = 'Sending…';
+        try {
+          const res = await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, target }),
+          });
+          const data = await res.json();
+          apiLog.textContent = `API: ${res.ok ? 'OK' : 'Error'} — ${JSON.stringify(data)}`;
+        } catch (err) {
+          apiLog.textContent = `API error: ${err.message}`;
         }
       });
     </script>

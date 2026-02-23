@@ -8,6 +8,7 @@ import type { Duplex } from 'stream';
 import type { WebSocket } from 'ws';
 import { WebSocketServer } from 'ws';
 import { SOCKET_BASE_PATH } from '../../shared/constants.js';
+import type { ApiClient, SocketEmitter, VitekApp } from '../shared/vitek-app.js';
 
 export interface SocketEntry {
   pattern: string;
@@ -22,11 +23,25 @@ export interface VitekSocketContext {
   req: IncomingMessage;
   params: Record<string, string>;
   path: string;
+  /** Present when the app is run with shared context (dev, preview, production with vitek-serve). Use to call the REST API internally. */
+  api?: ApiClient;
+}
+
+/** Optional logger for socket events (connect, disconnect, message received/emitted). Uses same config as request logging. */
+export interface SocketLogger {
+  socketConnected(path: string, pattern?: string): void;
+  socketDisconnected(path: string, pattern?: string): void;
+  socketMessageReceived(path: string, pattern?: string, data?: unknown): void;
+  socketMessageEmitted(path: string, data?: unknown): void;
 }
 
 export interface CreateSocketHandlerOptions {
   sockets: SocketEntry[];
   socketBasePath?: string;
+  /** When provided, the handler populates shared.sockets (emit) and passes shared.api into the user handler as ctx.api. */
+  shared?: VitekApp;
+  /** When provided and app has request logging enabled, logs connect/disconnect/received/emitted. */
+  logger?: SocketLogger;
 }
 
 /**
@@ -58,16 +73,45 @@ function matchSocket(
   return null;
 }
 
+/** WebSocket OPEN state for safe send */
+const WS_OPEN = 1;
+
 /**
  * Creates an HTTP upgrade handler for WebSocket connections.
  * Registers with server.on('upgrade', handler).
  * Does not intercept /__vite (Vite HMR) or paths outside socketBasePath.
+ * When options.shared is provided, populates shared.sockets (emit) and passes shared.api into the user handler as ctx.api.
  */
+function fullSocketPath(basePath: string, pattern: string): string {
+  return pattern === '' ? basePath : `${basePath}/${pattern}`;
+}
+
 export function createSocketHandler(options: CreateSocketHandlerOptions): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
-  const { sockets, socketBasePath = SOCKET_BASE_PATH } = options;
+  const { sockets, socketBasePath = SOCKET_BASE_PATH, shared, logger } = options;
 
   if (sockets.length === 0) {
     return () => {};
+  }
+
+  const registry = new Map<string, Set<WebSocket>>();
+
+  const emitter: SocketEmitter = {
+    emit(path: string, data: string | Buffer | object) {
+      logger?.socketMessageEmitted(fullSocketPath(socketBasePath, path), data);
+      const set = registry.get(path);
+      if (!set) return;
+      const payload =
+        typeof data === 'object' && data !== null && !Buffer.isBuffer(data)
+          ? JSON.stringify(data)
+          : (data as string | Buffer);
+      for (const ws of set) {
+        if (ws.readyState === WS_OPEN) ws.send(payload);
+      }
+    },
+  };
+
+  if (shared) {
+    shared.sockets = emitter;
   }
 
   const wss = new WebSocketServer({ noServer: true });
@@ -91,18 +135,44 @@ export function createSocketHandler(options: CreateSocketHandlerOptions): (req: 
     }
 
     const { socket: socketEntry, params } = matched;
+    const pattern = socketEntry.pattern;
 
     wss.handleUpgrade(req, socket, head, (ws: WebSocket) => {
+      let set = registry.get(pattern);
+      if (!set) {
+        set = new Set();
+        registry.set(pattern, set);
+      }
+      set.add(ws);
+
+      logger?.socketConnected(pathname, pattern);
+
+      ws.on('message', (data: Buffer | ArrayBuffer | Buffer[]) => {
+        logger?.socketMessageReceived(pathname, pattern, data);
+      });
+
+      const removeFromRegistry = () => {
+        const s = registry.get(pattern);
+        if (s) {
+          s.delete(ws);
+          if (s.size === 0) registry.delete(pattern);
+        }
+      };
+
       const cleanup = socketEntry.handler({
         socket: ws,
         req,
         params,
         path: pathname,
+        api: shared?.api,
       });
 
-      if (typeof cleanup === 'function') {
-        ws.on('close', cleanup);
-      }
+      const onClose = () => {
+        logger?.socketDisconnected(pathname, pattern);
+        removeFromRegistry();
+        if (typeof cleanup === 'function') cleanup();
+      };
+      ws.on('close', onClose);
     });
   };
 }

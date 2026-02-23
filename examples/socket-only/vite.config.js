@@ -2,5 +2,9 @@ import { defineConfig } from 'vite';
 import { vitek } from 'vitek-plugin';
 
 export default defineConfig({
-  plugins: [vitek()],
+  plugins: [vitek({
+    logging: {
+      enableRequestLogging: true
+    }
+  })],
 });

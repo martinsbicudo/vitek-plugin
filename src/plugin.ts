@@ -13,9 +13,10 @@ import { createRequestHandler } from './core/server/request-handler.js';
 import { buildApiBundle, getApiBundleFilename } from './build/build-api-bundle.js';
 import { buildSocketsBundle, getSocketsBundleFilename } from './build/build-sockets-bundle.js';
 import { createSocketHandler } from './core/socket/socket-handler.js';
-import { API_BASE_PATH, API_DIR_NAME, SOCKET_BASE_PATH } from './shared/constants.js';
+import { API_BASE_PATH, API_DIR_NAME, getSocketBasePath } from './shared/constants.js';
 import type { RequestHandlerOptions } from './core/server/request-handler.js';
 import type { OpenApiOptions } from './core/openapi/generate.js';
+import type { ApiClient, SocketEmitter, VitekApp } from './core/shared/vitek-app.js';
 
 export interface VitekOptions {
   /** API directory (relative to root) */
@@ -59,7 +60,7 @@ export function vitek(options: VitekOptions = {}): Plugin {
       buildOutDir = path.resolve(root, config.build?.outDir ?? 'dist');
     },
     
-    configureServer(server) {
+    async configureServer(server) {
       const fullApiDir = path.resolve(root, apiDirOption);
 
       if (!fs.existsSync(fullApiDir)) {
@@ -71,7 +72,11 @@ export function vitek(options: VitekOptions = {}): Plugin {
 
       const logger = createViteLogger(server.config.logger, options.logging);
       const socketsEnabled = options.sockets !== false;
-      const { middleware, cleanup, setupSockets } = createViteDevServerMiddleware({
+      const socketBasePath = getSocketBasePath(
+        options.apiBasePath,
+        typeof options.sockets === 'object' ? options.sockets?.path : undefined
+      );
+      const { ready, middleware, cleanup, setupSockets } = createViteDevServerMiddleware({
         root,
         apiDir: fullApiDir,
         logger,
@@ -79,19 +84,36 @@ export function vitek(options: VitekOptions = {}): Plugin {
         enableValidation: options.enableValidation || false,
         openApi: options.openApi,
         sockets: socketsEnabled,
+        socketBasePath,
       });
 
       cleanupFn = cleanup;
 
       server.middlewares.use(middleware);
 
+      await ready;
+
       if (socketsEnabled && server.httpServer) {
         setupSockets(server.httpServer);
       }
 
       logger.info('Vitek plugin initialized');
-      const relativeApiDir = path.relative(root, fullApiDir);
-      logger.info(`API directory: ./${relativeApiDir.replace(/\\/g, '/')}`);
+
+      const port = server.config.server?.port ?? 5173;
+      const apiPath = options.apiBasePath ?? API_BASE_PATH;
+      const originalPrintUrls = server.printUrls?.bind(server);
+      if (typeof originalPrintUrls === 'function') {
+        server.printUrls = () => {
+          originalPrintUrls();
+          const host = 'localhost';
+          const apiUrl = `http://${host}:${port}${apiPath}`;
+          server.config.logger.info(`  ➜  API:     ${apiUrl}`);
+          if (socketsEnabled) {
+            const wsUrl = `ws://${host}:${port}${socketBasePath}`;
+            server.config.logger.info(`  ➜  WS:      ${wsUrl}`);
+          }
+        };
+      }
     },
 
     async configurePreviewServer(server) {
@@ -105,6 +127,35 @@ export function vitek(options: VitekOptions = {}): Plugin {
         );
         return;
       }
+
+      const previewPort = server.config.preview?.port ?? 4173;
+      const apiBaseUrl = `http://127.0.0.1:${previewPort}${API_BASE_PATH}`;
+      const api: ApiClient = {
+        async fetch(path: string, fetchOptions?: { method?: string; body?: unknown }) {
+          const url = `${apiBaseUrl}/${path.replace(/^\//, '')}`;
+          const res = await fetch(url, {
+            method: fetchOptions?.method ?? 'GET',
+            headers:
+              fetchOptions?.body !== undefined
+                ? { 'Content-Type': 'application/json' }
+                : undefined,
+            body:
+              fetchOptions?.body !== undefined
+                ? JSON.stringify(fetchOptions.body)
+                : undefined,
+          });
+          const text = await res.text();
+          if (!text) return undefined;
+          try {
+            return JSON.parse(text);
+          } catch {
+            return text;
+          }
+        },
+      };
+      const noopSockets: SocketEmitter = { emit() {} };
+      const shared: VitekApp = { sockets: noopSockets, api };
+
       const bundleUrl = pathToFileURL(bundlePath).href;
       const bundleLoadPromise = import(bundleUrl) as Promise<{
         routes: RequestHandlerOptions['routes'];
@@ -124,6 +175,7 @@ export function vitek(options: VitekOptions = {}): Plugin {
               apiHandler = createRequestHandler({
                 routes: mod.routes,
                 middlewares: mod.middlewares,
+                shared,
               });
               server.config.logger.info('[vitek] API middleware registered for preview');
             }
@@ -142,9 +194,10 @@ export function vitek(options: VitekOptions = {}): Plugin {
       server.middlewares.use(apiMiddleware);
 
       const socketsEnabled = options.sockets !== false;
-      const socketBasePath = typeof options.sockets === 'object' && options.sockets?.path
-        ? options.sockets.path
-        : SOCKET_BASE_PATH;
+      const socketBasePath = getSocketBasePath(
+        options.apiBasePath,
+        typeof options.sockets === 'object' ? options.sockets?.path : undefined
+      );
       const socketsBundlePath = path.join(buildOutDir, getSocketsBundleFilename());
       if (socketsEnabled && fs.existsSync(socketsBundlePath)) {
         try {
@@ -153,6 +206,7 @@ export function vitek(options: VitekOptions = {}): Plugin {
           const handler = createSocketHandler({
             sockets: mod.sockets,
             socketBasePath,
+            shared,
           });
           server.httpServer?.on('upgrade', handler);
           server.config.logger.info('[vitek] WebSocket sockets registered for preview');

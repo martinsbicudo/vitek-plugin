@@ -12,9 +12,10 @@ import connect from 'connect';
 import serveStatic from 'serve-static';
 import { createRequestHandler } from '../core/server/request-handler.js';
 import { createSocketHandler } from '../core/socket/socket-handler.js';
-import { API_BASE_PATH } from '../shared/constants.js';
+import { API_BASE_PATH, getSocketBasePath } from '../shared/constants.js';
 import { getApiBundleFilename } from '../build/build-api-bundle.js';
 import { getSocketsBundleFilename } from '../build/build-sockets-bundle.js';
+import type { ApiClient, SocketEmitter, VitekApp } from '../core/shared/vitek-app.js';
 
 function parseArgs(): { dir: string; port: number; host: string } {
   let dir = 'dist';
@@ -42,6 +43,33 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const apiBaseUrl = `http://127.0.0.1:${port}${API_BASE_PATH}`;
+  const api: ApiClient = {
+    async fetch(path: string, fetchOptions?: { method?: string; body?: unknown }) {
+      const url = `${apiBaseUrl}/${path.replace(/^\//, '')}`;
+      const res = await fetch(url, {
+        method: fetchOptions?.method ?? 'GET',
+        headers:
+          fetchOptions?.body !== undefined
+            ? { 'Content-Type': 'application/json' }
+            : undefined,
+        body:
+          fetchOptions?.body !== undefined
+            ? JSON.stringify(fetchOptions.body)
+            : undefined,
+      });
+      const text = await res.text();
+      if (!text) return undefined;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return text;
+      }
+    },
+  };
+  const noopSockets: SocketEmitter = { emit() {} };
+  const shared: VitekApp = { sockets: noopSockets, api };
+
   const app = connect();
 
   const bundlePath = path.join(distDir, getApiBundleFilename());
@@ -52,6 +80,7 @@ async function main(): Promise<void> {
       const apiHandler = createRequestHandler({
         routes: mod.routes as Parameters<typeof createRequestHandler>[0]['routes'],
         middlewares: mod.middlewares as Parameters<typeof createRequestHandler>[0]['middlewares'],
+        shared,
       });
       app.use(apiHandler as (req: http.IncomingMessage, res: http.ServerResponse, next: () => void) => void);
     } catch (err) {
@@ -74,12 +103,17 @@ async function main(): Promise<void> {
 
   const server = http.createServer(app);
 
+  const socketBasePath = getSocketBasePath();
   const socketsBundlePath = path.join(distDir, getSocketsBundleFilename());
   if (fs.existsSync(socketsBundlePath)) {
     try {
       const socketsUrl = pathToFileURL(socketsBundlePath).href;
       const mod = await import(socketsUrl) as { sockets: Parameters<typeof createSocketHandler>[0]['sockets'] };
-      const handler = createSocketHandler({ sockets: mod.sockets });
+      const handler = createSocketHandler({
+        sockets: mod.sockets,
+        socketBasePath,
+        shared,
+      });
       server.on('upgrade', handler);
     } catch (err) {
       console.warn('[vitek-serve] Failed to load sockets bundle:', err instanceof Error ? err.message : String(err));
