@@ -24,7 +24,8 @@ import { generateSocketTypesFile } from '../../core/types/generate-socket-types.
 import { generateSocketServicesFile } from '../../core/types/generate-socket-services.js';
 import { patternToRegex } from '../../core/normalize/normalize-path.js';
 import { createSocketHandler, type SocketEntry } from '../../core/socket/socket-handler.js';
-import { generateOpenApiFile, generateSwaggerUiHtml } from '../../core/openapi/generate.js';
+import { generateOpenApiFile, generateApiDocsHtml } from '../../core/openapi/generate.js';
+import { generateAsyncApiFile } from '../../core/asyncapi/generate.js';
 import {
   API_BASE_PATH,
   SOCKET_BASE_PATH,
@@ -33,6 +34,7 @@ import {
   GENERATED_SOCKET_TYPES_FILE,
   GENERATED_SOCKET_SERVICES_FILE,
 } from '../../shared/constants.js';
+import type { ApiClient, SocketEmitter, VitekApp } from '../../core/shared/vitek-app.js';
 import type { OpenApiOptions } from '../../core/openapi/generate.js';
 import type { Route, RouteHandler, Middleware } from '../../core/routing/route-types.js';
 import type { LoadedMiddleware } from '../../core/middleware/get-applicable-middlewares.js';
@@ -46,6 +48,8 @@ export interface ViteDevServerOptions {
   enableValidation?: boolean;
   openApi?: OpenApiOptions | boolean;
   sockets?: boolean;
+  /** Base path for WebSocket endpoints (e.g. /api/ws). Default from constants. */
+  socketBasePath?: string;
 }
 
 /**
@@ -173,6 +177,12 @@ class DevServerState {
       }
     }
 
+    const socketBasePath = this.options.socketBasePath ?? SOCKET_BASE_PATH;
+    this.options.logger.socketsRegistered(
+      this.sockets.map((s) => ({ pattern: s.pattern })),
+      socketBasePath
+    );
+
     await this.generateTypes();
   }
   
@@ -218,14 +228,17 @@ class DevServerState {
           params: s.params,
           file: s.file,
         }));
-        const socketTypesPath = path.join(this.options.root, 'src', GENERATED_SOCKET_TYPES_FILE);
-        await generateSocketTypesFile(socketTypesPath, socketSchema, SOCKET_BASE_PATH);
-        const relativeSocketTypesPath = path.relative(this.options.root, socketTypesPath);
-        this.options.logger.typesGenerated(`./${relativeSocketTypesPath.replace(/\\/g, '/')}`);
+        const socketBasePath = this.options.socketBasePath ?? SOCKET_BASE_PATH;
+        if (isTypeScript) {
+          const socketTypesPath = path.join(this.options.root, 'src', GENERATED_SOCKET_TYPES_FILE);
+          await generateSocketTypesFile(socketTypesPath, socketSchema, socketBasePath);
+          const relativeSocketTypesPath = path.relative(this.options.root, socketTypesPath);
+          this.options.logger.typesGenerated(`./${relativeSocketTypesPath.replace(/\\/g, '/')}`);
+        }
 
         const socketServicesFileName = isTypeScript ? GENERATED_SOCKET_SERVICES_FILE : 'socket.services.js';
         const socketServicesPath = path.join(this.options.root, 'src', socketServicesFileName);
-        await generateSocketServicesFile(socketServicesPath, socketSchema, SOCKET_BASE_PATH, isTypeScript);
+        await generateSocketServicesFile(socketServicesPath, socketSchema, socketBasePath, isTypeScript);
         const relativeSocketServicesPath = path.relative(this.options.root, socketServicesPath);
         this.options.logger.servicesGenerated(`./${relativeSocketServicesPath.replace(/\\/g, '/')}`);
       }
@@ -261,13 +274,28 @@ class DevServerState {
       const relativeOpenApiPath = path.relative(this.options.root, openApiPath);
       this.options.logger.info(`OpenAPI spec generated: ./${relativeOpenApiPath.replace(/\\/g, '/')}`);
 
-      // Generate Swagger UI HTML
-      const swaggerUiPath = path.join(this.options.root, 'public', 'api-docs.html');
+      const port = this.options.viteServer.config.server?.port || 5173;
+      const socketBasePath = this.options.socketBasePath ?? SOCKET_BASE_PATH;
+      const hasSockets = this.sockets.length > 0;
+
+      if (hasSockets) {
+        const asyncApiPath = path.join(this.options.root, 'public', 'asyncapi.json');
+        await generateAsyncApiFile(asyncApiPath, this.sockets, socketBasePath, {
+          serverUrl: `ws://localhost:${port}`,
+        });
+        const relativeAsyncPath = path.relative(this.options.root, asyncApiPath);
+        this.options.logger.info(`AsyncAPI spec generated: ./${relativeAsyncPath.replace(/\\/g, '/')}`);
+      }
+
+      // Generate API docs HTML (Swagger UI only, or REST + WebSockets tabs)
+      const apiDocsPath = path.join(this.options.root, 'public', 'api-docs.html');
       const title = openApiOptions.info?.title || 'Vitek API';
-      const swaggerHtml = generateSwaggerUiHtml('/openapi.json', title);
-      fs.writeFileSync(swaggerUiPath, swaggerHtml, 'utf-8');
-      const relativeSwaggerPath = path.relative(this.options.root, swaggerUiPath);
-      this.options.logger.info(`Swagger UI available at: ./${relativeSwaggerPath.replace(/\\/g, '/')} → http://localhost:${this.options.viteServer.config.server?.port || 5173}/api-docs.html`);
+      const apiDocsHtml = generateApiDocsHtml('/openapi.json', title, {
+        asyncApiJsonPath: hasSockets ? '/asyncapi.json' : undefined,
+      });
+      fs.writeFileSync(apiDocsPath, apiDocsHtml, 'utf-8');
+      const relativeApiDocsPath = path.relative(this.options.root, apiDocsPath);
+      this.options.logger.info(`API docs at: ./${relativeApiDocsPath.replace(/\\/g, '/')} → http://localhost:${port}/api-docs.html`);
     } catch (error) {
       this.options.logger.warn(
         `Failed to generate OpenAPI spec: ${error instanceof Error ? error.message : String(error)}`
@@ -382,28 +410,68 @@ function extractTypeFromFile(filePath: string, typeName: string): string | undef
   }
 }
 
+const noopEmitter: SocketEmitter = {
+  emit() {},
+};
+
 /**
  * Creates middleware for Vite development server
  */
 export function createViteDevServerMiddleware(options: ViteDevServerOptions) {
   const state = new DevServerState(options);
-  state.initialize().catch(error => {
+  const ready = state.initialize().catch(error => {
     options.logger.error(`Failed to initialize Vitek: ${error instanceof Error ? error.message : String(error)}`);
   });
 
+  const port = options.viteServer.config.server.port ?? 5173;
+  const apiBaseUrl = `http://127.0.0.1:${port}${API_BASE_PATH}`;
+  const api: ApiClient = {
+    async fetch(path: string, fetchOptions?: { method?: string; body?: unknown }) {
+      const url = `${apiBaseUrl}/${path.replace(/^\//, '')}`;
+      const res = await fetch(url, {
+        method: fetchOptions?.method ?? 'GET',
+        headers:
+          fetchOptions?.body !== undefined
+            ? { 'Content-Type': 'application/json' }
+            : undefined,
+        body:
+          fetchOptions?.body !== undefined
+            ? JSON.stringify(fetchOptions.body)
+            : undefined,
+      });
+      const text = await res.text();
+      if (!text) return undefined;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return text;
+      }
+    },
+  };
+
+  const shared: VitekApp = {
+    sockets: noopEmitter,
+    api,
+  };
+
   return {
+    ready,
     middleware: createRequestHandler({
       routes: state.routes,
       middlewares: state.middlewares,
       logger: options.logger,
+      shared,
     }),
     cleanup: () => state.cleanup(),
     reload: () => state.reload(),
     setupSockets: (httpServer: { on(event: 'upgrade', listener: (req: import('http').IncomingMessage, socket: import('stream').Duplex, head: Buffer) => void): void }) => {
       if (options.sockets !== false && state.sockets.length > 0) {
+        const socketBasePath = options.socketBasePath ?? SOCKET_BASE_PATH;
         const handler = createSocketHandler({
           sockets: state.sockets,
-          socketBasePath: SOCKET_BASE_PATH,
+          socketBasePath,
+          shared,
+          logger: options.logger,
         });
         httpServer.on('upgrade', handler);
       }
