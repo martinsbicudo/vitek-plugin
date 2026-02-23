@@ -96,4 +96,4 @@ jobs:
           body: "# Changes\n\n${{ steps.match.outputs.group1 }}"
           name: v${{ needs.generate_semver.outputs.version }}
           tag: v${{ needs.generate_semver.outputs.version }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_ACCESS_TOKEN }}

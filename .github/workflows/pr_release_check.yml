@@ -57,7 +57,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: ${{ env.MESSAGE_ERROR }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
 
       - name: Get variables
         if: ${{ steps.bypass.outputs.bypass == 'false' }}
@@ -72,7 +72,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: ${{ env.MESSAGE_ERROR }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
 
       - name: Delete comment
         if: ${{ steps.bypass.outputs.bypass == 'false' && steps.variables.outputs.deleteComment == 'true' }}
@@ -80,7 +80,7 @@ jobs:
         with:
           type: "delete"
           comment_id: ${{ steps.comment.outputs.comment-id }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
 
       - name: Result
         run: |
