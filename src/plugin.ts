@@ -88,12 +88,12 @@ export function vitek(options: VitekOptions = {}): Plugin {
 
     transform(code, id) {
       const idPath = id.startsWith('file:') ? fileURLToPath(id) : id;
-      const fullApiDir = path.resolve(root, apiDirOption);
+      const srcDir = path.resolve(root, 'src');
       const virtualCandidate = idPath.startsWith('/') ? path.join(root, idPath.replace(/^\//, '')) : null;
       const normalizedId = virtualCandidate != null && fs.existsSync(virtualCandidate)
         ? virtualCandidate
         : path.resolve(idPath);
-      if (!normalizedId.startsWith(fullApiDir)) return null;
+      if (!normalizedId.startsWith(srcDir)) return null;
       const dir = path.dirname(normalizedId);
       const rootSlash = path.resolve(root) + path.sep;
       const rewritten = code.replace(

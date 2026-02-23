@@ -110,13 +110,45 @@ describe('vitek plugin resolveId and transform', () => {
   });
 
   describe('transform', () => {
-    const healthGetId = path.join(process.cwd(), 'placeholder'); // will override per platform
-
-    it('returns null when id is not under apiDir', () => {
+    it('returns null when id is not under src', () => {
       const code = "import x from '../lib/greeting';";
-      const idOutside = pathToFileURL(path.join(rootDir, 'src', 'main.ts')).href;
+      fs.mkdirSync(path.join(rootDir, 'other'), { recursive: true });
+      const idOutside = pathToFileURL(path.join(rootDir, 'other', 'main.ts')).href;
       const result = callTransform(plugin, code, idOutside);
       expect(result).toBeNull();
+    });
+
+    it('rewrites relative import when id is under src/lib (not only api)', () => {
+      fs.writeFileSync(
+        path.join(rootDir, 'src', 'lib', 'executor.ts'),
+        "import { getGreeting } from './greeting';\nexport function run() { return getGreeting(); }\n",
+        'utf-8'
+      );
+      const code = "import { getGreeting } from './greeting';\nexport function run() { return getGreeting(); }\n";
+      const id = pathToFileURL(path.join(rootDir, 'src', 'lib', 'executor.ts')).href;
+      const result = callTransform(plugin, code, id);
+      expect(result).not.toBeNull();
+      expect(result!.code).toContain("/src/lib/greeting");
+      expect(result!.code).not.toContain("from './greeting'");
+    });
+
+    it('rewrites relative import in src/lib file that imports from subpath', () => {
+      fs.mkdirSync(path.join(rootDir, 'src', 'lib', 'nested'), { recursive: true });
+      fs.writeFileSync(
+        path.join(rootDir, 'src', 'lib', 'nested', 'helper.ts'),
+        "export function getMessage() { return 'ok'; }\n",
+        'utf-8'
+      );
+      fs.writeFileSync(
+        path.join(rootDir, 'src', 'lib', 'nested', 'index.ts'),
+        "export { getMessage } from './helper';\n",
+        'utf-8'
+      );
+      const code = "export { getMessage } from './helper';\n";
+      const id = pathToFileURL(path.join(rootDir, 'src', 'lib', 'nested', 'index.ts')).href;
+      const result = callTransform(plugin, code, id);
+      expect(result).not.toBeNull();
+      expect(result!.code).toContain("/src/lib/nested/helper");
     });
 
     it('rewrites relative import to root-relative path when id is under apiDir', () => {
