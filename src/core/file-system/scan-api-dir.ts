@@ -71,6 +71,25 @@ function calculateMiddlewareBasePattern(middlewarePath: string, apiDir: string):
   return pattern;
 }
 
+export function deduplicateParsedRoutes(routes: ParsedRoute[]): ParsedRoute[] {
+  const seen = new Set<string>();
+  return routes.filter((r) => {
+    const key = `${r.method}:${r.pattern}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export function deduplicateParsedSockets(sockets: ParsedSocket[]): ParsedSocket[] {
+  const seen = new Set<string>();
+  return sockets.filter((s) => {
+    if (seen.has(s.pattern)) return false;
+    seen.add(s.pattern);
+    return true;
+  });
+}
+
 /**
  * Recursively scans a directory looking for route files and middlewares
  */
@@ -123,7 +142,15 @@ export function scanApiDirectory(apiDir: string): ScanResult {
   }
   
   scanDir(apiDir);
-  
+
+  const dedupedRoutes = deduplicateParsedRoutes(routes);
+  routes.length = 0;
+  routes.push(...dedupedRoutes);
+
+  const dedupedSockets = deduplicateParsedSockets(sockets);
+  sockets.length = 0;
+  sockets.push(...dedupedSockets);
+
   // Sort middlewares by depth (most generic first, most specific last)
   // This ensures that when composing, global middlewares come before specific ones
   middlewares.sort((a, b) => {
