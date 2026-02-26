@@ -22,6 +22,14 @@ function deduplicateRoutesByKey(routes: RouteSchema[]): RouteSchema[] {
   });
 }
 
+function partToIdentifier(part: string): string {
+  const clean = part.replace(/^[:*]/, '');
+  return clean
+    .split('-')
+    .map(word => capitalize(word))
+    .join('');
+}
+
 /**
  * Generates the content of the generated types file
  */
@@ -553,13 +561,8 @@ function generateFunctionNameBase(route: RouteSchema): string {
   const parts = route.pattern
     .split('/')
     .filter(Boolean)
-    .filter(part => part !== 'index') // Remove "index" from function name
-    .map(part => {
-      // Remove : or * from the beginning
-      const clean = part.replace(/^[:*]/, '');
-      // Capitalize
-      return capitalize(clean);
-    });
+    .filter(part => part !== 'index')
+    .map(part => partToIdentifier(part));
   
   const pathName = parts.join('');
   return `${method}${pathName}`;
@@ -581,12 +584,7 @@ function generateUniqueFunctionName(
   // Remove "index" but keep other parts (including params for context)
   const allParts = patternParts
     .filter(part => part !== 'index')
-    .map(part => {
-      // For parameters, include the name as context to differentiate
-      // Example: ":id" becomes "Id", "*ids" becomes "Ids"
-      const clean = part.replace(/^[:*]/, '');
-      return capitalize(clean);
-    });
+    .map(part => partToIdentifier(part));
   
   // Use all parts of the path to ensure uniqueness from the start
   if (allParts.length > 0) {

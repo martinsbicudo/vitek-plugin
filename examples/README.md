@@ -157,6 +157,31 @@ Same app as typescript-react, runnable in a container. Uses pnpm for install and
 
 ---
 
+### [prisma](./prisma/)
+
+**REST API with Prisma ORM and SQLite**
+
+File-based routes with Prisma for database access. No framework—pure API.
+
+**Key Features:**
+
+- ✅ Prisma ORM with SQLite
+- ✅ REST API (GET /api/users, POST /api/users, GET /api/users/:id)
+- ✅ OpenAPI docs
+- ✅ TypeScript
+
+**Best for:**
+
+- API-only apps with a database
+- Learning Vitek + Prisma
+- Backends without frontend framework
+
+**Tech Stack:**
+
+- TypeScript, Vite, Prisma, SQLite, Vitek
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -316,6 +341,7 @@ Nos exemplos usamos `vitek-serve`; é necessário rodar `pnpm build` na raiz do 
 - [typescript-react README](./typescript-react/README.md) - Detailed typescript-react documentation
 - [docker README](./docker/README.md) - TypeScript + React with Docker and docker-compose (pnpm)
 - [api-docs README](./api-docs/README.md) - API docs (REST + WebSockets)
+- [prisma README](./prisma/README.md) - Prisma ORM + SQLite
 
 ---
 
