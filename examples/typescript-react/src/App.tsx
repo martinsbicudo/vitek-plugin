@@ -9,7 +9,7 @@ function App() {
         
         <h3 style={{ marginTop: '1rem' }}>Using Generated Services (Recommended)</h3>
         <pre style={{ background: '#fff', padding: '1rem', borderRadius: '4px', overflowX: 'auto', fontSize: '0.85rem' }}>
-{`import { getHealth, getUsersById, getPosts, postPosts } from './api.services';
+{`import { getHealth, getUsersById, getPosts, postPosts, postInterSquadRequests, putInterSquadRequestsIdStatus } from './api.services';
 
 // GET /api/health
 const health = await getHealth();
@@ -94,6 +94,8 @@ const newPost = await fetch('/api/posts', {
           <li><strong>GET</strong> /api/posts/*ids (catch-all)</li>
           <li><strong>GET</strong> /api/comments/:postId/:commentId</li>
           <li><strong>DELETE</strong> /api/comments/:postId/:commentId</li>
+          <li><strong>POST</strong> /api/inter-squad/requests</li>
+          <li><strong>PUT</strong> /api/inter-squad/requests/:id/status</li>
         </ul>
 
         <p style={{ marginTop: '1rem', color: '#666', fontSize: '0.9rem' }}>

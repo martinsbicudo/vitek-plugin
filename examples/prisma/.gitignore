@@ -1,0 +1,6 @@
+node_modules
+dist
+.env
+*.db
+src/api.types.ts
+src/api.services.ts

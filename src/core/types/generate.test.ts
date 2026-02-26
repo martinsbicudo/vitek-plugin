@@ -240,6 +240,21 @@ describe('generateServicesContent', () => {
     });
   });
 
+  it('generates valid identifiers for paths with hyphens (e.g. inter-squad)', () => {
+    const routes = [
+      route('inter-squad/requests', 'post', []),
+      route('inter-squad/requests/:id/status', 'put', ['id']),
+    ];
+    const content = generateServicesContent(routes, API_BASE, true);
+    const names = getExportedFunctionNames(content);
+    expect(names).toHaveLength(2);
+    expect(names).toContain('postInterSquadRequests');
+    expect(names).toContain('putInterSquadRequestsIdStatus');
+    names.forEach((name) => {
+      expect(name).toMatch(/^[a-zA-Z_$][a-zA-Z0-9_$]*$/);
+    });
+  });
+
   it('regression: flows/id/versions GET and POST each appear once', () => {
     const routes = [
       route('flows/:id/versions', 'get', ['id']),
