@@ -54,6 +54,7 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
         afterTypesGenerated,
         cors: ctx.options.cors,
         trustProxy: ctx.options.trustProxy,
+        maxBodySize: ctx.options.maxBodySize,
         onError: ctx.options.onError,
       });
 

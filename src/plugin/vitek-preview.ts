@@ -84,6 +84,7 @@ export function createPreviewPlugin(ctx: PluginContext): Plugin {
                 beforeApiRequest,
                 cors: ctx.options.cors,
                 trustProxy: ctx.options.trustProxy,
+                maxBodySize: ctx.options.maxBodySize,
                 onError: ctx.options.onError,
                 shared,
               });

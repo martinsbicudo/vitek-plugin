@@ -242,6 +242,25 @@ describe('vitek plugin resolveId and transform', () => {
       expect(fs.readFileSync(servicesPath, 'utf-8')).toContain('getHealth');
       expect(fs.readFileSync(typesPath, 'utf-8')).toContain('VitekParams');
     });
+
+    it('skips type generation and API bundle when buildApi is false', async () => {
+      fs.writeFileSync(path.join(rootDir, 'tsconfig.json'), '{}', 'utf-8');
+      const noApiPlugins = vitek({ apiDir: path.join('src', 'api'), buildApi: false });
+      const noApiBuild = findPlugin(noApiPlugins, 'vitek:build')!;
+      const configResolved = noApiBuild.configResolved;
+      if (configResolved) {
+        const fn = typeof configResolved === 'function' ? configResolved : configResolved.handler;
+        fn.call(null as never, { root: rootDir, build: { outDir: 'dist' } } as never);
+      }
+      const buildStart = (noApiBuild as { buildStart?: () => Promise<void> }).buildStart;
+      const closeBundle = (noApiBuild as { closeBundle?: () => Promise<void> }).closeBundle;
+      if (buildStart) await buildStart.call(null as never);
+      fs.mkdirSync(path.join(rootDir, 'dist'), { recursive: true });
+      if (closeBundle) await closeBundle.call(null as never);
+      expect(fs.existsSync(path.join(rootDir, 'src', 'api.types.ts'))).toBe(false);
+      expect(fs.existsSync(path.join(rootDir, 'src', 'api.services.ts'))).toBe(false);
+      expect(fs.existsSync(path.join(rootDir, 'dist', 'vitek-api.mjs'))).toBe(false);
+    });
   });
 
   describe('srcDir option', () => {

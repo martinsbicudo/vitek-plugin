@@ -34,6 +34,8 @@ function mockRequest(
       if (event === 'end') (cb as () => void)();
       return req;
     }),
+    removeListener: vi.fn(() => req),
+    destroy: vi.fn(),
   } as unknown as IncomingMessage;
   return req;
 }
@@ -271,6 +273,27 @@ describe('createRequestHandler', () => {
     expect(capturedBody).toEqual({ name: 'test' });
     expect(res._statusCode).toBe(200);
     expect(JSON.parse(res._body)).toEqual({ received: { name: 'test' } });
+  });
+
+  it('returns 413 when body exceeds maxBodySize', async () => {
+    const route = createTestRoute(
+      { method: 'post', pattern: 'items', params: [], file: '/api/items.post.ts' },
+      () => ({ ok: true })
+    );
+    const handler = createRequestHandler({
+      routes: [route],
+      middlewares: [],
+      maxBodySize: 5,
+    });
+    const req = mockRequest({
+      method: 'POST',
+      url: `${API_BASE_PATH}/items`,
+      bodyChunks: ['12345', '67890'],
+    });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(413);
+    expect(JSON.parse(res._body)).toEqual({ error: 'Payload Too Large' });
   });
 
   it('sends string body as-is when VitekResponse body is string', async () => {

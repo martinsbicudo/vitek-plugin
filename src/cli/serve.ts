@@ -35,6 +35,7 @@ export interface ProductionConfig {
   onError?: (err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void>;
   onServerStart?: OnServerStartHook;
   onServerShutdown?: OnServerShutdownHook;
+  maxBodySize?: number;
 }
 
 /** Load beforeApiRequest, onError, onServerStart, onServerShutdown from dist/vitek.config.mjs if present. Throws if file exists but import fails. */
@@ -47,6 +48,7 @@ export async function loadProductionConfig(distDir: string): Promise<ProductionC
     onError?: (err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void>;
     onServerStart?: OnServerStartHook;
     onServerShutdown?: OnServerShutdownHook;
+    maxBodySize?: number;
   };
   const result: ProductionConfig = {};
   if (configMod.beforeApiRequest) {
@@ -55,6 +57,7 @@ export async function loadProductionConfig(distDir: string): Promise<ProductionC
   if (configMod.onError) result.onError = configMod.onError;
   if (configMod.onServerStart) result.onServerStart = configMod.onServerStart;
   if (configMod.onServerShutdown) result.onServerShutdown = configMod.onServerShutdown;
+  if (configMod.maxBodySize != null) result.maxBodySize = configMod.maxBodySize;
   return result;
 }
 
@@ -127,7 +130,7 @@ export async function main(): Promise<void> {
   } catch (err) {
     console.warn('[vitek-serve] Failed to load vitek.config.mjs; continuing without production hooks:', err instanceof Error ? err.message : String(err));
   }
-  const { beforeApiRequest, onError, onServerStart, onServerShutdown } = productionConfig;
+  const { beforeApiRequest, onError, onServerStart, onServerShutdown, maxBodySize } = productionConfig;
 
   if (fs.existsSync(bundlePath)) {
     try {
@@ -139,6 +142,7 @@ export async function main(): Promise<void> {
         beforeApiRequest,
         cors: cors ? true : undefined,
         trustProxy,
+        maxBodySize,
         onError,
         shared,
       });

@@ -11,8 +11,9 @@ export interface ValidationRule {
   required?: boolean;
   min?: number;
   max?: number;
+  /** String is compiled with new RegExp(pattern). Avoid complex or user-supplied patterns (ReDoS risk). Prefer allowlists or simple character classes. */
   pattern?: string | RegExp;
-  custom?: (value: any) => boolean | string; // Returns true if valid, or error message if invalid
+  custom?: (value: any) => boolean | string;
 }
 
 /**

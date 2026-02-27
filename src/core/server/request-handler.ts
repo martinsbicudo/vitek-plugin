@@ -45,6 +45,8 @@ export interface RequestHandlerOptions {
   };
   /** When provided, context.sockets is set so route handlers can emit to WebSocket clients. */
   shared?: { sockets: SocketEmitter };
+  /** Max request body size in bytes. When exceeded, responds with 413 Payload Too Large. Omit for no limit. */
+  maxBodySize?: number;
   /** Called when a non-HttpError is thrown. May send a custom response; if res is not ended, default 500 JSON is sent. */
   onError?: (err: Error, req: IncomingMessage, res: ServerResponse) => void | Promise<void>;
 }
@@ -70,7 +72,7 @@ function applyCorsHeaders(res: ServerResponse, corsHeaders: Record<string, strin
 }
 
 export function createRequestHandler(options: RequestHandlerOptions): (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => Promise<void> {
-  const { routes, middlewares, beforeApiRequest = [], cors, trustProxy = false, logger, shared, onError } = options;
+  const { routes, middlewares, beforeApiRequest = [], cors, trustProxy = false, logger, shared, maxBodySize, onError } = options;
   const corsOpts: NormalizedCorsOptions | null = cors != null ? normalizeCorsOptions(cors) : null;
   const logRouteMatched = logger?.routeMatched ?? noop;
   const logRequestStart = logger?.requestStart ?? noop;
@@ -133,12 +135,26 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         }
       });
 
+      const PAYLOAD_TOO_LARGE_SENTINEL = Symbol('PAYLOAD_TOO_LARGE');
       let body: unknown;
       if (['post', 'put', 'patch'].includes(method)) {
-        body = await new Promise((resolve) => {
+        body = await new Promise<unknown>((resolve, reject) => {
           const chunks: Buffer[] = [];
-          req.on('data', (chunk: Buffer) => chunks.push(chunk));
-          req.on('end', () => {
+          let totalSize = 0;
+          const onData = (chunk: Buffer) => {
+            if (maxBodySize != null) {
+              totalSize += chunk.length;
+              if (totalSize > maxBodySize) {
+                req.removeListener('data', onData);
+                req.removeListener('end', onEnd);
+                req.destroy();
+                reject(new Error('PAYLOAD_TOO_LARGE'));
+                return;
+              }
+            }
+            chunks.push(chunk);
+          };
+          const onEnd = () => {
             const rawBody = Buffer.concat(chunks).toString();
             if (!rawBody) {
               resolve(undefined);
@@ -149,8 +165,22 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
             } catch {
               resolve(rawBody);
             }
-          });
+          };
+          req.on('data', onData);
+          req.on('end', onEnd);
+        }).catch((err) => {
+          if (err?.message === 'PAYLOAD_TOO_LARGE') {
+            const duration = Date.now() - startTime;
+            res.statusCode = 413;
+            res.setHeader('Content-Type', 'application/json');
+            if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
+            res.end(JSON.stringify({ error: 'Payload Too Large' }));
+            logRequest(requestMethod, requestPath, 413, duration);
+            return PAYLOAD_TOO_LARGE_SENTINEL;
+          }
+          throw err;
         });
+        if (body === PAYLOAD_TOO_LARGE_SENTINEL) return;
       }
 
       const context = createContext(
