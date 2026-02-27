@@ -13,15 +13,15 @@ export type PostsPostBody = {
 };
 
 export interface HealthGetParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface PostsGetParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface PostsPostParams extends VitekParams {
-  // No dynamic params
+
 }
 
 export interface UsersIdGetParams extends VitekParams {

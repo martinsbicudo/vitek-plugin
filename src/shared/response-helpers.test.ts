@@ -13,6 +13,10 @@ import {
   tooManyRequests,
   internalServerError,
   redirect,
+  text,
+  html,
+  cacheControl,
+  noStore,
 } from './response-helpers.js';
 
 describe('json', () => {
@@ -205,5 +209,67 @@ describe('redirect', () => {
   it('should create 308 redirect for permanent with method preservation', () => {
     const response = redirect('/new-path', true, true);
     expect(response.status).toBe(308);
+  });
+});
+
+describe('text', () => {
+  it('creates 200 response with text/plain', () => {
+    const response = text('Hello world');
+    expect(response.status).toBe(200);
+    expect(response.headers).toEqual({ 'Content-Type': 'text/plain; charset=utf-8' });
+    expect(response.body).toBe('Hello world');
+  });
+
+  it('accepts custom status', () => {
+    const response = text('Error', 503);
+    expect(response.status).toBe(503);
+    expect(response.body).toBe('Error');
+  });
+});
+
+describe('html', () => {
+  it('creates 200 response with text/html', () => {
+    const response = html('<p>Hi</p>');
+    expect(response.status).toBe(200);
+    expect(response.headers).toEqual({ 'Content-Type': 'text/html; charset=utf-8' });
+    expect(response.body).toBe('<p>Hi</p>');
+  });
+
+  it('accepts custom status', () => {
+    const response = html('<h1>Not Found</h1>', 404);
+    expect(response.status).toBe(404);
+  });
+});
+
+describe('cacheControl', () => {
+  it('returns Cache-Control max-age only', () => {
+    const headers = cacheControl(60);
+    expect(headers).toEqual({ 'Cache-Control': 'max-age=60' });
+  });
+
+  it('includes stale-while-revalidate when provided', () => {
+    const headers = cacheControl(60, { staleWhileRevalidate: 120 });
+    expect(headers['Cache-Control']).toContain('max-age=60');
+    expect(headers['Cache-Control']).toContain('stale-while-revalidate=120');
+  });
+
+  it('includes private when set', () => {
+    const headers = cacheControl(300, { private: true });
+    expect(headers['Cache-Control']).toContain('max-age=300');
+    expect(headers['Cache-Control']).toContain('private');
+  });
+
+  it('combines all options', () => {
+    const headers = cacheControl(60, { staleWhileRevalidate: 120, private: true });
+    expect(headers['Cache-Control']).toContain('max-age=60');
+    expect(headers['Cache-Control']).toContain('stale-while-revalidate=120');
+    expect(headers['Cache-Control']).toContain('private');
+  });
+});
+
+describe('noStore', () => {
+  it('returns Cache-Control no-store', () => {
+    const headers = noStore();
+    expect(headers).toEqual({ 'Cache-Control': 'no-store' });
   });
 });

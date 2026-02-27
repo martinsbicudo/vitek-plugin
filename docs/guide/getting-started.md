@@ -1,5 +1,17 @@
 # Getting Started
 
+## Quick start with `npx vitek init`
+
+In a new or existing Vite project, run:
+
+```bash
+npx vitek init
+```
+
+This creates `src/api` (if missing), adds a sample `src/api/health.get.ts`, and injects `vitek()` into your `vite.config.js` or `vite.config.ts` if found. Use `npx vitek init --force` to overwrite the sample file. Then run `npm run dev` and open `http://localhost:5173/api/health`.
+
+---
+
 ## 1. Configure the Plugin
 
 Add Vitek to your `vite.config.ts`:

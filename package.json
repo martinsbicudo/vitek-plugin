@@ -1,70 +1,86 @@
 {
-    "name": "vitek-plugin",
-    "version": "0.1.2-beta.6",
-    "description": "Vite plugin for file-based HTTP API generation",
-    "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "import": "./dist/index.js",
-            "types": "./dist/index.d.ts"
-        }
-    },
-    "files": [
-        "dist"
-    ],
-    "scripts": {
-        "build": "tsc",
-        "dev": "concurrently \"pnpm:dev:tsc\" \"pnpm:docs:dev\"",
-        "dev:tsc": "tsc --watch",
-        "prepublishOnly": "npm run build",
-        "docs:dev": "vitepress dev docs",
-        "docs:build": "vitepress build docs",
-        "docs:preview": "vitepress preview docs",
-        "test": "vitest run",
-        "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage"
-    },
-    "keywords": [
-        "vite",
-        "plugin",
-        "api",
-        "file-based",
-        "routing"
-    ],
-    "author": "Victor Bicudo <victor.mbicudo@gmail.com> (https://github.com/martinsbicudo)",
-    "license": "MIT",
-    "homepage": "https://github.com/martinsbicudo/vitek-plugin#readme",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/martinsbicudo/vitek-plugin.git"
-    },
-    "bugs": {
-        "url": "https://github.com/martinsbicudo/vitek-plugin/issues"
-    },
-    "peerDependencies": {
-        "vite": "^5.0.0"
-    },
-    "dependencies": {
-        "connect": "^3.7.0",
-        "esbuild": "^0.24.0",
-        "serve-static": "^1.16.0",
-        "ws": "^8.18.0"
-    },
-    "devDependencies": {
-        "@types/connect": "^3.4.0",
-        "@types/node": "^20.0.0",
-        "@types/serve-static": "^1.15.0",
-        "@types/ws": "^8.18.1",
-        "@vitest/coverage-v8": "^4.0.18",
-        "concurrently": "^9.0.0",
-        "typescript": "^5.0.0",
-        "vite": "^5.0.0",
-        "vitepress": "^1.0.0",
-        "vitest": "^4.0.18"
-    },
-    "bin": {
-        "vitek-serve": "./dist/cli/serve.js"
+  "name": "vitek-plugin",
+  "version": "0.1.2-beta.6",
+  "description": "Vite plugin for file-based HTTP API generation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "husky",
+    "build": "tsc",
+    "dev": "concurrently \"pnpm:dev:tsc\" \"pnpm:docs:dev\"",
+    "dev:tsc": "tsc --watch",
+    "prepublishOnly": "npm run build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "node scripts/e2e.mjs",
+    "test:e2e:socket": "node scripts/e2e-socket.mjs",
+    "bench": "node scripts/bench.mjs",
+    "example:bench": "node scripts/bench.mjs --with-example",
+    "examples:build": "bash examples/build-all.sh",
+    "examples:test": "bash examples/run-all-tests.sh",
+    "examples:build-and-test": "bash examples/build-and-test.sh",
+    "check": "pnpm i && pnpm run build && pnpm test && pnpm run examples:build-and-test && pnpm run test:e2e && pnpm run test:e2e:socket && pnpm run example:bench"
+  },
+  "keywords": [
+    "vite",
+    "plugin",
+    "api",
+    "file-based",
+    "routing"
+  ],
+  "author": "Victor Bicudo <victor.mbicudo@gmail.com> (https://github.com/martinsbicudo)",
+  "license": "MIT",
+  "homepage": "https://github.com/martinsbicudo/vitek-plugin#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/martinsbicudo/vitek-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/martinsbicudo/vitek-plugin/issues"
+  },
+  "peerDependencies": {
+    "vite": "^5.0.0 || ^6.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "connect": "^3.7.0",
+    "zod": "^3.23.0",
+    "esbuild": "^0.24.0",
+    "magic-string": "^0.30.0",
+    "serve-static": "^1.16.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.4.2",
+    "@commitlint/config-conventional": "^20.4.2",
+    "@types/connect": "^3.4.0",
+    "@types/node": "^20.0.0",
+    "@types/serve-static": "^1.15.0",
+    "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "concurrently": "^9.0.0",
+    "husky": "^9.1.7",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0 || ^6.0.0",
+    "vitepress": "^1.0.0",
+    "vitest": "^4.0.18"
+  },
+  "bin": {
+    "vitek": "./dist/cli/cli.js",
+    "vitek-serve": "./dist/cli/serve.js"
+  }
 }

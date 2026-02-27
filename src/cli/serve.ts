@@ -17,10 +17,59 @@ import { getApiBundleFilename } from '../build/build-api-bundle.js';
 import { getSocketsBundleFilename } from '../build/build-sockets-bundle.js';
 import type { ApiClient, SocketEmitter, VitekApp } from '../core/shared/vitek-app.js';
 
-function parseArgs(): { dir: string; port: number; host: string } {
+const VITEK_SERVE_CONFIG_FILENAME = 'vitek.config.mjs';
+
+export type BeforeApiRequestHook = import('../core/server/request-handler.js').BeforeApiRequestHook;
+
+export interface OnServerStartContext {
+  api: ApiClient;
+  sockets: SocketEmitter;
+  server: http.Server;
+}
+
+export type OnServerStartHook = (ctx: OnServerStartContext) => void | Promise<void>;
+export type OnServerShutdownHook = () => void | Promise<void>;
+
+export interface ProductionConfig {
+  beforeApiRequest?: BeforeApiRequestHook[];
+  onError?: (err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void>;
+  onServerStart?: OnServerStartHook;
+  onServerShutdown?: OnServerShutdownHook;
+  maxBodySize?: number;
+}
+
+/** Load beforeApiRequest, onError, onServerStart, onServerShutdown from dist/vitek.config.mjs if present. Throws if file exists but import fails. */
+export async function loadProductionConfig(distDir: string): Promise<ProductionConfig> {
+  const configPath = path.join(distDir, VITEK_SERVE_CONFIG_FILENAME);
+  if (!fs.existsSync(configPath)) return {};
+  const configUrl = pathToFileURL(configPath).href;
+  const configMod = await import(configUrl) as {
+    beforeApiRequest?: BeforeApiRequestHook | BeforeApiRequestHook[];
+    onError?: (err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void>;
+    onServerStart?: OnServerStartHook;
+    onServerShutdown?: OnServerShutdownHook;
+    maxBodySize?: number;
+  };
+  const result: ProductionConfig = {};
+  if (configMod.beforeApiRequest) {
+    result.beforeApiRequest = Array.isArray(configMod.beforeApiRequest) ? configMod.beforeApiRequest : [configMod.beforeApiRequest];
+  }
+  if (configMod.onError) result.onError = configMod.onError;
+  if (configMod.onServerStart) result.onServerStart = configMod.onServerStart;
+  if (configMod.onServerShutdown) result.onServerShutdown = configMod.onServerShutdown;
+  if (configMod.maxBodySize != null) result.maxBodySize = configMod.maxBodySize;
+  return result;
+}
+
+export function parseArgs(): { dir: string; port: number; host: string; cors: boolean; trustProxy: boolean } {
   let dir = 'dist';
-  let port = 3000;
-  let host = '0.0.0.0';
+  const portEnv = process.env.PORT;
+  const hostEnv = process.env.HOST;
+  let port = portEnv !== undefined && portEnv !== '' ? parseInt(portEnv, 10) : 3000;
+  if (Number.isNaN(port)) port = 3000;
+  let host = hostEnv !== undefined && hostEnv !== '' ? hostEnv : '0.0.0.0';
+  let cors = false;
+  let trustProxy = false;
   const argv = process.argv.slice(2);
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -30,12 +79,14 @@ function parseArgs(): { dir: string; port: number; host: string } {
     else if (arg === '--port' && argv[i + 1]) port = parseInt(argv[++i], 10);
     else if (arg.startsWith('--host=')) host = arg.slice(7);
     else if (arg === '--host' && argv[i + 1]) host = argv[++i];
+    else if (arg === '--cors') cors = true;
+    else if (arg === '--trust-proxy') trustProxy = true;
   }
-  return { dir, port, host };
+  return { dir, port, host, cors, trustProxy };
 }
 
-async function main(): Promise<void> {
-  const { dir, port, host } = parseArgs();
+export async function main(): Promise<void> {
+  const { dir, port, host, cors, trustProxy } = parseArgs();
   const distDir = path.resolve(process.cwd(), dir);
 
   if (!fs.existsSync(distDir) || !fs.statSync(distDir).isDirectory()) {
@@ -73,6 +124,14 @@ async function main(): Promise<void> {
   const app = connect();
 
   const bundlePath = path.join(distDir, getApiBundleFilename());
+  let productionConfig: Awaited<ReturnType<typeof loadProductionConfig>> = {};
+  try {
+    productionConfig = await loadProductionConfig(distDir);
+  } catch (err) {
+    console.warn('[vitek-serve] Failed to load vitek.config.mjs; continuing without production hooks:', err instanceof Error ? err.message : String(err));
+  }
+  const { beforeApiRequest, onError, onServerStart, onServerShutdown, maxBodySize } = productionConfig;
+
   if (fs.existsSync(bundlePath)) {
     try {
       const bundleUrl = pathToFileURL(bundlePath).href;
@@ -80,6 +139,11 @@ async function main(): Promise<void> {
       const apiHandler = createRequestHandler({
         routes: mod.routes as Parameters<typeof createRequestHandler>[0]['routes'],
         middlewares: mod.middlewares as Parameters<typeof createRequestHandler>[0]['middlewares'],
+        beforeApiRequest,
+        cors: cors ? true : undefined,
+        trustProxy,
+        maxBodySize,
+        onError,
         shared,
       });
       app.use(apiHandler as (req: http.IncomingMessage, res: http.ServerResponse, next: () => void) => void);
@@ -120,13 +184,42 @@ async function main(): Promise<void> {
     }
   }
 
+  if (onServerStart) {
+    try {
+      await Promise.resolve(onServerStart({ api: shared.api, sockets: shared.sockets, server }));
+    } catch (err) {
+      console.error('[vitek-serve] onServerStart failed:', err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  }
+
+  let shuttingDown = false;
+  const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    if (onServerShutdown) {
+      try {
+        await Promise.resolve(onServerShutdown());
+      } catch (err) {
+        console.warn('[vitek-serve] onServerShutdown error:', err instanceof Error ? err.message : String(err));
+      }
+    }
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 5000);
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+
   server.listen(port, host, () => {
     const base = `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`;
     console.log(`[vitek-serve] Ready at ${base}`);
   });
 }
 
-main().catch((err) => {
-  console.error('[vitek-serve]', err);
-  process.exit(1);
-});
+const isServeEntry = process.argv[1]?.endsWith('serve.js');
+if (typeof process.env.VITEST === 'undefined' && isServeEntry) {
+  main().catch((err) => {
+    console.error('[vitek-serve]', err);
+    process.exit(1);
+  });
+}

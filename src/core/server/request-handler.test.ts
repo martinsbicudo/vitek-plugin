@@ -1,4 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
+import { Readable } from 'stream';
+import { EventEmitter } from 'events';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Connect } from 'vite';
 import { createRequestHandler } from './request-handler.js';
@@ -32,44 +34,62 @@ function mockRequest(
       if (event === 'end') (cb as () => void)();
       return req;
     }),
+    removeListener: vi.fn(() => req),
+    destroy: vi.fn(),
   } as unknown as IncomingMessage;
   return req;
 }
 
-type MockResponseOut = {
+type MockResponseOut = ServerResponse & {
   _statusCode: number;
   _headers: Record<string, string>;
   _body: string;
-  statusCode: number;
-  setHeader(name: string, value: string | number | string[]): MockResponseOut;
-  end(chunk?: string | (() => void), _encoding?: (() => void) | string, cb?: () => void): MockResponseOut;
-  writeHead: ReturnType<typeof vi.fn>;
+  _ended: boolean;
 };
 
-function mockResponse(): ServerResponse & { _statusCode: number; _headers: Record<string, string>; _body: string } {
-  const out: MockResponseOut = {
-    _statusCode: 0,
-    _headers: {},
-    _body: '',
-    get statusCode() {
-      return out._statusCode;
-    },
-    set statusCode(code: number) {
-      out._statusCode = code;
-    },
-    setHeader(name: string, value: string | number | string[]) {
-      out._headers[name] = Array.isArray(value) ? value.join(', ') : String(value);
-      return out;
-    },
-    end(chunk?: string | (() => void), _encoding?: (() => void) | string, cb?: () => void) {
-      if (typeof chunk === 'string') out._body = chunk;
-      else if (typeof chunk === 'function') chunk();
+class MockResponse extends EventEmitter {
+  _statusCode = 0;
+  _headers: Record<string, string> = {};
+  _body = '';
+  _ended = false;
+  get statusCode() {
+    return this._statusCode;
+  }
+  set statusCode(code: number) {
+    this._statusCode = code;
+  }
+  get writableEnded() {
+    return this._ended;
+  }
+  writable = true;
+  setHeader(name: string, value: string | number | string[]) {
+    this._headers[name] = Array.isArray(value) ? value.join(', ') : String(value);
+    return this;
+  }
+  write(chunk: Buffer | string, encoding?: string | (() => void), cb?: () => void) {
+    const callback = typeof encoding === 'function' ? encoding : cb;
+    this._body += typeof chunk === 'string' ? chunk : chunk?.toString?.() ?? '';
+    (callback as () => void)?.();
+    return true;
+  }
+  end(chunk?: string | Buffer | (() => void), _encoding?: (() => void) | string, cb?: () => void) {
+    this._ended = true;
+    if (typeof chunk === 'function' && _encoding === undefined && cb === undefined) {
+      (chunk as () => void)();
+    } else {
+      if (typeof chunk === 'string') this._body += chunk;
+      else if (Buffer.isBuffer(chunk)) this._body += chunk.toString();
+      else if (typeof chunk === 'function') (chunk as () => void)();
       (cb as () => void)?.();
-      return out;
-    },
-    writeHead: vi.fn(),
-  };
-  return out as unknown as ServerResponse & { _statusCode: number; _headers: Record<string, string>; _body: string };
+    }
+    this.emit('finish');
+    return this;
+  }
+  writeHead = vi.fn();
+}
+
+function mockResponse(): MockResponseOut {
+  return new MockResponse() as unknown as MockResponseOut;
 }
 
 function next(): Connect.NextFunction {
@@ -255,6 +275,82 @@ describe('createRequestHandler', () => {
     expect(JSON.parse(res._body)).toEqual({ received: { name: 'test' } });
   });
 
+  it('passes raw string as body when POST body is invalid JSON', async () => {
+    let capturedBody: unknown;
+    const route = createTestRoute(
+      { method: 'post', pattern: 'items', params: [], file: '/api/items.post.ts' },
+      (ctx) => {
+        capturedBody = ctx.body;
+        return { received: ctx.body };
+      }
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [] });
+    const req = mockRequest({
+      method: 'POST',
+      url: `${API_BASE_PATH}/items`,
+      bodyChunks: ['not valid json {'],
+    });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(capturedBody).toBe('not valid json {');
+    expect(res._statusCode).toBe(200);
+    expect(JSON.parse(res._body)).toEqual({ received: 'not valid json {' });
+  });
+
+  it('parses query with many keys without crashing', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'search', params: [], file: '/api/search.get.ts' },
+      (ctx) => ({ q: ctx.query.q, keys: Object.keys(ctx.query).length })
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [] });
+    const query = new URLSearchParams({ q: 'x', a: '1', b: '2', c: '3' }).toString();
+    const req = mockRequest({ url: `${API_BASE_PATH}/search?${query}` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(200);
+    const body = JSON.parse(res._body);
+    expect(body.q).toBe('x');
+    expect(body.keys).toBe(4);
+  });
+
+  it('strips CRLF from response header values to prevent response splitting', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => ({
+        status: 200,
+        body: { ok: true },
+        headers: { 'X-Custom': 'safe\r\nEvil-Header: injected' },
+      })
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [] });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._headers['X-Custom']).toBe('safeEvil-Header: injected');
+    expect(res._headers['Evil-Header']).toBeUndefined();
+  });
+
+  it('returns 413 when body exceeds maxBodySize', async () => {
+    const route = createTestRoute(
+      { method: 'post', pattern: 'items', params: [], file: '/api/items.post.ts' },
+      () => ({ ok: true })
+    );
+    const handler = createRequestHandler({
+      routes: [route],
+      middlewares: [],
+      maxBodySize: 5,
+    });
+    const req = mockRequest({
+      method: 'POST',
+      url: `${API_BASE_PATH}/items`,
+      bodyChunks: ['12345', '67890'],
+    });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(413);
+    expect(JSON.parse(res._body)).toEqual({ error: 'Payload Too Large' });
+  });
+
   it('sends string body as-is when VitekResponse body is string', async () => {
     const route = createTestRoute(
       { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
@@ -265,6 +361,51 @@ describe('createRequestHandler', () => {
     const res = mockResponse();
     await handler(req, res, next());
     expect(res._body).toBe('<html>ok</html>');
+  });
+
+  it('pipes Readable stream body to response', async () => {
+    const streamBody = new Readable({
+      read() {
+        this.push('streamed ');
+        this.push('data');
+        this.push(null);
+      },
+    });
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => ({
+        status: 200,
+        headers: { 'Content-Type': 'text/plain' },
+        body: streamBody,
+      })
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [] });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    const finishPromise = new Promise<void>((resolve) => res.once('finish', resolve));
+    await handler(req, res, next());
+    await finishPromise;
+    expect(res._statusCode).toBe(200);
+    expect(res._headers['Content-Type']).toBe('text/plain');
+    expect(res._body).toBe('streamed data');
+  });
+
+  it('sends Cache-Control and other custom headers when present in VitekResponse', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => ({
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=60' },
+        body: { cached: true },
+      })
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [] });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(200);
+    expect(res._headers['Cache-Control']).toBe('max-age=60');
+    expect(JSON.parse(res._body)).toEqual({ cached: true });
   });
 
   it('returns 500 when handler throws generic error', async () => {
@@ -282,5 +423,177 @@ describe('createRequestHandler', () => {
     const body = JSON.parse(res._body);
     expect(body.error).toBe('Internal server error');
     expect(body.message).toContain('Something broke');
+  });
+
+  it('when onError is set and sends response, uses that status and body', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => {
+        throw new Error('Unavailable');
+      }
+    );
+    const handler = createRequestHandler({
+      routes: [route],
+      middlewares: [],
+      onError: (_err, _req, res) => {
+        res.statusCode = 503;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'Service Unavailable' }));
+      },
+    });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(503);
+    expect(JSON.parse(res._body)).toEqual({ error: 'Service Unavailable' });
+  });
+
+  it('when onError is set but does not end response, default 500 is sent', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => {
+        throw new Error('Oops');
+      }
+    );
+    const handler = createRequestHandler({
+      routes: [route],
+      middlewares: [],
+      onError: () => {
+        // does not call res.end()
+      },
+    });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(500);
+    expect(JSON.parse(res._body).error).toBe('Internal server error');
+  });
+
+  describe('CORS', () => {
+    it('with cors: true, OPTIONS request returns 204 and CORS headers', async () => {
+      const handler = createRequestHandler({ routes: [], middlewares: [], cors: true });
+      const req = mockRequest({ method: 'OPTIONS', url: `${API_BASE_PATH}/health` });
+      const res = mockResponse();
+      const nextFn = next();
+      await handler(req, res, nextFn);
+      expect(nextFn).not.toHaveBeenCalled();
+      expect(res._statusCode).toBe(204);
+      expect(res._headers['Access-Control-Allow-Origin']).toBe('*');
+      expect(res._body).toBe('');
+    });
+
+    it('with cors: true, GET request returns 200 with CORS headers', async () => {
+      const route = createTestRoute(
+        { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+        () => ({ ok: true })
+      );
+      const handler = createRequestHandler({ routes: [route], middlewares: [], cors: true });
+      const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+      const res = mockResponse();
+      await handler(req, res, next());
+      expect(res._statusCode).toBe(200);
+      expect(res._headers['Access-Control-Allow-Origin']).toBe('*');
+      expect(JSON.parse(res._body)).toEqual({ ok: true });
+    });
+
+    it('with cors: { origin: "https://example.com" }, allows that origin', async () => {
+      const route = createTestRoute(
+        { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+        () => ({ ok: true })
+      );
+      const handler = createRequestHandler({
+        routes: [route],
+        middlewares: [],
+        cors: { origin: 'https://example.com' },
+      });
+      const req = mockRequest({
+        url: `${API_BASE_PATH}/health`,
+        headers: { host: 'localhost', origin: 'https://example.com' },
+      });
+      const res = mockResponse();
+      await handler(req, res, next());
+      expect(res._statusCode).toBe(200);
+      expect(res._headers['Access-Control-Allow-Origin']).toBe('https://example.com');
+    });
+  });
+
+  describe('global middleware with pathPatterns', () => {
+    it('applies global middleware with pathPatterns; when middleware does not call next(), handler is not run', async () => {
+      let handlerRan = false;
+      const route = createTestRoute(
+        { method: 'get', pattern: 'protected/me', params: [], file: '/api/protected/me.get.ts' },
+        () => {
+          handlerRan = true;
+          return { user: 'me' };
+        }
+      );
+      const authMiddleware: LoadedMiddleware = {
+        basePattern: '',
+        pathPatterns: ['protected/*'],
+        middleware: [
+          async (_ctx, _next) => {
+            // short-circuit: do not call next()
+          },
+        ],
+      };
+      const handler = createRequestHandler({
+        routes: [route],
+        middlewares: [authMiddleware],
+      });
+      const req = mockRequest({ url: `${API_BASE_PATH}/protected/me` });
+      const res = mockResponse();
+      await handler(req, res, next());
+      expect(handlerRan).toBe(false);
+    });
+    it('does not apply global middleware with pathPatterns to non-matching route', async () => {
+      const route = createTestRoute(
+        { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+        () => ({ ok: true })
+      );
+      const authMiddleware: LoadedMiddleware = {
+        basePattern: '',
+        pathPatterns: ['protected/*'],
+        middleware: [async (_ctx, next) => next()],
+      };
+      const handler = createRequestHandler({
+        routes: [route],
+        middlewares: [authMiddleware],
+      });
+      const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+      const res = mockResponse();
+      await handler(req, res, next());
+      expect(res._statusCode).toBe(200);
+      expect(JSON.parse(res._body)).toEqual({ ok: true });
+    });
+  });
+
+  describe('proxy (trustProxy)', () => {
+    it('with trustProxy: true, sets context.url and context.clientIp from X-Forwarded-*', async () => {
+      let capturedContext: any;
+      const route = createTestRoute(
+        { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+        (ctx) => {
+          capturedContext = ctx;
+          return { url: ctx.url, clientIp: ctx.clientIp };
+        }
+      );
+      const handler = createRequestHandler({ routes: [route], middlewares: [], trustProxy: true });
+      const req = mockRequest({
+        url: `${API_BASE_PATH}/health`,
+        headers: {
+          host: 'localhost',
+          'x-forwarded-proto': 'https',
+          'x-forwarded-host': 'api.example.com',
+          'x-forwarded-for': '1.2.3.4',
+        },
+      });
+      const res = mockResponse();
+      await handler(req, res, next());
+      expect(res._statusCode).toBe(200);
+      const body = JSON.parse(res._body);
+      expect(body.url).toMatch(/^https:\/\/api\.example\.com\/api\/health/);
+      expect(body.clientIp).toBe('1.2.3.4');
+      expect(capturedContext.clientIp).toBe('1.2.3.4');
+    });
   });
 });

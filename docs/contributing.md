@@ -10,7 +10,19 @@ git checkout -b feat/your-new-feature
 
 ## 2. Make changes and test
 
-Make your changes and, if applicable, add or update tests. Test the plugin in a real app using **npm link**:
+Make your changes and, if applicable, add or update tests.
+
+**Before opening a PR**, the full check must pass. From the repo root run:
+
+```bash
+pnpm run check
+```
+
+This runs: install dependencies, build the plugin, unit tests, examples build-and-test, e2e test, and example benchmark. All of these must pass for your PR to be merged.
+
+A **pre-commit hook** (Husky) runs the same `pnpm run check` before each commit. If the check fails, the commit is aborted. A **commit-msg hook** (Husky + Commitlint) enforces [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `chore:`). After `pnpm i`, hooks are configured automatically via the `prepare` script.
+
+You can also test the plugin in a real app using **npm link**:
 
 **In the vitek-plugin project:**
 

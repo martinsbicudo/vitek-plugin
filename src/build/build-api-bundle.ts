@@ -16,6 +16,7 @@ export interface BuildApiBundleOptions {
   root: string;
   apiDir: string;
   outDir: string;
+  alias?: Record<string, string>;
 }
 
 /**
@@ -38,7 +39,8 @@ function generateEntryContent(
   scanResult.middlewares.forEach((mw, i) => {
     const rel = path.relative(entryDir, mw.path).replace(/\\/g, '/');
     const importPath = rel.startsWith('.') ? rel : `./${rel}`;
-    lines.push(`import mw_${i} from ${JSON.stringify(importPath)};`);
+    // Use namespace import so we can read both default and named export 'config' (for global pathPatterns)
+    lines.push(`import * as mw_${i}_ns from ${JSON.stringify(importPath)};`);
   });
 
   const routeEntries = scanResult.routes.map((parsed, i) => {
@@ -52,7 +54,11 @@ function generateEntryContent(
   lines.push('];');
 
   const mwEntries = scanResult.middlewares.map((mw, i) => {
-    return `  { basePattern: ${JSON.stringify(mw.basePattern)}, middleware: (() => { const m = mw_${i}; const fn = typeof m === 'function' || Array.isArray(m) ? m : (m.default ?? m.middleware); return Array.isArray(fn) ? fn : [fn]; })() }`;
+    const base = `  { basePattern: ${JSON.stringify(mw.basePattern)}, middleware: (() => { const m = mw_${i}_ns.default ?? mw_${i}_ns; const fn = typeof m === 'function' || Array.isArray(m) ? m : (m?.default ?? m?.middleware); return Array.isArray(fn) ? fn : [fn]; })()`;
+    if (mw.basePattern === '') {
+      return `${base}, pathPatterns: (() => { const c = mw_${i}_ns?.config; if (!c?.path) return undefined; const p = Array.isArray(c.path) ? c.path : [c.path]; return p.map((x) => String(x).replace(/^\\/api\\/?/, '').replace(/^\\/+|\\/+$/g, '')); })() }`;
+    }
+    return `${base} }`;
   });
   lines.push('');
   lines.push('const middlewares = [');
@@ -64,12 +70,39 @@ function generateEntryContent(
   return lines.join('\n');
 }
 
+function createAliasPlugin(root: string, alias: Record<string, string>): { name: string; setup: (build: unknown) => void } {
+  const entries = Object.entries(alias)
+    .filter(([, v]) => v != null && v !== '')
+    .sort(([a], [b]) => b.length - a.length);
+  return {
+    name: 'vitek-alias',
+    setup(build: unknown) {
+      if (entries.length === 0) return;
+      const b = build as { onResolve: (opts: { filter: RegExp }, fn: (args: { path: string }) => { path: string } | null) => void };
+      const filter = new RegExp('^(' + entries.map(([k]) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(/|$)');
+      b.onResolve({ filter }, (args) => {
+        const imp = args.path;
+        for (const [key, value] of entries) {
+          if (imp === key || imp.startsWith(key + '/')) {
+            const rest = imp.slice(key.length).replace(/^\//, '') || '';
+            const base = path.resolve(root, value, rest);
+            const withExt = ['.js', '.ts', '.mjs', '.cjs'].find((ext) => fs.existsSync(base + ext));
+            const resolved = withExt ? base + withExt : base;
+            return { path: resolved };
+          }
+        }
+        return null;
+      });
+    },
+  };
+}
+
 /**
  * Builds the API bundle and writes it to outDir/vitek-api.mjs
  * Returns the path to the written file, or null if skipped (no apiDir, no routes, or error)
  */
 export async function buildApiBundle(options: BuildApiBundleOptions): Promise<string | null> {
-  const { root, apiDir, outDir } = options;
+  const { root, apiDir, outDir, alias } = options;
 
   if (!fs.existsSync(apiDir)) {
     return null;
@@ -97,6 +130,7 @@ export async function buildApiBundle(options: BuildApiBundleOptions): Promise<st
     return null;
   }
 
+  const plugins = alias && Object.keys(alias).length > 0 ? [createAliasPlugin(root, alias)] : [];
   try {
     await esbuild.build({
       entryPoints: [tmpEntry],
@@ -105,6 +139,8 @@ export async function buildApiBundle(options: BuildApiBundleOptions): Promise<st
       platform: 'node',
       outfile: outFile,
       external: ['vitek-plugin'],
+      minify: true,
+      plugins,
     });
     return outFile;
   } finally {

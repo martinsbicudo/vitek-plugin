@@ -14,10 +14,28 @@ import { HttpError } from '../../shared/errors.js';
 import type { Route } from '../routing/route-types.js';
 import type { LoadedMiddleware } from '../middleware/get-applicable-middlewares.js';
 import type { SocketEmitter } from '../shared/vitek-app.js';
+import {
+  normalizeCorsOptions,
+  getCorsHeaders,
+  type NormalizedCorsOptions,
+} from './cors.js';
+import { getEffectiveRequest } from './proxy.js';
+
+/** Callback for beforeApiRequest hook. Call next() to continue, or send response and return without next() to short-circuit. */
+export type BeforeApiRequestHook = (
+  ctx: { req: IncomingMessage; res: ServerResponse; path: string; method: string },
+  next: () => void
+) => void | Promise<void>;
 
 export interface RequestHandlerOptions {
   routes: Route[];
   middlewares: LoadedMiddleware[];
+  /** Hooks called before each API request. Call next() to continue. */
+  beforeApiRequest?: BeforeApiRequestHook[];
+  /** Enable CORS. true or CorsOptions. When set, OPTIONS preflight and CORS headers on responses are handled. */
+  cors?: boolean | import('./cors.js').CorsOptions;
+  /** When true, trust X-Forwarded-* headers and set context.clientIp / effective url. */
+  trustProxy?: boolean;
   logger?: {
     routeMatched?(pattern: string, method: string): void;
     requestStart?(method: string, path: string): void;
@@ -27,15 +45,43 @@ export interface RequestHandlerOptions {
   };
   /** When provided, context.sockets is set so route handlers can emit to WebSocket clients. */
   shared?: { sockets: SocketEmitter };
+  /** Max request body size in bytes. When exceeded, responds with 413 Payload Too Large. Omit for no limit. */
+  maxBodySize?: number;
+  /** Called when a non-HttpError is thrown. May send a custom response; if res is not ended, default 500 JSON is sent. */
+  onError?: (err: Error, req: IncomingMessage, res: ServerResponse) => void | Promise<void>;
 }
 
 const noop = () => {};
 
-/**
- * Creates a Connect-style middleware that handles /api/* requests using the given routes and middlewares.
- */
+function sanitizeHeaderValue(value: string | number | string[]): string {
+  const s = Array.isArray(value)
+    ? value.map((v) => String(v).replace(/\r|\n/g, '')).join(', ')
+    : String(value).replace(/\r|\n/g, '');
+  return s;
+}
+
+function safeSetHeader(res: ServerResponse, key: string, value: string | number | string[]): void {
+  res.setHeader(key, sanitizeHeaderValue(value));
+}
+
+/** True if value is a Node.js Readable stream (has .pipe). Used for streaming response body. */
+function isReadableStream(value: unknown): value is NodeJS.ReadableStream {
+  return (
+    value != null &&
+    typeof value === 'object' &&
+    typeof (value as NodeJS.ReadableStream).pipe === 'function'
+  );
+}
+
+function applyCorsHeaders(res: ServerResponse, corsHeaders: Record<string, string>): void {
+  for (const [key, value] of Object.entries(corsHeaders)) {
+    safeSetHeader(res, key, value);
+  }
+}
+
 export function createRequestHandler(options: RequestHandlerOptions): (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => Promise<void> {
-  const { routes, middlewares, logger, shared } = options;
+  const { routes, middlewares, beforeApiRequest = [], cors, trustProxy = false, logger, shared, maxBodySize, onError } = options;
+  const corsOpts: NormalizedCorsOptions | null = cors != null ? normalizeCorsOptions(cors) : null;
   const logRouteMatched = logger?.routeMatched ?? noop;
   const logRequestStart = logger?.requestStart ?? noop;
   const logRequest = logger?.request ?? noop;
@@ -53,17 +99,32 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
     const requestMethod = req.method?.toLowerCase() || 'get';
     const requestPath = pathname;
 
+    const effective = getEffectiveRequest(req, trustProxy);
+    const requestUrl = effective.url || req.url;
+
+    if (corsOpts) {
+      const corsHeaders = getCorsHeaders(req, corsOpts);
+      applyCorsHeaders(res, corsHeaders);
+      if (req.method === 'OPTIONS') {
+        res.statusCode = 204;
+        res.end();
+        return;
+      }
+    }
+
     try {
-      const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      const url = new URL(requestUrl, 'http://localhost');
       const routePath = url.pathname.replace(API_BASE_PATH, '') || '/';
       const method = requestMethod;
 
+      const doHandleRequest = async () => {
       const match = matchRoute(routes, routePath, method);
 
       if (!match) {
         const duration = Date.now() - startTime;
         res.statusCode = 404;
-        res.setHeader('Content-Type', 'application/json');
+        safeSetHeader(res, 'Content-Type', 'application/json');
+        if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
         res.end(JSON.stringify({ error: 'Route not found' }));
         logRequest(requestMethod, requestPath, 404, duration);
         return;
@@ -82,12 +143,26 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         }
       });
 
+      const PAYLOAD_TOO_LARGE_SENTINEL = Symbol('PAYLOAD_TOO_LARGE');
       let body: unknown;
       if (['post', 'put', 'patch'].includes(method)) {
-        body = await new Promise((resolve) => {
+        body = await new Promise<unknown>((resolve, reject) => {
           const chunks: Buffer[] = [];
-          req.on('data', (chunk: Buffer) => chunks.push(chunk));
-          req.on('end', () => {
+          let totalSize = 0;
+          const onData = (chunk: Buffer) => {
+            if (maxBodySize != null) {
+              totalSize += chunk.length;
+              if (totalSize > maxBodySize) {
+                req.removeListener('data', onData);
+                req.removeListener('end', onEnd);
+                req.destroy();
+                reject(new Error('PAYLOAD_TOO_LARGE'));
+                return;
+              }
+            }
+            chunks.push(chunk);
+          };
+          const onEnd = () => {
             const rawBody = Buffer.concat(chunks).toString();
             if (!rawBody) {
               resolve(undefined);
@@ -98,13 +173,27 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
             } catch {
               resolve(rawBody);
             }
-          });
+          };
+          req.on('data', onData);
+          req.on('end', onEnd);
+        }).catch((err) => {
+          if (err?.message === 'PAYLOAD_TOO_LARGE') {
+            const duration = Date.now() - startTime;
+            res.statusCode = 413;
+            safeSetHeader(res, 'Content-Type', 'application/json');
+            if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
+            res.end(JSON.stringify({ error: 'Payload Too Large' }));
+            logRequest(requestMethod, requestPath, 413, duration);
+            return PAYLOAD_TOO_LARGE_SENTINEL;
+          }
+          throw err;
         });
+        if (body === PAYLOAD_TOO_LARGE_SENTINEL) return;
       }
 
       const context = createContext(
         {
-          url: req.url,
+          url: requestUrl,
           method,
           headers: (req.headers || {}) as Record<string, string>,
           body,
@@ -112,6 +201,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         match.params,
         query
       );
+      if (effective.clientIp) context.clientIp = effective.clientIp;
       if (shared?.sockets) {
         context.sockets = shared.sockets;
       }
@@ -124,28 +214,37 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         if (isVitekResponse(result)) {
           const response = result as VitekResponse;
           const statusCode = response.status || 200;
-
+          if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
           if (response.headers) {
             for (const [key, value] of Object.entries(response.headers)) {
-              res.setHeader(key, value);
+              safeSetHeader(res, key, value);
             }
           }
           if (!response.headers || !response.headers['Content-Type']) {
-            if (response.body !== undefined) {
-              res.setHeader('Content-Type', 'application/json');
+            if (response.body !== undefined && !isReadableStream(response.body)) {
+              safeSetHeader(res, 'Content-Type', 'application/json');
             }
           }
           res.statusCode = statusCode;
           if (response.body === undefined) {
             res.end();
+            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
+          } else if (isReadableStream(response.body)) {
+            const stream = response.body as NodeJS.ReadableStream;
+            res.once('finish', () =>
+              logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime)
+            );
+            stream.pipe(res as NodeJS.WritableStream);
           } else if (typeof response.body === 'string') {
             res.end(response.body);
+            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
           } else {
             res.end(JSON.stringify(response.body));
+            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
           }
-          logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
         } else {
-          res.setHeader('Content-Type', 'application/json');
+          if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
+          safeSetHeader(res, 'Content-Type', 'application/json');
           res.statusCode = 200;
           res.end(JSON.stringify(result));
           logRequest(requestMethod, requestPath, 200, Date.now() - startTime);
@@ -153,14 +252,30 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
       };
 
       await composed(context, handler);
+      };
+
+      if (beforeApiRequest.length > 0) {
+        for (const hook of beforeApiRequest) {
+          await new Promise<void>((resolve, reject) => {
+            let done = false;
+            const next = () => { if (!done) { done = true; resolve(); } };
+            Promise.resolve(hook({ req, res, path: routePath, method }, next))
+              .then(() => { if (!done && res.writableEnded) { done = true; resolve(); } })
+              .catch(reject);
+          });
+          if (res.writableEnded) return;
+        }
+      }
+      await doHandleRequest();
     } catch (error) {
       const duration = Date.now() - startTime;
 
+      if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
       if (error instanceof HttpError) {
         const httpError = error as HttpError;
         logWarn(`HTTP Error ${httpError.statusCode}: ${httpError.message}`);
         res.statusCode = httpError.statusCode;
-        res.setHeader('Content-Type', 'application/json');
+        safeSetHeader(res, 'Content-Type', 'application/json');
         res.end(
           JSON.stringify({
             error: httpError.name,
@@ -170,10 +285,18 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         );
         logRequest(requestMethod, requestPath, httpError.statusCode, duration);
       } else {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const err = error instanceof Error ? error : new Error(String(error));
+        if (onError) {
+          await Promise.resolve(onError(err, req, res));
+          if (res.writableEnded) {
+            logRequest(requestMethod, requestPath, res.statusCode, duration);
+            return;
+          }
+        }
+        const errorMessage = err.message;
         logError(`Error handling request: ${errorMessage}`);
         res.statusCode = 500;
-        res.setHeader('Content-Type', 'application/json');
+        safeSetHeader(res, 'Content-Type', 'application/json');
         res.end(
           JSON.stringify({
             error: 'Internal server error',

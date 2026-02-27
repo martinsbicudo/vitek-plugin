@@ -5,7 +5,7 @@ import { vitek } from 'vitek-plugin';
 export default defineConfig({
   plugins: [
     react(),
-    vitek(),
+    vitek({ trustProxy: true }),
   ],
 });
 

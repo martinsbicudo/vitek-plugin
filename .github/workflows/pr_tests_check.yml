@@ -30,6 +30,9 @@ jobs:
       - name: Run tests
         run: pnpm test
 
+      - name: Run vitek-mcp tests
+        run: cd packages/vitek-mcp && pnpm install --frozen-lockfile && pnpm test
+
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
@@ -37,3 +40,42 @@ jobs:
           name: coverage-report
           path: coverage/
           retention-days: 7
+
+  examples_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build plugin
+        run: pnpm run build
+
+      - name: Build and test examples
+        run: pnpm run examples:build-and-test
+        timeout-minutes: 10
+
+      - name: Run e2e test
+        run: pnpm run test:e2e
+        timeout-minutes: 3
+
+      - name: Run e2e WebSocket test
+        run: pnpm run test:e2e:socket
+        timeout-minutes: 3
+
+      - name: Run example benchmark
+        run: pnpm run example:bench
+        timeout-minutes: 5

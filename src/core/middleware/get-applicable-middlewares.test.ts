@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getApplicableMiddlewares, type LoadedMiddleware } from './get-applicable-middlewares.js';
+import { getApplicableMiddlewares, matchPathPattern, type LoadedMiddleware } from './get-applicable-middlewares.js';
 import type { Middleware } from '../routing/route-types.js';
 
 function noopMiddleware(): Middleware {
@@ -80,5 +80,44 @@ describe('getApplicableMiddlewares', () => {
       { basePattern: 'posts', middleware: [mw1, mw2] },
     ];
     expect(getApplicableMiddlewares(middlewares, 'posts/1')).toEqual([mw1, mw2]);
+  });
+
+  describe('global middleware with pathPatterns', () => {
+    it('applies only to routes matching pathPatterns when set', () => {
+      const globalMw = noopMiddleware();
+      const middlewares: LoadedMiddleware[] = [
+        { basePattern: '', middleware: [globalMw], pathPatterns: ['protected/*', 'admin'] },
+      ];
+      expect(getApplicableMiddlewares(middlewares, 'protected')).toEqual([globalMw]);
+      expect(getApplicableMiddlewares(middlewares, 'protected/1')).toEqual([globalMw]);
+      expect(getApplicableMiddlewares(middlewares, 'admin')).toEqual([globalMw]);
+      expect(getApplicableMiddlewares(middlewares, 'admin/users')).toEqual([globalMw]);
+      expect(getApplicableMiddlewares(middlewares, 'posts')).toEqual([]);
+      expect(getApplicableMiddlewares(middlewares, 'health')).toEqual([]);
+    });
+
+    it('global without pathPatterns still applies to all routes', () => {
+      const globalMw = noopMiddleware();
+      const middlewares: LoadedMiddleware[] = [
+        { basePattern: '', middleware: [globalMw] },
+      ];
+      expect(getApplicableMiddlewares(middlewares, 'posts')).toEqual([globalMw]);
+      expect(getApplicableMiddlewares(middlewares, 'any/route')).toEqual([globalMw]);
+    });
+  });
+});
+
+describe('matchPathPattern', () => {
+  it('matches exact pattern', () => {
+    expect(matchPathPattern('admin', 'admin')).toBe(true);
+    expect(matchPathPattern('admin/users', 'admin')).toBe(true);
+    expect(matchPathPattern('posts', 'admin')).toBe(false);
+  });
+
+  it('matches glob pattern with /*', () => {
+    expect(matchPathPattern('protected', 'protected/*')).toBe(true);
+    expect(matchPathPattern('protected/1', 'protected/*')).toBe(true);
+    expect(matchPathPattern('protected/1/2', 'protected/*')).toBe(true);
+    expect(matchPathPattern('posts', 'protected/*')).toBe(false);
   });
 });

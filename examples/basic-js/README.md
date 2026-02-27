@@ -11,6 +11,9 @@ Basic example demonstrating the use of Vitek in pure JavaScript, without framewo
 - ✅ **Query parameters**: Query params demonstration
 - ✅ **HTTP methods**: GET and POST
 - ✅ **WebSocket**: chat.socket.js at /ws/chat
+- ✅ **CORS**: Enabled via `cors: true` in vite.config.js
+- ✅ **Custom error handler**: `onError` in vite.config.js for dev
+- ✅ **Cache headers**: `GET /api/cache` uses `cacheControl(60)` from vitek-plugin
 
 ## Structure
 
@@ -18,6 +21,7 @@ Basic example demonstrating the use of Vitek in pure JavaScript, without framewo
 src/
   └── api/                    # API file-based
       ├── health.get.js       # GET /api/health
+      ├── cache.get.js        # GET /api/cache (Cache-Control: max-age=60)
       ├── users/
       │   └── [id].get.js     # GET /api/users/:id
       ├── chat.socket.js      # WS /ws/chat
@@ -57,6 +61,7 @@ Visit `http://localhost:5173` to see the HTML page with endpoint documentation.
 ## Endpoints
 
 - `GET /api/health` - Health check
+- `GET /api/cache` - Cached response (Cache-Control: max-age=60)
 - `WS /ws/chat` - WebSocket (echo)
 - `GET /api/users/:id` - Get user by ID
 - `GET /api/posts?limit=5&offset=0` - List posts (with query params)
@@ -127,6 +132,10 @@ This is the simplest example and demonstrates:
 - **js-react**: Example with React in JavaScript (without TypeScript)
 - **typescript-react**: Complete example with TypeScript and React, showing all features
 - **docker**: TypeScript + React with Docker and docker-compose (pnpm)
+
+## Production and CORS
+
+For production, run `pnpm build` then `pnpm start` (vitek-serve). If your frontend is on another origin, enable CORS in `vite.config.js`: `vitek({ cors: true })` or `cors: { origin: 'https://your-app.com' }`. When behind a reverse proxy (nginx, Caddy), use `trustProxy: true` or `vitek-serve --trust-proxy` so the API sees the correct client IP and URL.
 
 ## When to Use This Example
 

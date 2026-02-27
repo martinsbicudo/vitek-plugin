@@ -15,4 +15,4 @@ yarn add vitek-plugin
 - **Vite** ^5.0.0
 - **Node.js** 18+ (for development)
 
-Your project must use Vite as the build tool. Add the plugin in your Vite config as shown in [Getting Started](/guide/getting-started).
+Your project must use Vite as the build tool. Add the plugin in your Vite config as shown in [Getting Started](/guide/getting-started). After installing, you can run `npx vitek init` to scaffold `src/api` and add vitek to your config (see [Getting Started](/guide/getting-started#quick-start-with-npx-vitek-init)).

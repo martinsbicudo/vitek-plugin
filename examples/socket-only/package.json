@@ -6,10 +6,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "vitek-serve"
+    "start": "vitek-serve",
+    "test": "vitest run"
   },
   "devDependencies": {
     "vite": "^5.0.0",
-    "vitek-plugin": "file:../.."
+    "vitek-plugin": "file:../..",
+    "vitest": "^4.0.0"
   }
 }

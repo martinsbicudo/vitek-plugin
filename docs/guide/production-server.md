@@ -52,19 +52,121 @@ npm start
 
 The server listens at `http://localhost:3000` by default.
 
+## Environment variables
+
+If you do not pass `--port` or `--host`, vitek-serve uses `process.env.PORT` and `process.env.HOST` when set (e.g. on Heroku, Railway). CLI flags override env.
+
+```bash
+PORT=8080 HOST=0.0.0.0 pnpm start
+```
+
 ## Options
 
-| Option   | Default   | Description                                      |
-| -------- | --------- | ------------------------------------------------ |
-| `--dir`  | `dist`    | Directory to serve (relative to current directory) |
-| `--port` | `3000`    | Port to listen on                                |
-| `--host` | `0.0.0.0` | Host to bind to                                  |
+| Option           | Default   | Description                                                                 |
+| ---------------- | --------- | --------------------------------------------------------------------------- |
+| `--dir`          | `dist`    | Directory to serve (relative to current directory)                          |
+| `--port`         | `3000`    | Port to listen on                                                           |
+| `--host`         | `0.0.0.0` | Host to bind to                                                             |
+| `--cors`         | off       | Enable CORS (permissive `*` origin) for the API                             |
+| `--trust-proxy`  | off       | Trust `X-Forwarded-*` headers (use when behind nginx, Caddy, or similar)     |
 
 Examples:
 
 ```bash
 vitek-serve --port 8080
 vitek-serve --dir=dist --port 3000 --host 127.0.0.1
+vitek-serve --trust-proxy   # when behind a reverse proxy (correct client IP and URL)
+vitek-serve --cors          # enable CORS for the API
+```
+
+## Production config (vitek.config.mjs)
+
+To run **beforeApiRequest** or **onError** hooks in production, add a config file that vitek-serve will load from the output directory:
+
+- **Path:** `dist/vitek.config.mjs` (or `dist/vitek.config.js`). The file must be in the same directory you pass to `--dir` (default `dist`).
+
+**Exports from vitek.config.mjs:**
+
+| Export               | Type / signature                                      | Description |
+| -------------------- | ----------------------------------------------------- | ----------- |
+| `beforeApiRequest`   | `(ctx, next) => void` or array of such functions       | Run before each API request (e.g. auth, logging). Same as plugin option. |
+| `onError`            | `(err, req, res) => void \| Promise<void>`            | Custom error handler when a non-HttpError is thrown. Same as plugin option. |
+| `onServerStart`      | `(ctx: { api, sockets?, server }) => void`             | Called once before the server listens. See [Lifecycle hooks](#lifecycle-hooks-onserverstart--onservershutdown). |
+| `onServerShutdown`   | `() => void \| Promise<void>`                          | Called on SIGTERM/SIGINT before the server closes. |
+| `maxBodySize`        | `number`                                               | Max request body size in bytes (413 when exceeded). See [Security](/guide/security#request-body-limit). |
+
+Example `vitek.config.mjs` in your project root, and ensure it is **copied to `dist/`** during build (e.g. via Vite’s `publicDir` or a copy step):
+
+```javascript
+// dist/vitek.config.mjs (or build so this file ends up in dist/)
+export function beforeApiRequest(ctx, next) {
+  // e.g. auth, logging
+  next();
+}
+
+export function onError(err, req, res) {
+  res.statusCode = 503;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({ error: 'Service Unavailable' }));
+}
+```
+
+If the file is missing or fails to load, vitek-serve continues without these hooks and logs a warning.
+
+## Lifecycle hooks (onServerStart / onServerShutdown)
+
+You can run logic when the server starts or when it is shutting down (e.g. SIGTERM, SIGINT) by exporting **`onServerStart`** and optionally **`onServerShutdown`** from `dist/vitek.config.mjs`.
+
+### onServerStart(ctx)
+
+Called once **before** the server starts listening. Use it to start timers, cron jobs, or other in-process scheduled work. The server is not accepting connections yet; use `setInterval` or `node-cron` so that when the callback runs, the server is already up (and `ctx.api.fetch()` will work if you call your API from the callback).
+
+**Context:**
+
+| Property  | Type             | Description                                                                 |
+| --------- | ---------------- | --------------------------------------------------------------------------- |
+| `api`     | `ApiClient`      | Internal client to call your REST API (e.g. `ctx.api.fetch('/api/jobs/run')`) |
+| `sockets` | `SocketEmitter`  | Emit to WebSocket clients (e.g. `ctx.sockets.emit('chat', data)`)           |
+| `server`  | `http.Server`    | The HTTP server instance (for cleanup or low-level use)                     |
+
+**Example – cron in-process with setInterval:**
+
+```javascript
+// dist/vitek.config.mjs
+export function onServerStart({ api, server }) {
+  const interval = setInterval(async () => {
+    await api.fetch('/api/jobs/cleanup', { method: 'POST' });
+  }, 60_000);
+  server.on('close', () => clearInterval(interval));
+}
+```
+
+**Example – with node-cron (optional dependency):**
+
+```javascript
+// dist/vitek.config.mjs
+import cron from 'node-cron';
+
+export function onServerStart({ api }) {
+  cron.schedule('0 * * * *', () => api.fetch('/api/jobs/hourly', { method: 'POST' }));
+}
+```
+
+### onServerShutdown()
+
+Called when the process receives SIGTERM or SIGINT (e.g. Ctrl+C, container stop). Use it to clear timers, close database connections, or flush buffers. After the hook runs (or if it throws), vitek-serve closes the server and exits.
+
+```javascript
+// dist/vitek.config.mjs
+let intervalId;
+
+export function onServerStart() {
+  intervalId = setInterval(() => {}, 5000);
+}
+
+export function onServerShutdown() {
+  if (intervalId) clearInterval(intervalId);
+}
 ```
 
 ## When the API is not available

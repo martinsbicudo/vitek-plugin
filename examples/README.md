@@ -182,6 +182,30 @@ File-based routes with Prisma for database access. No framework—pure API.
 
 ---
 
+### [rate-limit](./rate-limit/)
+
+**In-memory rate limiting via plugin**
+
+Minimal example using a `beforeApiRequest` plugin to limit requests per IP (10 per minute). See [Plugin API – Recipes (rate limiting)](../docs/guide/plugin-api.md#rate-limiting-in-memory-by-ip).
+
+**Key Features:**
+
+- ✅ Pure JavaScript
+- ✅ Rate limit plugin (429 after limit)
+- ✅ Single route: GET /api/health
+
+**Best for:**
+
+- Learning how to add rate limiting with a plugin
+- Reference for in-memory rate limiting (production: use Redis or proxy)
+
+**Tech Stack:**
+
+- JavaScript
+- Vite
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -231,23 +255,19 @@ pnpm build
 
 ## 📊 Comparison Table
 
-| Feature                | socket-only     | basic-js       | js-react       | typescript-react | docker         |
-| ---------------------- | --------------- | -------------- | -------------- | ---------------- | -------------- |
-| **Focus**              | WebSockets only | HTTP + Sockets | HTTP + Sockets | HTTP + Sockets   | HTTP + Sockets |
-| **Language**           | JavaScript      | JavaScript     | JavaScript     | TypeScript       | TypeScript     |
-| **Framework**          | None            | None           | React          | React            | React          |
-| **Type Safety**        | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **Response Helpers**   | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **Error Classes**      | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **Validation**         | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **Generated Types**    | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **Generated Services** | ✅ (socket)     | ✅ (JS)        | ✅ (JS)        | ✅ (TS)          | ✅ (TS)        |
-| **Middlewares**        | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **HTTP Methods**       | None            | GET, POST      | GET, POST      | All methods      | All methods    |
-| **Docker**             | ❌              | ❌             | ❌             | ❌               | ✅             |
-| **WebSockets**         | ✅              | ✅             | ✅             | ✅               | ✅             |
-| **Complexity**         | ⭐              | ⭐             | ⭐⭐           | ⭐⭐⭐           | ⭐⭐⭐         |
-| **Best For**           | WebSockets      | Learning       | React (JS)     | Production       | Docker         |
+| Feature                | socket-only     | basic-js       | js-react       | typescript-react | import-external | api-docs   | prisma     | docker     | rate-limit   |
+| ---------------------- | --------------- | -------------- | -------------- | ---------------- | -------------- | ---------- | ---------- | ---------- | ------------ |
+| **Focus**              | WebSockets only | HTTP + Sockets | HTTP + Sockets | HTTP + Sockets   | External libs  | OpenAPI    | Prisma DB  | Docker     | Rate limit   |
+| **Language**           | JavaScript      | JavaScript     | JavaScript     | TypeScript       | TypeScript     | TypeScript | TypeScript | TypeScript | JavaScript  |
+| **Framework**          | None            | None           | React          | React            | None           | None       | None       | React      | None        |
+| **Type Safety**        | ❌              | ❌             | ❌             | ✅               | ✅             | ✅         | ✅         | ✅         | ❌          |
+| **OpenAPI**            | ❌              | ❌             | ❌             | ❌               | ❌             | ✅         | ✅         | ❌         | ❌          |
+| **Database**           | ❌              | ❌             | ❌             | ❌               | ❌             | ❌         | ✅ Prisma  | ❌         | ❌          |
+| **Generated Services** | ✅ (socket)     | ✅ (JS)        | ✅ (JS)        | ✅ (TS)          | ✅ (TS)        | ✅ (TS)    | ✅ (TS)    | ✅ (TS)    | ✅ (JS)     |
+| **Docker**             | ❌              | ❌             | ❌             | ❌               | ❌             | ❌         | ❌         | ✅         | ❌          |
+| **WebSockets**         | ✅              | ✅             | ✅             | ✅               | ❌             | ❌         | ❌         | ✅         | ❌          |
+| **Complexity**         | ⭐              | ⭐             | ⭐⭐           | ⭐⭐⭐           | ⭐⭐           | ⭐⭐        | ⭐⭐⭐      | ⭐⭐⭐     | ⭐          |
+| **Best For**           | WebSockets      | Learning       | React (JS)     | Production       | Shared libs    | API docs   | DB-backed  | Docker     | Rate limit  |
 
 ---
 
@@ -280,11 +300,44 @@ pnpm build
 - You need all Vitek features
 - You want the complete reference implementation
 
+### Use `import-external` if:
+
+- You want to import shared code from outside `src/api`
+- You're structuring libs or shared utilities
+- You need to see how external imports work with Vitek
+
+### Use `api-docs` if:
+
+- You want OpenAPI/Swagger documentation
+- You're building API-first or documenting your API
+- You need the minimal setup for API docs
+
+### Use `prisma` if:
+
+- You're building a REST API with a database
+- You want to see Vitek + Prisma + SQLite
+- You need a backend-only example without frontend
+
 ### Use `docker` if:
 
 - You want to run the app in a container
 - You're standardizing on Docker
 - You need containerized dev or CI
+
+### Use `rate-limit` if:
+
+- You want to add in-memory rate limiting via a plugin
+- You need a reference for `beforeApiRequest` with 429 responses
+- You're evaluating rate limiting before moving to Redis or proxy
+
+### Additional examples
+
+- **[validation-only](./validation-only/)** — `validateBody` and 422 on invalid body
+- **[error-handling](./error-handling/)** — custom `onError` and route that throws
+- **[cors](./cors/)** — CORS with restricted origin, methods, headers
+- **[minimal-ts](./minimal-ts/)** — minimal TypeScript, one GET route, no React
+- **[buildApi-false](./buildApi-false/)** — API only in dev, no bundle in `dist/`
+- **[alias](./alias/)** — `alias: { '@lib': 'src/lib' }` in routes
 
 ---
 
@@ -342,6 +395,13 @@ Nos exemplos usamos `vitek-serve`; é necessário rodar `pnpm build` na raiz do 
 - [docker README](./docker/README.md) - TypeScript + React with Docker and docker-compose (pnpm)
 - [api-docs README](./api-docs/README.md) - API docs (REST + WebSockets)
 - [prisma README](./prisma/README.md) - Prisma ORM + SQLite
+- [rate-limit README](./rate-limit/README.md) - In-memory rate limiting via plugin
+- [validation-only README](./validation-only/README.md) - validateBody and 422
+- [error-handling README](./error-handling/README.md) - onError and thrown errors
+- [cors README](./cors/README.md) - CORS options
+- [minimal-ts README](./minimal-ts/README.md) - Minimal TypeScript
+- [buildApi-false README](./buildApi-false/README.md) - buildApi: false
+- [alias README](./alias/README.md) - alias option
 
 ---
 

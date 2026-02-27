@@ -17,6 +17,8 @@ export type {
   Middleware,
   RouteMatch,
 } from './core/routing/route-types.js';
+export type { ParsedRoute } from './core/routing/route-parser.js';
+export type { ParsedSocket } from './core/routing/socket-parser.js';
 
 export type { VitekSocketContext } from './core/socket/socket-handler.js';
 
@@ -36,6 +38,10 @@ export {
   tooManyRequests,
   internalServerError,
   redirect,
+  text,
+  html,
+  cacheControl,
+  noStore,
 } from './shared/response-helpers.js';
 
 export {
@@ -59,6 +65,16 @@ export {
 } from './core/validation/validator.js';
 export type { ValidationSchema, ValidationRule, ValidationResult } from './core/validation/types.js';
 
+export {
+  getManifest,
+  getRoutes,
+  getSockets,
+  writeManifest,
+} from './core/introspection/manifest.js';
+export type { VitekManifest } from './core/introspection/manifest.js';
+
 export type { OpenApiOptions, OpenApiInfo, OpenApiServer } from './core/openapi/generate.js';
 export type { AsyncApiOptions, AsyncApiInfo } from './core/asyncapi/generate.js';
+
+export type { VitekPlugin, AfterTypesGeneratedContext, BeforeApiRequestContext } from './plugin/plugin-api.js';
 

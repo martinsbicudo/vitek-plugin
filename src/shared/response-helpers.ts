@@ -129,3 +129,51 @@ export function redirect(
     body: undefined,
   };
 }
+
+/**
+ * Creates a plain text response (Content-Type: text/plain).
+ */
+export function text(body: string, status: number = 200): VitekResponse {
+  return {
+    status,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    body,
+  };
+}
+
+/**
+ * Creates an HTML response (Content-Type: text/html).
+ */
+export function html(body: string, status: number = 200): VitekResponse {
+  return {
+    status,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    body,
+  };
+}
+
+/**
+ * Cache-Control header helpers. Merge returned headers into your response, e.g.:
+ * `{ ...ok(body), headers: { ...ok(body).headers, ...cacheControl(60) } }`
+ */
+export function cacheControl(
+  maxAgeSeconds: number,
+  options?: { staleWhileRevalidate?: number; private?: boolean }
+): Record<string, string> {
+  const parts = [`max-age=${maxAgeSeconds}`];
+  if (options?.staleWhileRevalidate != null) {
+    parts.push(`stale-while-revalidate=${options.staleWhileRevalidate}`);
+  }
+  if (options?.private === true) {
+    parts.push('private');
+  }
+  return { 'Cache-Control': parts.join(', ') };
+}
+
+/**
+ * Returns headers to disable caching. Merge into response headers, e.g.:
+ * `{ ...ok(body), headers: { ...ok(body).headers, ...noStore() } }`
+ */
+export function noStore(): Record<string, string> {
+  return { 'Cache-Control': 'no-store' };
+}
