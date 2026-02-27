@@ -318,6 +318,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@jridgewell/sourcemap-codec@1.5.5':
+    resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
+
   '@prisma/client@6.19.2':
     resolution: {integrity: sha512-gR2EMvfK/aTxsuooaDA32D8v+us/8AAet+C3J1cc04SW35FPdZYgLF+iN4NDLUgAaUGTKdAB0CYenu1TAgGdMg==}
     engines: {node: '>=18.18'}
@@ -610,6 +613,9 @@ packages:
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
+
+  magic-string@0.30.21:
+    resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
   mime@1.6.0:
     resolution: {integrity: sha512-x0Vn8spI+wuJ1O6S7gnbaQg8Pxh4NNHb7KSINmEWKiPE4RKOplvijn+NkmYmmRgP68mc70j2EbeTFRsrswaQeg==}
@@ -937,6 +943,8 @@ snapshots:
   '@esbuild/win32-x64@0.24.2':
     optional: true
 
+  '@jridgewell/sourcemap-codec@1.5.5': {}
+
   '@prisma/client@6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)':
     optionalDependencies:
       prisma: 6.19.2(typescript@5.9.3)
@@ -1224,6 +1232,10 @@ snapshots:
 
   jiti@2.6.1: {}
 
+  magic-string@0.30.21:
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.5.5
+
   mime@1.6.0: {}
 
   ms@2.0.0: {}
@@ -1381,6 +1393,7 @@ snapshots:
     dependencies:
       connect: 3.7.0
       esbuild: 0.24.2
+      magic-string: 0.30.21
       serve-static: 1.16.3
       vite: 5.4.21(@types/node@20.19.35)
       ws: 8.19.0

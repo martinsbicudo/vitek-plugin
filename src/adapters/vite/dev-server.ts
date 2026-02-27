@@ -54,6 +54,8 @@ export interface ViteDevServerOptions {
   sockets?: boolean;
   /** Base path for WebSocket endpoints (e.g. /api/ws). Default from constants. */
   socketBasePath?: string;
+  /** Callback when types/services/OpenAPI generation fails. */
+  onGenerationError?: (error: Error) => void;
 }
 
 /**
@@ -228,11 +230,12 @@ class DevServerState {
           info: (m) => this.options.logger.info(m),
           warn: (m) => this.options.logger.warn(m),
         },
+        onGenerationError: this.options.onGenerationError,
       });
     } catch (error) {
-      this.options.logger.error(
-        `Failed to generate types: ${error instanceof Error ? error.message : String(error)}`
-      );
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.options.logger.error(`Failed to generate types: ${err.message}`);
+      this.options.onGenerationError?.(err);
     }
   }
   

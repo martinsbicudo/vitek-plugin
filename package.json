@@ -24,7 +24,8 @@
         "docs:preview": "vitepress preview docs",
         "test": "vitest run",
         "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage",
+    "examples:build": "bash examples/build-all.sh"
     },
     "keywords": [
         "vite",
@@ -46,8 +47,9 @@
     "peerDependencies": {
         "vite": "^5.0.0"
     },
-    "dependencies": {
-        "connect": "^3.7.0",
+"dependencies": {
+    "connect": "^3.7.0",
+    "magic-string": "^0.30.0",
         "esbuild": "^0.24.0",
         "serve-static": "^1.16.0",
         "ws": "^8.18.0"

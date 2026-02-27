@@ -34,8 +34,8 @@ importers:
         specifier: ^5.0.0
         version: 5.4.21(@types/node@25.2.3)
       vitek-plugin:
-        specifier: 0.1.2-beta
-        version: 0.1.2-beta(vite@5.4.21(@types/node@25.2.3))
+        specifier: 0.1.2-beta.5
+        version: 0.1.2-beta.5(vite@5.4.21(@types/node@25.2.3))
 
 packages:
 
@@ -862,11 +862,23 @@ packages:
       terser:
         optional: true
 
-  vitek-plugin@0.1.2-beta:
-    resolution: {integrity: sha512-tYtZUdHGcoCatsa3hv/QTdjwwQENsHv4sMwc8MWdHvPMAOBScYGkrkHt/pxHtX6f7oDDk4UNVoMIAjwlV4CJWw==}
+  vitek-plugin@0.1.2-beta.5:
+    resolution: {integrity: sha512-JxWAZ7h+qL0M+XkQQa8rSLFDyQ/lHw9PO5JoZ6TNCVshkZ5fEXCvFKzZQZDGnldDTaKZYExzEKqEUluWEYYGIw==}
     hasBin: true
     peerDependencies:
       vite: ^5.0.0
+
+  ws@8.19.0:
+    resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
 
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
@@ -1562,13 +1574,18 @@ snapshots:
       '@types/node': 25.2.3
       fsevents: 2.3.3
 
-  vitek-plugin@0.1.2-beta(vite@5.4.21(@types/node@25.2.3)):
+  vitek-plugin@0.1.2-beta.5(vite@5.4.21(@types/node@25.2.3)):
     dependencies:
       connect: 3.7.0
       esbuild: 0.24.2
       serve-static: 1.16.3
       vite: 5.4.21(@types/node@25.2.3)
+      ws: 8.19.0
     transitivePeerDependencies:
+      - bufferutil
       - supports-color
+      - utf-8-validate
+
+  ws@8.19.0: {}
 
   yallist@3.1.1: {}

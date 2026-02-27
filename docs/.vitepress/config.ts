@@ -34,6 +34,7 @@ export default defineConfig({
           { text: 'Getting Started', link: '/guide/getting-started' },
           { text: 'Installation', link: '/guide/installation' },
           { text: 'File Structure', link: '/guide/file-structure' },
+          { text: 'Relative Imports', link: '/guide/imports' },
           { text: 'Routing', link: '/guide/routing' },
           { text: 'Middlewares', link: '/guide/middlewares' },
           { text: 'Response Handling', link: '/guide/response-handling' },

@@ -38,6 +38,7 @@ export default defineConfig({
 | `logging.level`                | `'debug' \| 'info' \| 'warn' \| 'error'` | `'info'`    | Minimum log level to display                                                                                                                                                                                                                               |
 | `logging.enableRequestLogging` | `boolean`                                | `false`     | Log every HTTP request (start `[METHOD] /path →` and end `[METHOD] /path 200 (5ms)`) and WebSocket events (`[WS] connected`, `[WS] disconnected`, `[WS] received`, `[WS] emitted`). See [WebSockets](/guide/websockets#logging-request-and-socket-events). |
 | `logging.enableRouteLogging`   | `boolean`                                | `true`      | Log when a route is matched (debug level)                                                                                                                                                                                                                  |
+| `onGenerationError`            | `(error: Error) => void`                 | `undefined` | Callback when types/services/OpenAPI generation fails. Use for error reporting (e.g. Sentry) or custom handling. See [Relative Imports](/guide/imports) for context.                                                                                         |
 
 ## Preview and production
 

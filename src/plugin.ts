@@ -6,6 +6,7 @@
 import type { Plugin } from 'vite';
 import * as path from 'path';
 import * as fs from 'fs';
+import MagicString from 'magic-string';
 import { pathToFileURL, fileURLToPath } from 'url';
 import { createViteDevServerMiddleware } from './adapters/vite/dev-server.js';
 import { createViteLogger } from './adapters/vite/logger.js';
@@ -42,6 +43,8 @@ export interface VitekOptions {
   openApi?: OpenApiOptions | boolean;
   /** Enable WebSocket sockets (default: true). Set to false to disable, or { path: '/ws' } to customize base path. */
   sockets?: boolean | { path?: string };
+  /** Callback when types/services/OpenAPI generation fails. Receives the error. */
+  onGenerationError?: (error: Error) => void;
 }
 
 /**
@@ -86,9 +89,12 @@ export function vitek(options: VitekOptions = {}): Plugin {
           socketBasePath,
           openApi: options.openApi,
           serverPort: 5173,
+          onGenerationError: options.onGenerationError,
         });
       } catch (err) {
-        console.error('[vitek] Failed to generate types/services:', err instanceof Error ? err.message : err);
+        const error = err instanceof Error ? err : new Error(String(err));
+        console.error('[vitek] Failed to generate types/services:', error.message);
+        options.onGenerationError?.(error);
       }
     },
 
@@ -118,6 +124,7 @@ export function vitek(options: VitekOptions = {}): Plugin {
     },
 
     transform(code, id) {
+      if (id.includes('node_modules') || !/\.(tsx?|jsx?|mjs)$/.test(id)) return null;
       const idPath = id.startsWith('file:') ? fileURLToPath(id) : id;
       const srcDir = path.resolve(root, 'src');
       const virtualCandidate = idPath.startsWith('/') ? path.join(root, idPath.replace(/^\//, '')) : null;
@@ -127,26 +134,33 @@ export function vitek(options: VitekOptions = {}): Plugin {
       if (!normalizedId.startsWith(srcDir)) return null;
       const dir = path.dirname(normalizedId);
       const rootSlash = path.resolve(root) + path.sep;
-      const rewritten = code.replace(
-        /from\s+['"](\.\.?[^'"]+)['"]/g,
-        (match, specifier: string) => {
-          const resolved = path.resolve(dir, specifier);
-          if (!resolved.startsWith(rootSlash)) return match;
-          let target = resolved;
-          if (!fs.existsSync(target)) {
-            const ext = ['.ts', '.tsx', '.mts', '.js', '.jsx', '.mjs'].find((e) =>
-              fs.existsSync(target + e)
-            );
-            if (ext) target += ext;
-          }
-          if (!fs.existsSync(target)) return match;
-          const rootRelative = path.relative(root, target).replace(/\\/g, '/');
-          const newSpecifier = `/${rootRelative}`;
-          const quote = match.includes('"') ? '"' : "'";
-          return `from ${quote}${newSpecifier}${quote}`;
+      const relImportRe = /from\s+['"](\.\.?[^'"]+)['"]/g;
+      let match: RegExpExecArray | null;
+      const s = new MagicString(code);
+      let hasChanges = false;
+      while ((match = relImportRe.exec(code)) !== null) {
+        const specifier = match[1];
+        const resolved = path.resolve(dir, specifier);
+        if (!resolved.startsWith(rootSlash)) continue;
+        let target = resolved;
+        if (!fs.existsSync(target)) {
+          const ext = ['.ts', '.tsx', '.mts', '.js', '.jsx', '.mjs'].find((e) =>
+            fs.existsSync(target + e)
+          );
+          if (ext) target += ext;
         }
-      );
-      return rewritten !== code ? { code: rewritten, map: null } : null;
+        if (!fs.existsSync(target)) continue;
+        const rootRelative = path.relative(root, target).replace(/\\/g, '/');
+        const newSpecifier = `/${rootRelative}`;
+        const quote = match[0].includes('"') ? '"' : "'";
+        s.overwrite(match.index, match.index + match[0].length, `from ${quote}${newSpecifier}${quote}`);
+        hasChanges = true;
+      }
+      if (!hasChanges) return null;
+      return {
+        code: s.toString(),
+        map: s.generateMap({ hires: 'boundary' }),
+      };
     },
 
     async configureServer(server) {
@@ -174,6 +188,7 @@ export function vitek(options: VitekOptions = {}): Plugin {
         openApi: options.openApi,
         sockets: socketsEnabled,
         socketBasePath,
+        onGenerationError: options.onGenerationError,
       });
 
       cleanupFn = cleanup;

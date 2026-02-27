@@ -48,6 +48,8 @@ export interface RunFileGenerationOptions {
     info?: (message: string) => void;
     warn?: (message: string) => void;
   };
+  /** Callback when generation fails (e.g. OpenAPI). Does not run for types/services write errors. */
+  onGenerationError?: (error: Error) => void;
 }
 
 export async function runFileGeneration(options: RunFileGenerationOptions): Promise<void> {
@@ -66,6 +68,7 @@ export async function runFileGeneration(options: RunFileGenerationOptions): Prom
   const logServices = logger?.servicesGenerated ?? (() => {});
   const logInfo = logger?.info ?? (() => {});
   const logWarn = logger?.warn ?? (() => {});
+  const onGenerationError = options.onGenerationError;
 
   const isTypeScript = isTypeScriptProject(root);
   const srcDir = path.join(root, 'src');
@@ -131,9 +134,9 @@ export async function runFileGeneration(options: RunFileGenerationOptions): Prom
         `API docs at: ./${path.relative(root, apiDocsPath).replace(/\\/g, '/')} → http://localhost:${serverPort}/api-docs.html`
       );
     } catch (error) {
-      logWarn(
-        `Failed to generate OpenAPI spec: ${error instanceof Error ? error.message : String(error)}`
-      );
+      const err = error instanceof Error ? error : new Error(String(error));
+      logWarn(`Failed to generate OpenAPI spec: ${err.message}`);
+      onGenerationError?.(err);
     }
   }
 }
