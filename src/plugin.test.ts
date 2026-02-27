@@ -209,4 +209,21 @@ describe('vitek plugin resolveId and transform', () => {
       expect(plugin.transform).toBeDefined();
     });
   });
+
+  describe('buildStart', () => {
+    it('generates api.services.ts and api.types.ts when buildStart runs', async () => {
+      fs.writeFileSync(path.join(rootDir, 'tsconfig.json'), '{}', 'utf-8');
+      const buildStart = (plugin as { buildStart?: () => Promise<void> }).buildStart;
+      if (!buildStart) {
+        expect.fail('Plugin does not have buildStart hook');
+      }
+      await buildStart.call(null as never);
+      const servicesPath = path.join(rootDir, 'src', 'api.services.ts');
+      const typesPath = path.join(rootDir, 'src', 'api.types.ts');
+      expect(fs.existsSync(servicesPath)).toBe(true);
+      expect(fs.existsSync(typesPath)).toBe(true);
+      expect(fs.readFileSync(servicesPath, 'utf-8')).toContain('getHealth');
+      expect(fs.readFileSync(typesPath, 'utf-8')).toContain('VitekParams');
+    });
+  });
 });

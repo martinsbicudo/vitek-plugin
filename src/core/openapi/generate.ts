@@ -5,7 +5,15 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Route } from '../routing/route-types.js';
+
+export type RouteForDocs = {
+  pattern: string;
+  method: string;
+  params: string[];
+  file: string;
+  bodyType?: string;
+  queryType?: string;
+};
 
 /**
  * OpenAPI Info object
@@ -69,7 +77,7 @@ const DEFAULT_OPENAPI_INFO: OpenApiInfo = {
 /**
  * Generates a complete OpenAPI 3.0 specification
  */
-export function generateOpenApiSpec(routes: Route[], options: OpenApiOptions): object {
+export function generateOpenApiSpec(routes: RouteForDocs[], options: OpenApiOptions): object {
   const info = { ...DEFAULT_OPENAPI_INFO, ...options.info };
   
   const spec: Record<string, unknown> = {
@@ -91,7 +99,7 @@ export function generateOpenApiSpec(routes: Route[], options: OpenApiOptions): o
 /**
  * Generates OpenAPI paths from routes
  */
-function generatePaths(routes: Route[], options: OpenApiOptions): Record<string, unknown> {
+function generatePaths(routes: RouteForDocs[], options: OpenApiOptions): Record<string, unknown> {
   const paths: Record<string, unknown> = {};
 
   for (const route of routes) {
@@ -130,7 +138,7 @@ function convertPatternToOpenApi(pattern: string): string {
  * Generates an OpenAPI Operation object for a route
  */
 function generateOperationObject(
-  route: Route,
+  route: RouteForDocs,
   metadata: RouteMetadata,
   options: OpenApiOptions
 ): object {
@@ -205,7 +213,7 @@ function generateOperationObject(
 /**
  * Generates a unique operation ID from route
  */
-function generateOperationId(route: Route): string {
+function generateOperationId(route: RouteForDocs): string {
   const patternParts = route.pattern
     .split('/')
     .filter(Boolean)
@@ -222,7 +230,7 @@ function generateOperationId(route: Route): string {
 /**
  * Generates OpenAPI responses object
  */
-function generateResponses(route: Route, metadata: RouteMetadata): object {
+function generateResponses(route: RouteForDocs, metadata: RouteMetadata): object {
   const responses: Record<string, object> = {};
 
   if (metadata.responses && Object.keys(metadata.responses).length > 0) {
@@ -503,7 +511,7 @@ function typeToSchema(typeStr: string): object {
 /**
  * Generates component schemas from route types
  */
-function generateSchemas(routes: Route[]): Record<string, object> {
+function generateSchemas(routes: RouteForDocs[]): Record<string, object> {
   const schemas: Record<string, object> = {};
 
   // Collect unique type names referenced in routes
@@ -555,7 +563,7 @@ function extractTypeReferences(typeStr: string): string[] {
  */
 export async function generateOpenApiFile(
   outputPath: string,
-  routes: Route[],
+  routes: RouteForDocs[],
   options: OpenApiOptions
 ): Promise<void> {
   const spec = generateOpenApiSpec(routes, options);

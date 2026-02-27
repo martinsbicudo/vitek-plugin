@@ -12,6 +12,17 @@ export type FilesPostBody = {
   size: number;
 };
 
+export type InterSquadRequestsIdStatusPutBody = {
+  status: 'pending' | 'in_progress' | 'completed' | 'rejected';
+};
+
+export type InterSquadRequestsPostBody = {
+  title: string;
+  description: string;
+  fromSquadId: string;
+  toSquadId: string;
+};
+
 export type NotificationsPostBody = {
   title: string;
   message: string;
@@ -180,6 +191,14 @@ export interface HealthGetParams extends VitekParams {
 
 }
 
+export interface InterSquadRequestsIdStatusPutParams extends VitekParams {
+  id: string;
+}
+
+export interface InterSquadRequestsPostParams extends VitekParams {
+
+}
+
 export interface NotificationsPostParams extends VitekParams {
 
 }
@@ -300,6 +319,16 @@ export type VitekRoute =
       pattern: 'health';
       method: 'get';
       params: HealthGetParams;
+    }
+  | {
+      pattern: 'inter-squad/requests/:id/status';
+      method: 'put';
+      params: InterSquadRequestsIdStatusPutParams;
+    }
+  | {
+      pattern: 'inter-squad/requests';
+      method: 'post';
+      params: InterSquadRequestsPostParams;
     }
   | {
       pattern: 'notifications';

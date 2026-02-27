@@ -7,32 +7,17 @@ import type { ViteDevServer } from 'vite';
 import * as path from 'path';
 import * as fs from 'fs';
 import { scanApiDirectory } from '../../core/file-system/scan-api-dir.js';
-
-/**
- * Detects if the project uses TypeScript by checking if tsconfig.json exists
- */
-function isTypeScriptProject(root: string): boolean {
-  const tsconfigPath = path.join(root, 'tsconfig.json');
-  return fs.existsSync(tsconfigPath);
-}
 import { watchApiDirectory, type ApiWatcher } from '../../core/file-system/watch-api-dir.js';
 import { createRoute } from '../../core/routing/route-parser.js';
 import { createRequestHandler } from '../../core/server/request-handler.js';
 import { routesToSchema } from '../../core/types/schema.js';
-import { generateTypesFile, generateServicesFile } from '../../core/types/generate.js';
-import { generateSocketTypesFile } from '../../core/types/generate-socket-types.js';
-import { generateSocketServicesFile } from '../../core/types/generate-socket-services.js';
+import { runFileGeneration } from '../../core/generation/run-file-generation.js';
 import { patternToRegex } from '../../core/normalize/normalize-path.js';
 import { createSocketHandler, type SocketEntry } from '../../core/socket/socket-handler.js';
-import { generateOpenApiFile, generateApiDocsHtml } from '../../core/openapi/generate.js';
-import { generateAsyncApiFile } from '../../core/asyncapi/generate.js';
+import { extractBodyTypeFromFile, extractQueryTypeFromFile } from '../../core/file-system/extract-type-from-file.js';
 import {
   API_BASE_PATH,
   SOCKET_BASE_PATH,
-  GENERATED_TYPES_FILE,
-  GENERATED_SERVICES_FILE,
-  GENERATED_SOCKET_TYPES_FILE,
-  GENERATED_SOCKET_SERVICES_FILE,
 } from '../../shared/constants.js';
 import type { ApiClient, SocketEmitter, VitekApp } from '../../core/shared/vitek-app.js';
 import type { OpenApiOptions } from '../../core/openapi/generate.js';
@@ -223,105 +208,30 @@ class DevServerState {
     });
   }
   
-  /**
-   * Generates types and services files
-   */
   async generateTypes() {
     try {
       const schema = routesToSchema(this.routes);
-      const isTypeScript = isTypeScriptProject(this.options.root);
+      const socketBasePath = this.options.socketBasePath ?? SOCKET_BASE_PATH;
+      const port = this.options.viteServer.config.server?.port || 5173;
 
-      if (isTypeScript) {
-        const typesPath = path.join(this.options.root, 'src', GENERATED_TYPES_FILE);
-        await generateTypesFile(typesPath, schema, API_BASE_PATH);
-        const relativeTypesPath = path.relative(this.options.root, typesPath);
-        this.options.logger.typesGenerated(`./${relativeTypesPath.replace(/\\/g, '/')}`);
-      }
-
-      const servicesFileName = isTypeScript ? GENERATED_SERVICES_FILE : 'api.services.js';
-      const servicesPath = path.join(this.options.root, 'src', servicesFileName);
-      await generateServicesFile(servicesPath, schema, API_BASE_PATH, isTypeScript);
-      
-      const relativeServicesPath = path.relative(this.options.root, servicesPath);
-      this.options.logger.servicesGenerated(`./${relativeServicesPath.replace(/\\/g, '/')}`);
-
-      if (this.sockets.length > 0) {
-        const socketSchema = this.sockets.map((s) => ({
-          pattern: s.pattern,
-          params: s.params,
-          file: s.file,
-        }));
-        const socketBasePath = this.options.socketBasePath ?? SOCKET_BASE_PATH;
-        if (isTypeScript) {
-          const socketTypesPath = path.join(this.options.root, 'src', GENERATED_SOCKET_TYPES_FILE);
-          await generateSocketTypesFile(socketTypesPath, socketSchema, socketBasePath);
-          const relativeSocketTypesPath = path.relative(this.options.root, socketTypesPath);
-          this.options.logger.typesGenerated(`./${relativeSocketTypesPath.replace(/\\/g, '/')}`);
-        }
-
-        const socketServicesFileName = isTypeScript ? GENERATED_SOCKET_SERVICES_FILE : 'socket.services.js';
-        const socketServicesPath = path.join(this.options.root, 'src', socketServicesFileName);
-        await generateSocketServicesFile(socketServicesPath, socketSchema, socketBasePath, isTypeScript);
-        const relativeSocketServicesPath = path.relative(this.options.root, socketServicesPath);
-        this.options.logger.servicesGenerated(`./${relativeSocketServicesPath.replace(/\\/g, '/')}`);
-      }
-
-      // Generate OpenAPI spec if enabled
-      await this.generateOpenApi();
+      await runFileGeneration({
+        root: this.options.root,
+        schema,
+        sockets: this.sockets,
+        apiBasePath: API_BASE_PATH,
+        socketBasePath,
+        openApi: this.options.openApi,
+        serverPort: port,
+        logger: {
+          typesGenerated: (p) => this.options.logger.typesGenerated(p),
+          servicesGenerated: (p) => this.options.logger.servicesGenerated(p),
+          info: (m) => this.options.logger.info(m),
+          warn: (m) => this.options.logger.warn(m),
+        },
+      });
     } catch (error) {
       this.options.logger.error(
         `Failed to generate types: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  /**
-   * Generates OpenAPI specification and Swagger UI
-   */
-  async generateOpenApi() {
-    const { openApi } = this.options;
-    if (!openApi) {
-      return;
-    }
-
-    try {
-      const openApiOptions: OpenApiOptions = typeof openApi === 'boolean' 
-        ? {
-            apiBasePath: API_BASE_PATH,
-          }
-        : { ...openApi, apiBasePath: API_BASE_PATH };
-
-      // Generate openapi.json
-      const openApiPath = path.join(this.options.root, 'public', 'openapi.json');
-      await generateOpenApiFile(openApiPath, this.routes, openApiOptions);
-      const relativeOpenApiPath = path.relative(this.options.root, openApiPath);
-      this.options.logger.info(`OpenAPI spec generated: ./${relativeOpenApiPath.replace(/\\/g, '/')}`);
-
-      const port = this.options.viteServer.config.server?.port || 5173;
-      const socketBasePath = this.options.socketBasePath ?? SOCKET_BASE_PATH;
-      const hasSockets = this.sockets.length > 0;
-
-      if (hasSockets) {
-        const asyncApiPath = path.join(this.options.root, 'public', 'asyncapi.json');
-        await generateAsyncApiFile(asyncApiPath, this.sockets, socketBasePath, {
-          serverUrl: `ws://localhost:${port}`,
-        });
-        const relativeAsyncPath = path.relative(this.options.root, asyncApiPath);
-        this.options.logger.info(`AsyncAPI spec generated: ./${relativeAsyncPath.replace(/\\/g, '/')}`);
-      }
-
-      // Generate API docs HTML (Swagger UI only, or REST + WebSockets tabs)
-      const apiDocsPath = path.join(this.options.root, 'public', 'api-docs.html');
-      const title = openApiOptions.info?.title || 'Vitek API';
-      const apiDocsHtml = generateApiDocsHtml('/openapi.json', title, {
-        asyncApiJsonPath: hasSockets ? '/asyncapi.json' : undefined,
-      });
-      fs.writeFileSync(apiDocsPath, apiDocsHtml, 'utf-8');
-      const relativeApiDocsPath = path.relative(this.options.root, apiDocsPath);
-      this.options.logger.info(`API docs at: ./${relativeApiDocsPath.replace(/\\/g, '/')} → http://localhost:${port}/api-docs.html`);
-    } catch (error) {
-      this.options.logger.warn(
-        `Failed to generate OpenAPI spec: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }
@@ -334,102 +244,6 @@ class DevServerState {
       this.watcher.close();
       this.watcher = null;
     }
-  }
-}
-
-/**
- * Extracts the body type from a route file
- * Looks for export type Body = ... or export interface Body { ... }
- * Returns the complete type definition as a string
- */
-function extractBodyTypeFromFile(filePath: string): string | undefined {
-  return extractTypeFromFile(filePath, 'Body');
-}
-
-/**
- * Extracts the query type from a route file
- * Looks for export type Query = ... or export interface Query { ... }
- * Returns the complete type definition as a string
- */
-function extractQueryTypeFromFile(filePath: string): string | undefined {
-  return extractTypeFromFile(filePath, 'Query');
-}
-
-/**
- * Extracts a type (Body or Query) from a route file via regex. AST-based extraction could be used in a future version.
- */
-function extractTypeFromFile(filePath: string, typeName: string): string | undefined {
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-
-    const typeStart = content.indexOf(`export type ${typeName}`);
-    if (typeStart !== -1) {
-      const afterStart = content.substring(typeStart);
-      const equalsIndex = afterStart.indexOf('=');
-      if (equalsIndex !== -1) {
-        const afterEquals = afterStart.substring(equalsIndex + 1).trimStart();
-
-        if (afterEquals.startsWith('{')) {
-          let braceCount = 0;
-          let i = 0;
-          let foundClose = false;
-          
-          for (; i < afterEquals.length; i++) {
-            if (afterEquals[i] === '{') {
-              braceCount++;
-            } else if (afterEquals[i] === '}') {
-              braceCount--;
-              if (braceCount === 0) {
-                foundClose = true;
-                break;
-              }
-            }
-          }
-          
-          if (foundClose) {
-            const typeBody = afterEquals.substring(0, i + 1).trim();
-            return typeBody;
-          }
-        } else {
-          const semicolonIndex = afterEquals.indexOf(';');
-          if (semicolonIndex !== -1) {
-            return afterEquals.substring(0, semicolonIndex).trim();
-          }
-        }
-      }
-    }
-
-    const interfaceStart = content.indexOf(`export interface ${typeName}`);
-    if (interfaceStart !== -1) {
-      const afterStart = content.substring(interfaceStart);
-      const openBrace = afterStart.indexOf('{');
-      if (openBrace !== -1) {
-        let braceCount = 0;
-        let i = openBrace;
-        let foundClose = false;
-        
-        for (; i < afterStart.length; i++) {
-          if (afterStart[i] === '{') {
-            braceCount++;
-          } else if (afterStart[i] === '}') {
-            braceCount--;
-            if (braceCount === 0) {
-              foundClose = true;
-              break;
-            }
-          }
-        }
-        
-        if (foundClose) {
-          const interfaceBody = afterStart.substring(openBrace + 1, i).trim();
-          return `{ ${interfaceBody} }`;
-        }
-      }
-    }
-    
-    return undefined;
-  } catch {
-    return undefined;
   }
 }
 
