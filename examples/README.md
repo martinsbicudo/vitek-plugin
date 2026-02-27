@@ -365,11 +365,11 @@ example-name/
 
 ---
 
-## Uso fora dos examples
+## Using outside the examples folder
 
-No seu próprio projeto (fora desta pasta de examples), depois de instalar o plugin com `npm install vitek-plugin` ou `pnpm add vitek-plugin`, você pode subir o servidor de produção (static + API) assim:
+In your own project (outside this examples folder), after installing the plugin with `npm install vitek-plugin` or `pnpm add vitek-plugin`, you can run the production server (static + API) like this:
 
-No `package.json`:
+In `package.json`:
 
 ```json
 "scripts": {
@@ -377,11 +377,11 @@ No `package.json`:
 }
 ```
 
-Depois: `pnpm run build` e `pnpm start`. Para expor em todas as interfaces (ex.: Docker): `vitek-serve --port=5173 --host=0.0.0.0`.
+Then: `pnpm run build` and `pnpm start`. To expose on all interfaces (e.g. Docker): `vitek-serve --port=5173 --host=0.0.0.0`.
 
-Alternativa (caminho direto ao CLI): `"start": "node ./node_modules/vitek-plugin/dist/cli/serve.js"`.
+Alternative (direct CLI path): `"start": "node ./node_modules/vitek-plugin/dist/cli/serve.js"`.
 
-Nos exemplos usamos `vitek-serve`; é necessário rodar `pnpm build` na raiz do plugin antes de `pnpm start` quando o plugin estiver como `file:../..`.
+In the examples we use `vitek-serve`; you must run `pnpm build` at the plugin root before `pnpm start` when the plugin is linked as `file:../..`.
 
 ---
 

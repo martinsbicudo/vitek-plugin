@@ -1,20 +1,20 @@
-# MCP – API do projeto
+# MCP – Project API
 
-No contexto de um projeto que usa Vitek, você pode expor a **API desse projeto** (rotas, sockets, manifest, OpenAPI, AsyncAPI) para assistentes de IA via **Model Context Protocol (MCP)**. Assim, a IA que está ajudando no front-end ou em outro serviço consegue ver os endpoints e tipos sem precisar colar documentação manualmente.
+In a project that uses Vitek, you can expose that **project's API** (routes, sockets, manifest, OpenAPI, AsyncAPI) to AI assistants via **Model Context Protocol (MCP)**. The AI helping with the front-end or another service can then see endpoints and types without you pasting documentation manually.
 
-## Comando
+## Command
 
-No diretório do seu projeto (onde está o `vite.config` e a pasta `src/api`), execute:
+From your project directory (where `vite.config` and the `src/api` folder live), run:
 
 ```bash
 vitek mcp
 ```
 
-Isso inicia um servidor MCP em **stdio**. O servidor usa o diretório atual como raiz do projeto e lê a configuração opcional em `vitek.mcp.json`.
+This starts an MCP server over **stdio**. The server uses the current directory as the project root and reads the optional config from `vitek.mcp.json`.
 
-## Configuração (opcional)
+## Configuration (optional)
 
-Crie `vitek.mcp.json` na raiz do projeto para ajustar paths e URL base:
+Create `vitek.mcp.json` at the project root to adjust paths and base URL:
 
 ```json
 {
@@ -25,38 +25,38 @@ Crie `vitek.mcp.json` na raiz do projeto para ajustar paths e URL base:
 }
 ```
 
-| Campo | Padrão | Descrição |
-|-------|--------|-----------|
-| `apiDir` | `src/api` | Pasta das rotas e sockets |
-| `apiBasePath` | `/api` | Prefixo da API HTTP |
-| `socketBasePath` | `/api/ws` | Prefixo dos WebSockets |
-| `baseUrl` | `http://localhost:5173` | URL base usada pela tool `vitek_api_call` |
+| Field | Default | Description |
+|-------|---------|-------------|
+| `apiDir` | `src/api` | Directory for routes and sockets |
+| `apiBasePath` | `/api` | HTTP API path prefix |
+| `socketBasePath` | `/api/ws` | WebSocket path prefix |
+| `baseUrl` | `http://localhost:5173` | Base URL used by the `vitek_api_call` tool |
 
-Se o arquivo não existir, esses valores padrão são usados.
+If the file is missing, these defaults are used.
 
-## Resources (leitura)
+## Resources (read-only)
 
-O servidor expõe os seguintes resources:
+The server exposes the following resources:
 
-| URI | Conteúdo |
-|-----|----------|
-| `vitek-api://manifest` | Manifest completo (routes, middlewares, sockets) |
-| `vitek-api://routes` | Lista de rotas HTTP (method, pattern, params, file) |
-| `vitek-api://sockets` | Lista de sockets (pattern, params, file) |
-| `vitek-api://openapi` | Spec OpenAPI 3.0 gerada a partir das rotas |
-| `vitek-api://asyncapi` | Spec AsyncAPI 2.x gerada a partir dos sockets |
+| URI | Content |
+|-----|---------|
+| `vitek-api://manifest` | Full manifest (routes, middlewares, sockets) |
+| `vitek-api://routes` | HTTP routes list (method, pattern, params, file) |
+| `vitek-api://sockets` | Sockets list (pattern, params, file) |
+| `vitek-api://openapi` | OpenAPI 3.0 spec generated from routes |
+| `vitek-api://asyncapi` | AsyncAPI 2.x spec generated from sockets |
 
-A IA pode ler esses resources para conhecer a superfície da sua API.
+The AI can read these resources to discover your API surface.
 
-## Tool (opcional)
+## Tool (optional)
 
-- **vitek_api_call** – Chama um endpoint da API local. Parâmetros: `method`, `path` (relativo ao apiBasePath), `body` (opcional), `headers` (opcional).  
-  **Requisito:** a API precisa estar rodando (por exemplo `pnpm dev` ou `pnpm start`). A URL base é a definida em `baseUrl` no config (ou `http://localhost:5173`).
+- **vitek_api_call** – Calls a local API endpoint. Parameters: `method`, `path` (relative to apiBasePath), `body` (optional), `headers` (optional).  
+  **Requirement:** the API must be running (e.g. `pnpm dev` or `pnpm start`). The base URL is the one set in `baseUrl` in the config (or `http://localhost:5173`).
 
 ## Cursor
 
-1. Em um projeto que usa Vitek, crie ou edite `.cursor/mcp.json` (ou Configurações → MCP).
-2. Adicione o servidor apontando para o comando `vitek mcp` no diretório do projeto:
+1. In a Vitek project, create or edit `.cursor/mcp.json` (or Settings → MCP).
+2. Add the server pointing to the `vitek mcp` command in the project directory:
 
 ```json
 {
@@ -69,7 +69,7 @@ A IA pode ler esses resources para conhecer a superfície da sua API.
 }
 ```
 
-Se você usa `npx` em vez de `pnpm`:
+If you use `npx` instead of `pnpm`:
 
 ```json
 {
@@ -82,11 +82,11 @@ Se você usa `npx` em vez de `pnpm`:
 }
 ```
 
-3. Reinicie o Cursor ou recarregue o MCP. A IA passará a poder ler os resources `vitek-api://*` e, se a API estiver rodando, usar a tool `vitek_api_call`.
+3. Restart Cursor or reload MCP. The AI will then be able to read the `vitek-api://*` resources and, if the API is running, use the `vitek_api_call` tool.
 
 ## Claude Desktop
 
-No arquivo de configuração do Claude (por exemplo `~/Library/Application Support/Claude/claude_desktop_config.json` no macOS), adicione:
+In the Claude config file (e.g. `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS), add:
 
 ```json
 {
@@ -99,12 +99,12 @@ No arquivo de configuração do Claude (por exemplo `~/Library/Application Suppo
 }
 ```
 
-Abra o Claude Desktop a partir do diretório do seu projeto Vitek (ou configure o `cwd` conforme a documentação do Claude).
+Start Claude Desktop from your Vitek project directory (or set `cwd` as per Claude’s documentation).
 
-## Resumo
+## Summary
 
-- **Comando:** `vitek mcp` (no diretório do projeto).
-- **Config:** `vitek.mcp.json` (opcional).
+- **Command:** `vitek mcp` (from the project directory).
+- **Config:** `vitek.mcp.json` (optional).
 - **Resources:** manifest, routes, sockets, openapi, asyncapi.
-- **Tool:** `vitek_api_call` (requer API rodando).
-- **Uso:** configurar o cliente MCP (Cursor, Claude Desktop) para executar `vitek mcp` no cwd do projeto.
+- **Tool:** `vitek_api_call` (requires the API to be running).
+- **Usage:** configure the MCP client (Cursor, Claude Desktop) to run `vitek mcp` in the project cwd.

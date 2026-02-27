@@ -1,206 +1,206 @@
-# Planejamento MCP para Vitek
+# MCP Planning for Vitek
 
-Este documento descreve o planejamento completo para oferecer suporte a **Model Context Protocol (MCP)** em duas frentes: um MCP do produto Vitek (para AIs usarem o framework) e um MCP ativável por projeto (para AIs integrarem com a API criada com Vitek).
-
----
-
-## 1. Visão geral
-
-| Frente | Objetivo | Público | Quando usar |
-|--------|----------|---------|-------------|
-| **MCP do Vitek** | Ajudar AIs a *construir e modificar* backends com Vitek | Qualquer usuário de Vitek que usa Cursor, Claude Desktop, etc. | Ao pedir à AI para criar rotas, middlewares, sockets, validação, etc. |
-| **MCP da API (projeto)** | Ajudar AIs a *integrar com* a API do projeto (rotas, tipos, chamadas) | Desenvolvedor de front ou de outro serviço que consome a API Vitek | Ao pedir à AI para chamar endpoints, tipar requests, ou documentar integração |
-
-Ambas as frentes são complementares e podem ser implementadas em paralelo ou em sequência.
+This document describes the full plan to add **Model Context Protocol (MCP)** support in two areas: a Vitek product MCP (for AIs to use the framework) and a per-project MCP (for AIs to integrate with the API built with Vitek).
 
 ---
 
-## 2. MCP do Vitek (produto)
+## 1. Overview
 
-### 2.1 Objetivo e valor
+| Area | Goal | Audience | When to use |
+|------|------|----------|-------------|
+| **Vitek MCP** | Help AIs *build and modify* backends with Vitek | Any Vitek user with Cursor, Claude Desktop, etc. | When asking the AI to create routes, middlewares, sockets, validation, etc. |
+| **Project API MCP** | Help AIs *integrate with* the project's API (routes, types, calls) | Front-end or other service developer consuming the Vitek API | When asking the AI to call endpoints, type requests, or document integration |
 
-- Expor conhecimento e capacidades do Vitek via MCP para que assistentes (Cursor, Claude Desktop, outros clientes MCP) possam:
-  - Sugerir código alinhado às convenções do Vitek (nomenclatura de arquivos, `VitekContext`, helpers de resposta, validação).
-  - Criar rotas `[name].[method].ts`, middlewares, sockets `.socket.ts`, e configuração do plugin.
-  - Consultar documentação e exemplos sem depender apenas do modelo treinado.
-
-### 2.2 Escopo funcional
-
-#### 2.2.1 Resources (leitura)
-
-| Resource URI | Descrição | Conteúdo sugerido |
-|--------------|-----------|-------------------|
-| `vitek://docs/routing` | Convenções de roteamento | Nomenclatura `[param].get.ts`, `[...rest].get.ts`, padrões, `apiDir`, `apiBasePath` |
-| `vitek://docs/middlewares` | Middlewares | Estrutura de `middleware.ts`, `basePattern`, ordem de aplicação, `next()` |
-| `vitek://docs/websockets` | WebSockets | Arquivos `.socket.ts`, `VitekSocketContext`, `sockets` no context, base path |
-| `vitek://docs/context` | Context e request | `VitekContext`, `VitekRequest`, `path`, `params`, `query`, `body`, `headers`, `clientIp` |
-| `vitek://docs/response` | Respostas | `VitekResponse`, helpers `ok`, `created`, `notFound`, `json`, `redirect`, etc. |
-| `vitek://docs/validation` | Validação | `validate`, `validateBody`, `validateQuery`, `ValidationSchema`, `enableValidation` |
-| `vitek://docs/errors` | Erros HTTP | `HttpError`, `BadRequestError`, `ValidationError`, etc., e `onError` |
-| `vitek://docs/plugin-api` | Plugin API | `VitekPlugin`, `afterTypesGenerated`, `beforeApiRequest`, tipos de contexto |
-| `vitek://docs/configuration` | Configuração | `VitekOptions`: `apiDir`, `openApi`, `cors`, `sockets`, `alias`, `maxBodySize`, etc. |
-| `vitek://docs/introspection` | Introspection | `getManifest`, `getRoutes`, `getSockets`, `writeManifest`, formato do manifest |
-
-Cada resource pode ser gerado a partir do conteúdo atual da documentação (docs/) e dos tipos exportados em `src/index.ts`, garantindo consistência com a versão do pacote.
-
-#### 2.2.2 Tools (ações)
-
-| Tool | Descrição | Inputs | Comportamento |
-|------|-----------|--------|---------------|
-| `vitek_create_route` | Criar esqueleto de rota | `path` (ex: `users/[id]`), `method` (get, post, put, patch, delete, options), `apiDir` opcional | Retorna snippet de código e caminho do arquivo sugerido (ex: `src/api/users/[id].get.ts`) |
-| `vitek_create_middleware` | Criar esqueleto de middleware | `basePattern` (ex: `users` ou vazio para global), `apiDir` opcional | Retorna snippet e caminho do arquivo |
-| `vitek_create_socket` | Criar esqueleto de socket | `pattern` (ex: `chat`), `apiDir` opcional | Retorna snippet e caminho do arquivo |
-| `vitek_suggest_vite_config` | Sugerir configuração Vite + Vitek | `options` opcionais (openApi, cors, apiDir, etc.) | Retorna trecho para `vite.config.ts` |
-| `vitek_validate_convention` | Validar se um caminho de arquivo segue convenção | `filePath` (ex: `src/api/users/[id].get.ts`) | Retorna se é rota, middleware ou socket válido e qual método/padrão |
-
-Ferramentas adicionais opcionais em fases posteriores: `vitek_add_validation_to_route`, `vitek_generate_openapi_snippet`.
-
-### 2.3 Arquitetura técnica
-
-- **Runtime:** Node.js (LTS), sem dependência de Vite no processo do MCP.
-- **Protocolo:** MCP (Model Context Protocol) sobre stdio ou SSE, conforme SDK escolhido.
-- **Implementação:** Servidor MCP em pacote separado (ex.: `vitek-mcp` ou `@vitek/mcp`) que:
-  - Usa o SDK oficial MCP (ex.: `@modelcontextprotocol/sdk` em TypeScript/Node).
-  - Implementa handlers para os resources e tools listados.
-  - Lê documentação e metadados a partir do pacote `vitek-plugin` instalado (ou bundle embutido) para manter compatibilidade por versão.
-
-- **Pacote NPM:** Publicar `vitek-mcp` (ou nome a definir) com `bin` para execução via `npx vitek-mcp` ou configurável em clientes MCP (Cursor, Claude) como comando do servidor.
-
-### 2.4 Dependências e entregáveis
-
-- Dependência: SDK MCP para Node (ex.: `@modelcontextprotocol/sdk`).
-- Entregáveis:
-  - Repositório ou subpasta `packages/vitek-mcp` com servidor MCP.
-  - Lista de resources e tools estável e documentada.
-  - Documentação de instalação (Cursor, Claude Desktop, etc.) e versionamento alinhado ao `vitek-plugin`.
-
-### 2.5 Critérios de aceitação (MCP do Vitek)
-
-- [x] Servidor MCP inicia e expõe os resources e tools definidos.
-- [x] Cliente MCP (ex.: Cursor) consegue ler pelo menos um resource e invocar uma tool.
-- [x] Conteúdo dos resources está alinhado à documentação e à API pública do Vitek da versão correspondente.
-- [x] README com instruções de configuração para pelo menos um cliente (ex.: Cursor).
-
-**Implementação (Fase 1 + 2):** O servidor MCP do Vitek está em `packages/vitek-mcp`. Inclui os 10 resources (routing, context, response, middlewares, websockets, validation, errors, plugin-api, configuration, introspection) e as 5 tools (`vitek_create_route`, `vitek_create_middleware`, `vitek_create_socket`, `vitek_suggest_vite_config`, `vitek_validate_convention`). Ver `packages/vitek-mcp/README.md` para instalação (Cursor, Claude Desktop) e uso.
+Both areas are complementary and can be implemented in parallel or in sequence.
 
 ---
 
-## 3. MCP da API do projeto (por projeto)
+## 2. Vitek MCP (product)
 
-### 3.1 Objetivo e valor
+### 2.1 Goal and value
 
-- No contexto de um projeto que já usa Vitek, expor a *API desse projeto* (rotas, métodos, parâmetros, e quando possível tipos/schemas) para a AI que está ajudando no mesmo repositório (ex.: front-end ou outro serviço).
-- Reduz erros de integração (paths errados, métodos errados, bodies malformados) e evita que o desenvolvedor precise colar OpenAPI ou tipos manualmente no contexto.
+- Expose Vitek knowledge and capabilities via MCP so assistants (Cursor, Claude Desktop, other MCP clients) can:
+  - Suggest code that follows Vitek conventions (file naming, `VitekContext`, response helpers, validation).
+  - Create routes `[name].[method].ts`, middlewares, sockets `.socket.ts`, and plugin configuration.
+  - Query documentation and examples without relying only on the trained model.
 
-### 3.2 Escopo funcional
+### 2.2 Functional scope
 
-#### 3.2.1 Fonte de dados
+#### 2.2.1 Resources (read-only)
 
-- **Manifest:** `getManifest(root, apiDir)` já expõe `routes`, `middlewares`, `sockets` com `method`, `pattern`, `params`, `file`.
-- **OpenAPI:** Se o projeto tiver `openApi: true`, a spec já é gerada; pode ser lida de arquivo ou gerada sob demanda.
-- **Tipos gerados:** `api.types.ts` / `api.services.ts` (ou nomes configuráveis) gerados pelo Vitek; podem ser lidos para enriquecer recursos com tipos de body/query quando disponíveis.
+| Resource URI | Description | Suggested content |
+|--------------|-------------|-------------------|
+| `vitek://docs/routing` | Routing conventions | Naming `[param].get.ts`, `[...rest].get.ts`, patterns, `apiDir`, `apiBasePath` |
+| `vitek://docs/middlewares` | Middlewares | Structure of `middleware.ts`, `basePattern`, application order, `next()` |
+| `vitek://docs/websockets` | WebSockets | `.socket.ts` files, `VitekSocketContext`, `sockets` in context, base path |
+| `vitek://docs/context` | Context and request | `VitekContext`, `VitekRequest`, `path`, `params`, `query`, `body`, `headers`, `clientIp` |
+| `vitek://docs/response` | Responses | `VitekResponse`, helpers `ok`, `created`, `notFound`, `json`, `redirect`, etc. |
+| `vitek://docs/validation` | Validation | `validate`, `validateBody`, `validateQuery`, `ValidationSchema`, `enableValidation` |
+| `vitek://docs/errors` | HTTP errors | `HttpError`, `BadRequestError`, `ValidationError`, etc., and `onError` |
+| `vitek://docs/plugin-api` | Plugin API | `VitekPlugin`, `afterTypesGenerated`, `beforeApiRequest`, context types |
+| `vitek://docs/configuration` | Configuration | `VitekOptions`: `apiDir`, `openApi`, `cors`, `sockets`, `alias`, `maxBodySize`, etc. |
+| `vitek://docs/introspection` | Introspection | `getManifest`, `getRoutes`, `getSockets`, `writeManifest`, manifest format |
 
-#### 3.2.2 Resources (leitura)
+Each resource can be generated from the current docs (docs/) and types exported in `src/index.ts`, keeping them in sync with the package version.
 
-| Resource URI | Descrição | Fonte |
-|--------------|-----------|--------|
-| `vitek-api://manifest` | Manifest completo (routes, middlewares, sockets) | `getManifest(root, apiDir)` |
-| `vitek-api://routes` | Lista de rotas com method, pattern, params, file | `manifest.routes` |
-| `vitek-api://sockets` | Lista de sockets com pattern, params, file | `manifest.sockets` |
-| `vitek-api://openapi` | Spec OpenAPI 3.0 (se disponível) | Arquivo gerado ou `generateOpenApiSpec` com dados atuais |
-| `vitek-api://asyncapi` | Spec AsyncAPI (se houver sockets) | Arquivo gerado ou equivalente |
+#### 2.2.2 Tools (actions)
 
-O servidor MCP do projeto deve resolver `root` e `apiDir` a partir do diretório de trabalho ou de um arquivo de configuração (ex.: `vitek.mcp.json` ou opção no `vite.config` / `vitek.config.mjs`).
+| Tool | Description | Inputs | Behavior |
+|------|-------------|--------|----------|
+| `vitek_create_route` | Create route skeleton | `path` (e.g. `users/[id]`), `method` (get, post, put, patch, delete, options), optional `apiDir` | Returns code snippet and suggested file path (e.g. `src/api/users/[id].get.ts`) |
+| `vitek_create_middleware` | Create middleware skeleton | `basePattern` (e.g. `users` or empty for global), optional `apiDir` | Returns snippet and file path |
+| `vitek_create_socket` | Create socket skeleton | `pattern` (e.g. `chat`), optional `apiDir` | Returns snippet and file path |
+| `vitek_suggest_vite_config` | Suggest Vite + Vitek config | Optional `options` (openApi, cors, apiDir, etc.) | Returns snippet for `vite.config.ts` |
+| `vitek_validate_convention` | Validate file path convention | `filePath` (e.g. `src/api/users/[id].get.ts`) | Returns whether it is a valid route, middleware or socket and which method/pattern |
 
-#### 3.2.3 Tools (ações) – opcional
+Optional tools for later phases: `vitek_add_validation_to_route`, `vitek_generate_openapi_snippet`.
 
-| Tool | Descrição | Inputs | Comportamento |
-|------|-----------|--------|---------------|
-| `vitek_api_call` | Chamar um endpoint da API local | `method`, `path` (relativo ao apiBasePath), `body` opcional, `headers` opcional | Faz requisição HTTP para base URL configurável (ex.: `http://localhost:5173`) e retorna status e body. Útil para a AI testar ou demonstrar chamadas. |
+### 2.3 Technical architecture
 
-Risco: a API precisa estar rodando (dev ou serve). Documentar que a tool só funciona com servidor ativo; caso contrário, retornar erro claro.
+- **Runtime:** Node.js (LTS), no Vite dependency in the MCP process.
+- **Protocol:** MCP (Model Context Protocol) over stdio or SSE, as per chosen SDK.
+- **Implementation:** MCP server in a separate package (e.g. `vitek-mcp` or `@vitek/mcp`) that:
+  - Uses the official MCP SDK (e.g. `@modelcontextprotocol/sdk` in TypeScript/Node).
+  - Implements handlers for the resources and tools listed above.
+  - Reads documentation and metadata from the installed `vitek-plugin` package (or embedded bundle) to stay compatible with the version.
 
-### 3.3 Ativação e modo de execução
+- **NPM package:** Publish `vitek-mcp` (or name TBD) with `bin` for running via `npx vitek-mcp` or as the server command in MCP clients (Cursor, Claude).
 
-- **Onde vive:** No projeto do usuário, não no pacote principal. Duas opções:
-  - **A)** Comando no CLI do Vitek: `vitek mcp` (ou `vitek-mcp-dev`) que inicia um servidor MCP (stdio ou SSE) com contexto do projeto (root, apiDir, openApi, etc.).
-  - **B)** Pacote separado `vitek-mcp-dev` instalável no projeto, com script `"mcp": "vitek-mcp-dev"` e o usuário configura o cliente MCP para rodar esse comando no cwd do projeto.
+### 2.4 Dependencies and deliverables
 
-- **Configuração do projeto:**
-  - Ler `apiDir` (e opcionalmente `apiBasePath`, `openApi`) do `vite.config` ou de `vitek.config.mjs` / `vitek.mcp.json` para não duplicar configuração.
-  - Se não houver Vite config no cwd, usar defaults (ex.: `src/api`) e documentar.
+- Dependency: MCP SDK for Node (e.g. `@modelcontextprotocol/sdk`).
+- Deliverables:
+  - Repo or subfolder `packages/vitek-mcp` with the MCP server.
+  - Stable, documented list of resources and tools.
+  - Installation docs (Cursor, Claude Desktop, etc.) and versioning aligned with `vitek-plugin`.
 
-### 3.4 Arquitetura técnica
+### 2.5 Acceptance criteria (Vitek MCP)
+
+- [x] MCP server starts and exposes the defined resources and tools.
+- [x] MCP client (e.g. Cursor) can read at least one resource and invoke a tool.
+- [x] Resource content is aligned with the docs and Vitek public API for the corresponding version.
+- [x] README with configuration instructions for at least one client (e.g. Cursor).
+
+**Implementation (Phase 1 + 2):** The Vitek MCP server lives in `packages/vitek-mcp`. It includes the 10 resources (routing, context, response, middlewares, websockets, validation, errors, plugin-api, configuration, introspection) and the 5 tools (`vitek_create_route`, `vitek_create_middleware`, `vitek_create_socket`, `vitek_suggest_vite_config`, `vitek_validate_convention`). See `packages/vitek-mcp/README.md` for installation (Cursor, Claude Desktop) and usage.
+
+---
+
+## 3. Project API MCP (per project)
+
+### 3.1 Goal and value
+
+- In a project that already uses Vitek, expose that *project's API* (routes, methods, params, and when possible types/schemas) to the AI helping in the same repo (e.g. front-end or another service).
+- Reduces integration mistakes (wrong paths, wrong methods, malformed bodies) and avoids manually pasting OpenAPI or types into context.
+
+### 3.2 Functional scope
+
+#### 3.2.1 Data sources
+
+- **Manifest:** `getManifest(root, apiDir)` already exposes `routes`, `middlewares`, `sockets` with `method`, `pattern`, `params`, `file`.
+- **OpenAPI:** If the project has `openApi: true`, the spec is already generated; it can be read from file or generated on demand.
+- **Generated types:** `api.types.ts` / `api.services.ts` (or configurable names) generated by Vitek; can be read to enrich resources with body/query types when available.
+
+#### 3.2.2 Resources (read-only)
+
+| Resource URI | Description | Source |
+|--------------|-------------|--------|
+| `vitek-api://manifest` | Full manifest (routes, middlewares, sockets) | `getManifest(root, apiDir)` |
+| `vitek-api://routes` | Routes list with method, pattern, params, file | `manifest.routes` |
+| `vitek-api://sockets` | Sockets list with pattern, params, file | `manifest.sockets` |
+| `vitek-api://openapi` | OpenAPI 3.0 spec (if available) | Generated file or `generateOpenApiSpec` with current data |
+| `vitek-api://asyncapi` | AsyncAPI spec (if sockets exist) | Generated file or equivalent |
+
+The project MCP server must resolve `root` and `apiDir` from the working directory or a config file (e.g. `vitek.mcp.json` or option in `vite.config` / `vitek.config.mjs`).
+
+#### 3.2.3 Tools (actions) – optional
+
+| Tool | Description | Inputs | Behavior |
+|------|-------------|--------|----------|
+| `vitek_api_call` | Call a local API endpoint | `method`, `path` (relative to apiBasePath), optional `body`, optional `headers` | Sends HTTP request to configurable base URL (e.g. `http://localhost:5173`) and returns status and body. Useful for the AI to test or demonstrate calls. |
+
+Risk: the API must be running (dev or serve). Document that the tool only works with the server up; otherwise return a clear error.
+
+### 3.3 Activation and execution mode
+
+- **Where it lives:** In the user's project, not in the main package. Two options:
+  - **A)** Command in the Vitek CLI: `vitek mcp` (or `vitek-mcp-dev`) that starts an MCP server (stdio or SSE) with project context (root, apiDir, openApi, etc.).
+  - **B)** Separate package `vitek-mcp-dev` installable in the project, with script `"mcp": "vitek-mcp-dev"` and the user configures the MCP client to run that command in the project cwd.
+
+- **Project configuration:**
+  - Read `apiDir` (and optionally `apiBasePath`, `openApi`) from `vite.config` or `vitek.config.mjs` / `vitek.mcp.json` to avoid duplicating config.
+  - If there is no Vite config in cwd, use defaults (e.g. `src/api`) and document.
+
+### 3.4 Technical architecture
 
 - **Runtime:** Node.js.
-- **Protocolo:** MCP sobre stdio (recomendado para dev local) ou SSE.
-- **Implementação:**
-  - Servidor MCP que importa `getManifest`, `getRoutes`, `getSockets` (e se possível `generateOpenApiSpec` ou lê arquivo) do `vitek-plugin`.
-  - Resources leem do disco e/ou chamam as funções de introspection; OpenAPI pode ser gerado em memória ou lido de build anterior (com aviso se desatualizado).
-- **Segurança:** Servidor destinado a ambiente de desenvolvimento; não expor em rede pública. Opção de binding apenas em localhost se usar SSE.
+- **Protocol:** MCP over stdio (recommended for local dev) or SSE.
+- **Implementation:**
+  - MCP server that imports `getManifest`, `getRoutes`, `getSockets` (and when possible `generateOpenApiSpec` or reads file) from `vitek-plugin`.
+  - Resources read from disk and/or call introspection functions; OpenAPI can be generated in memory or read from a previous build (with a warning if outdated).
+- **Security:** Server intended for development; do not expose on a public network. Option to bind only to localhost if using SSE.
 
-### 3.5 Critérios de aceitação (MCP da API)
+### 3.5 Acceptance criteria (Project API MCP)
 
-- [x] Comando ou script inicia o servidor MCP no diretório do projeto e expõe `vitek-api://manifest` (e pelo menos `routes` / `sockets`).
-- [x] Cliente MCP consegue ler o manifest e listar rotas/sockets do projeto.
-- [x] Se o projeto tiver OpenAPI habilitado, resource `vitek-api://openapi` retorna spec válida (ou indica como gerar).
-- [x] Documentação explica como configurar o cliente (ex.: Cursor) para usar esse MCP no repositório do projeto.
-- [x] (Opcional) Tool `vitek_api_call` funciona quando a API está rodando e base URL está configurada.
+- [x] Command or script starts the MCP server in the project directory and exposes `vitek-api://manifest` (and at least `routes` / `sockets`).
+- [x] MCP client can read the manifest and list the project's routes/sockets.
+- [x] If the project has OpenAPI enabled, resource `vitek-api://openapi` returns a valid spec (or indicates how to generate it).
+- [x] Documentation explains how to configure the client (e.g. Cursor) to use this MCP in the project repo.
+- [x] (Optional) Tool `vitek_api_call` works when the API is running and base URL is configured.
 
-**Implementação (Fase 3):** Comando `vitek mcp` no CLI do vitek-plugin inicia o servidor MCP no cwd. Config opcional em `vitek.mcp.json` (apiDir, apiBasePath, socketBasePath, baseUrl). Resources: `vitek-api://manifest`, `routes`, `sockets`, `openapi`, `asyncapi`. Tool `vitek_api_call` para chamar a API local. Documentação em [docs/guide/mcp-project.md](docs/guide/mcp-project.md).
-
----
-
-## 4. Cronograma sugerido (fases)
-
-### Fase 1 – Fundação (MCP do Vitek)
-
-1. Criar pacote/repo do servidor MCP do Vitek.
-2. Integrar SDK MCP; expor 2–3 resources de documentação e 1 tool (ex.: `vitek_create_route`).
-3. Documentar instalação em um cliente (Cursor).
-4. Validar com usuários internos ou beta.
-
-### Fase 2 – MCP do Vitek completo
-
-1. Completar todos os resources e tools planejados.
-2. Alinhar conteúdo aos docs e à API do Vitek; automatizar geração de conteúdo a partir de docs/tipos quando possível.
-3. Publicar pacote NPM e anunciar.
-
-### Fase 3 – MCP da API do projeto
-
-1. Definir comando (`vitek mcp`) ou pacote (`vitek-mcp-dev`) e contrato de configuração (vite.config / vitek.config.mjs / vitek.mcp.json).
-2. Implementar servidor MCP que usa `getManifest`, `getRoutes`, `getSockets` e OpenAPI quando existir.
-3. Expor resources `manifest`, `routes`, `sockets`, `openapi`.
-4. Documentar configuração no projeto e no cliente MCP.
-5. (Opcional) Implementar tool `vitek_api_call` e documentar requisitos (servidor ativo, base URL).
-
-### Fase 4 – Refinamentos
-
-1. ~~Suporte a AsyncAPI no MCP da API (resource `vitek-api://asyncapi`).~~ (já incluído na Fase 3)
-2. Melhorias de UX: mensagens claras quando OpenAPI não está disponível ou está desatualizado. (opcional; OpenAPI/AsyncAPI são geradas sob demanda)
-3. ~~Testes automatizados para ambos os servidores MCP (resources e tools).~~ Testes unitários adicionados: `packages/vitek-mcp/src/tools/*.test.ts` (create-route, create-middleware, create-socket, suggest-vite-config, validate-convention) e `src/cli/mcp-project-config.test.ts`.
+**Implementation (Phase 3):** The `vitek mcp` command in the vitek-plugin CLI starts the MCP server in cwd. Optional config in `vitek.mcp.json` (apiDir, apiBasePath, socketBasePath, baseUrl). Resources: `vitek-api://manifest`, `routes`, `sockets`, `openapi`, `asyncapi`. Tool `vitek_api_call` to call the local API. Documentation in [docs/guide/mcp-project.md](docs/guide/mcp-project.md).
 
 ---
 
-## 5. Riscos e dependências
+## 4. Suggested schedule (phases)
 
-- **MCP em evolução:** Protocolo e SDK podem mudar; manter dependência em versão estável e acompanhar changelog.
-- **Manutenção de conteúdo:** Resources do MCP do Vitek devem acompanhar mudanças na documentação e na API; considerar geração a partir de docs e tipos para reduzir drift.
-- **Descoberta:** README do vitek-plugin e docs mencionam o MCP; `vitek init` exibe uma dica ao final: "Tip: expose your API to AI assistants with `vitek mcp`".
+### Phase 1 – Foundation (Vitek MCP)
+
+1. Create package/repo for the Vitek MCP server.
+2. Integrate MCP SDK; expose 2–3 documentation resources and 1 tool (e.g. `vitek_create_route`).
+3. Document installation for one client (Cursor).
+4. Validate with internal or beta users.
+
+### Phase 2 – Full Vitek MCP
+
+1. Complete all planned resources and tools.
+2. Align content with Vitek docs and API; automate content generation from docs/types when possible.
+3. Publish NPM package and announce.
+
+### Phase 3 – Project API MCP
+
+1. Define command (`vitek mcp`) or package (`vitek-mcp-dev`) and config contract (vite.config / vitek.config.mjs / vitek.mcp.json).
+2. Implement MCP server that uses `getManifest`, `getRoutes`, `getSockets` and OpenAPI when present.
+3. Expose resources `manifest`, `routes`, `sockets`, `openapi`.
+4. Document configuration in the project and in the MCP client.
+5. (Optional) Implement tool `vitek_api_call` and document requirements (server running, base URL).
+
+### Phase 4 – Refinements
+
+1. ~~AsyncAPI support in Project API MCP (resource `vitek-api://asyncapi`).~~ (already included in Phase 3)
+2. UX improvements: clear messages when OpenAPI is unavailable or outdated. (optional; OpenAPI/AsyncAPI are generated on demand)
+3. ~~Automated tests for both MCP servers (resources and tools).~~ Unit tests added: `packages/vitek-mcp/src/tools/*.test.ts` (create-route, create-middleware, create-socket, suggest-vite-config, validate-convention) and `src/cli/mcp-project-config.test.ts`.
 
 ---
 
-## 6. Métricas de sucesso
+## 5. Risks and dependencies
 
-- Número de instalações ou referências ao pacote MCP do Vitek.
-- Redução de issues/PRs com código que não segue convenções do Vitek (rotas mal nomeadas, uso incorreto de context).
-- Feedback qualitativo: desenvolvedores conseguem pedir à AI para criar rotas/sockets e obter código utilizável; integração com a API do projeto fica mais rápida com o MCP da API.
+- **MCP evolving:** Protocol and SDK may change; keep dependency on a stable version and follow the changelog.
+- **Content maintenance:** Vitek MCP resources must track documentation and API changes; consider generating from docs and types to reduce drift.
+- **Discovery:** The vitek-plugin README and docs mention MCP; `vitek init` shows a tip at the end: "Tip: expose your API to AI assistants with `vitek mcp`".
 
 ---
 
-## 7. Referências
+## 6. Success metrics
+
+- Number of installations or references to the Vitek MCP package.
+- Fewer issues/PRs with code that breaks Vitek conventions (misnamed routes, incorrect context usage).
+- Qualitative feedback: developers can ask the AI to create routes/sockets and get usable code; integration with the project API is faster with the Project API MCP.
+
+---
+
+## 7. References
 
 - [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 - [MCP SDK (TypeScript/Node)](https://github.com/modelcontextprotocol/typescript-sdk)
-- Documentação Vitek: [docs/](../), [Introspection](../guide/introspection.md), [Plugin API](../guide/plugin-api.md), [OpenAPI](../guide/openapi.md)
-- Código: `getManifest`, `getRoutes`, `getSockets` em `src/core/introspection/manifest.ts`; `VitekManifest` e tipos em `src/index.ts`
+- Vitek docs: [docs/](../), [Introspection](../guide/introspection.md), [Plugin API](../guide/plugin-api.md), [OpenAPI](../guide/openapi.md)
+- Code: `getManifest`, `getRoutes`, `getSockets` in `src/core/introspection/manifest.ts`; `VitekManifest` and types in `src/index.ts`
