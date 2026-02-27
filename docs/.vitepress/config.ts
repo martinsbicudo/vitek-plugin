@@ -49,6 +49,7 @@ export default defineConfig({
           { text: 'Configuration', link: '/guide/configuration' },
           { text: 'Security', link: '/guide/security' },
           { text: 'Production server', link: '/guide/production-server' },
+          { text: 'Bundle size', link: '/guide/bundle-size' },
           { text: 'Deployment & integrations', link: '/guide/production-deploy' },
           { text: 'Testing', link: '/guide/testing' },
         ],

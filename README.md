@@ -118,6 +118,7 @@ Then open `http://localhost:5173/api-docs.html` for interactive API documentatio
 - [Plugin API](./docs/guide/plugin-api.md) — Extend Vitek with `afterTypesGenerated` and `beforeApiRequest` hooks
 - [Alias](./docs/guide/alias.md) — Use `resolve.alias` for stable import paths
 - [Introspection](./docs/guide/introspection.md) — Programmatic API: `getRoutes`, `getSockets`, `vitek-manifest.json`
+- [Bundle size](./docs/guide/bundle-size.md) — Plugin and generated bundles (vitek-api.mjs); tree-shaking, heavy imports
 - [Examples](./examples/) — socket-only, basic-js, js-react, typescript-react, import-external, api-docs, prisma, docker
 - [GitHub](https://github.com/martinsbicudo/vitek-plugin)
 - [NPM](https://www.npmjs.com/package/vitek-plugin)
