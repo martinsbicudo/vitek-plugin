@@ -55,13 +55,15 @@ O import `../../../lib/comments` também é tratado, desde que o arquivo resolvi
 ## Limitações
 
 - **Somente dentro do projeto** — Imports que resolvem para fora da raiz (ex.: `../../../etc/passwd`) **não** são reescritos por razões de segurança.
-- **Apenas arquivos em `src/`** — O transform aplica-se apenas a arquivos sob `src/`. Arquivos em `public/`, `node_modules/` ou fora de `src/` não são processados.
+- **Apenas arquivos em `src/` (ou `srcDir`)** — O transform aplica-se apenas a arquivos sob o diretório de source (padrão: `src/`). Use a opção `srcDir` se seu código ficar em outro diretório (ex.: `lib/` ou `app/`). Arquivos em `public/`, `node_modules/` ou fora de `srcDir` não são processados.
 - **Imports relativos apenas** — Imports de pacotes npm (ex.: `import vue from 'vue'`) passam direto; não são alterados.
 - **apiDir configurável** — Se você usar `apiDir` fora de `src/` (ex.: `api/` na raiz), o `resolveId` ainda ajuda imports em arquivos da API; o `transform` continua aplicando-se a arquivos em `src/` (onde normalmente ficam as rotas).
 
-## apiDir personalizado
+## apiDir e srcDir personalizados
 
-Quando `apiDir` é configurado (ex.: `apiDir: 'api'` com `api/` na raiz), o `resolveId` continua funcionando para imports relativos **dentro** dos arquivos da API. A estrutura do projeto pode variar; o importante é que os imports resolvam para arquivos **dentro da raiz**.
+Quando `apiDir` é configurado (ex.: `apiDir: 'api'` com `api/` na raiz), o `resolveId` continua funcionando para imports relativos **dentro** dos arquivos da API.
+
+Use `srcDir` quando seu código-fonte estiver em outro diretório (ex.: `srcDir: 'lib'`). O transform aplica-se a todos os arquivos sob `srcDir`, reescrevendo imports relativos para paths root-relative.
 
 ## Troubleshooting
 

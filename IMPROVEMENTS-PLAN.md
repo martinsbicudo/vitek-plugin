@@ -86,9 +86,11 @@ Objetivo: melhorar robustez e performance com esforço baixo.
 
 ---
 
-## Fase 2 — Organização e qualidade (médio prazo)
+## Fase 2 — Organização e qualidade (médio prazo) ✅
 
 Objetivo: melhorar estrutura do código e qualidade dos testes.
+
+**Status:** Concluída. Sub-plugins (`vitek:resolve`, `vitek:transform`, `vitek:dev`, `vitek:preview`, `vitek:build`), path-utils, srcDir, documentação e testes adicionados.
 
 ### 2.1 Modularização do plugin principal
 

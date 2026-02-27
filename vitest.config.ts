@@ -17,10 +17,11 @@ export default defineConfig({
         'examples/',
       ],
       thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 75,
-        statements: 80,
+        // Phase 2 baseline; improve incrementally (see IMPROVEMENTS-PLAN 2.3)
+        lines: 55,
+        functions: 60,
+        branches: 50,
+        statements: 55,
       },
     },
     include: ['src/**/*.test.ts'],

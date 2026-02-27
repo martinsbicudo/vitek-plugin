@@ -5,7 +5,12 @@ import { pathToFileURL } from 'url';
 import type { Plugin } from 'vite';
 import { vitek } from './plugin.js';
 
-function callResolveId(plugin: Plugin, id: string, importer: string | undefined): string | null {
+function findPlugin(plugins: Plugin[], name: string): Plugin | undefined {
+  return plugins.find((p) => p.name === name);
+}
+
+function callResolveId(plugin: Plugin | undefined, id: string, importer: string | undefined): string | null {
+  if (!plugin) return null;
   const hook = plugin.resolveId;
   if (!hook) return null;
   const fn = typeof hook === 'function' ? hook : (hook as { handler: (id: string, importer: string | undefined, options: unknown) => string | null }).handler;
@@ -13,7 +18,8 @@ function callResolveId(plugin: Plugin, id: string, importer: string | undefined)
   return fn.call(null as any, id, importer, { attributes: {}, isEntry: false }) as string | null;
 }
 
-function callTransform(plugin: Plugin, code: string, id: string): { code: string; map: null } | null {
+function callTransform(plugin: Plugin | undefined, code: string, id: string): { code: string; map: null } | null {
+  if (!plugin) return null;
   const hook = plugin.transform;
   if (!hook) return null;
   const fn = typeof hook === 'function' ? hook : (hook as { handler: (code: string, id: string) => { code: string; map: null } | null }).handler;
@@ -22,9 +28,13 @@ function callTransform(plugin: Plugin, code: string, id: string): { code: string
 }
 
 describe('vitek plugin resolveId and transform', () => {
-  let plugin: ReturnType<typeof vitek>;
+  let plugins: ReturnType<typeof vitek>;
   let rootDir: string;
   let apiDir: string;
+  let configPlugin: Plugin;
+  let resolvePlugin: Plugin;
+  let transformPlugin: Plugin;
+  let buildPlugin: Plugin;
 
   beforeEach(() => {
     rootDir = fs.mkdtempSync(path.join(process.cwd(), 'vitek-plugin-test-'));
@@ -47,11 +57,16 @@ describe('vitek plugin resolveId and transform', () => {
       "import { getGreeting } from '../../lib/greeting';\nexport default function handler() { return {}; }\n",
       'utf-8'
     );
-    plugin = vitek({ apiDir: path.join('src', 'api') });
-    (plugin as { configResolved?: (config: { root: string; build?: { outDir: string } }) => void }).configResolved?.({
-      root: rootDir,
-      build: { outDir: 'dist' },
-    });
+    plugins = vitek({ apiDir: path.join('src', 'api') });
+    configPlugin = findPlugin(plugins, 'vitek:build')!;
+    resolvePlugin = findPlugin(plugins, 'vitek:resolve')!;
+    transformPlugin = findPlugin(plugins, 'vitek:transform')!;
+    buildPlugin = findPlugin(plugins, 'vitek:build')!;
+    const configResolvedHook = configPlugin.configResolved;
+    if (configResolvedHook) {
+      const fn = typeof configResolvedHook === 'function' ? configResolvedHook : configResolvedHook.handler;
+      fn.call(null as never, { root: rootDir, build: { outDir: 'dist' } } as never);
+    }
   });
 
   afterEach(() => {
@@ -65,22 +80,22 @@ describe('vitek plugin resolveId and transform', () => {
   describe('resolveId', () => {
     it('returns null when id does not start with .', () => {
       const importer = pathToFileURL(path.join(apiDir, 'health.get.ts')).href;
-      expect(callResolveId(plugin, 'vue', importer)).toBeNull();
-      expect(callResolveId(plugin, '/absolute', importer)).toBeNull();
+      expect(callResolveId(resolvePlugin, 'vue', importer)).toBeNull();
+      expect(callResolveId(resolvePlugin, '/absolute', importer)).toBeNull();
     });
 
     it('returns null when importer is undefined', () => {
-      expect(callResolveId(plugin, '../lib/greeting', undefined)).toBeNull();
+      expect(callResolveId(resolvePlugin, '../lib/greeting', undefined)).toBeNull();
     });
 
     it('returns null when importer is outside apiDir', () => {
       const importerOutside = pathToFileURL(path.join(rootDir, 'src', 'main.ts')).href;
-      expect(callResolveId(plugin, '../lib/greeting', importerOutside)).toBeNull();
+      expect(callResolveId(resolvePlugin, '../lib/greeting', importerOutside)).toBeNull();
     });
 
     it('resolves relative import from api file to existing file and returns file URL', () => {
       const importer = pathToFileURL(path.join(apiDir, 'health.get.ts')).href;
-      const result = callResolveId(plugin, '../lib/greeting', importer);
+      const result = callResolveId(resolvePlugin, '../lib/greeting', importer);
       expect(result).not.toBeNull();
       expect(typeof result).toBe('string');
       expect(result).toContain('greeting');
@@ -89,7 +104,7 @@ describe('vitek plugin resolveId and transform', () => {
 
     it('resolves with extension fallback when target has no extension', () => {
       const importer = pathToFileURL(path.join(apiDir, 'health.get.ts')).href;
-      const result = callResolveId(plugin, '../lib/greeting', importer);
+      const result = callResolveId(resolvePlugin, '../lib/greeting', importer);
       expect(result).not.toBeNull();
       const filePath = result!.replace(/^file:\/\//, '').replace(/%2F/g, '/').replace(/%3A/g, ':');
       expect(fs.existsSync(filePath) || fs.existsSync(filePath + '.ts')).toBe(true);
@@ -97,13 +112,13 @@ describe('vitek plugin resolveId and transform', () => {
 
     it('returns null when relative target does not exist', () => {
       const importer = pathToFileURL(path.join(apiDir, 'health.get.ts')).href;
-      expect(callResolveId(plugin, '../lib/nonexistent', importer)).toBeNull();
+      expect(callResolveId(resolvePlugin, '../lib/nonexistent', importer)).toBeNull();
     });
 
     it('resolves nested api file relative import', () => {
       const nestedDir = path.join(apiDir, 'nested');
       const importer = pathToFileURL(path.join(nestedDir, 'deep.get.ts')).href;
-      const result = callResolveId(plugin, '../../lib/greeting', importer);
+      const result = callResolveId(resolvePlugin, '../../lib/greeting', importer);
       expect(result).not.toBeNull();
       expect(result).toContain('greeting');
     });
@@ -114,7 +129,7 @@ describe('vitek plugin resolveId and transform', () => {
       const code = "import x from '../lib/greeting';";
       fs.mkdirSync(path.join(rootDir, 'other'), { recursive: true });
       const idOutside = pathToFileURL(path.join(rootDir, 'other', 'main.ts')).href;
-      const result = callTransform(plugin, code, idOutside);
+      const result = callTransform(transformPlugin, code, idOutside);
       expect(result).toBeNull();
     });
 
@@ -126,7 +141,7 @@ describe('vitek plugin resolveId and transform', () => {
       );
       const code = "import { getGreeting } from './greeting';\nexport function run() { return getGreeting(); }\n";
       const id = pathToFileURL(path.join(rootDir, 'src', 'lib', 'executor.ts')).href;
-      const result = callTransform(plugin, code, id);
+      const result = callTransform(transformPlugin, code, id);
       expect(result).not.toBeNull();
       expect(result!.code).toContain("/src/lib/greeting");
       expect(result!.code).not.toContain("from './greeting'");
@@ -146,7 +161,7 @@ describe('vitek plugin resolveId and transform', () => {
       );
       const code = "export { getMessage } from './helper';\n";
       const id = pathToFileURL(path.join(rootDir, 'src', 'lib', 'nested', 'index.ts')).href;
-      const result = callTransform(plugin, code, id);
+      const result = callTransform(transformPlugin, code, id);
       expect(result).not.toBeNull();
       expect(result!.code).toContain("/src/lib/nested/helper");
     });
@@ -154,7 +169,7 @@ describe('vitek plugin resolveId and transform', () => {
     it('rewrites relative import to root-relative path when id is under apiDir', () => {
       const code = "import { getGreeting } from '../lib/greeting';\nexport default function handler() {}";
       const id = pathToFileURL(path.join(apiDir, 'health.get.ts')).href;
-      const result = callTransform(plugin, code, id);
+      const result = callTransform(transformPlugin, code, id);
       expect(result).not.toBeNull();
       expect(result!.code).toContain("/src/lib/greeting");
       expect(result!.code).not.toContain("from '../lib/greeting'");
@@ -163,7 +178,7 @@ describe('vitek plugin resolveId and transform', () => {
     it('preserves double quotes when original uses double quotes', () => {
       const code = 'import { getGreeting } from "../lib/greeting";';
       const id = pathToFileURL(path.join(apiDir, 'health.get.ts')).href;
-      const result = callTransform(plugin, code, id);
+      const result = callTransform(transformPlugin, code, id);
       expect(result).not.toBeNull();
       expect(result!.code).toContain('/src/lib/greeting');
     });
@@ -171,7 +186,7 @@ describe('vitek plugin resolveId and transform', () => {
     it('returns null when code has no relative imports', () => {
       const code = "import vue from 'vue';\nexport default {}";
       const id = pathToFileURL(path.join(apiDir, 'health.get.ts')).href;
-      const result = callTransform(plugin, code, id);
+      const result = callTransform(transformPlugin, code, id);
       expect(result).toBeNull();
     });
 
@@ -179,7 +194,7 @@ describe('vitek plugin resolveId and transform', () => {
       const code = "import { getGreeting } from '../../lib/greeting';";
       const nestedPath = path.join(apiDir, 'nested', 'deep.get.ts');
       const id = pathToFileURL(nestedPath).href;
-      const result = callTransform(plugin, code, id);
+      const result = callTransform(transformPlugin, code, id);
       expect(result).not.toBeNull();
       expect(result!.code).toContain("/src/lib/greeting");
     });
@@ -187,33 +202,35 @@ describe('vitek plugin resolveId and transform', () => {
     it('does not rewrite import when resolved target is outside root', () => {
       const code = "import x from '../../../etc/passwd';";
       const id = pathToFileURL(path.join(apiDir, 'health.get.ts')).href;
-      const result = callTransform(plugin, code, id);
+      const result = callTransform(transformPlugin, code, id);
       expect(result).toBeNull();
     });
 
     it('returns null when relative target file does not exist', () => {
       const code = "import x from '../lib/nonexistent';";
       const id = pathToFileURL(path.join(apiDir, 'health.get.ts')).href;
-      const result = callTransform(plugin, code, id);
+      const result = callTransform(transformPlugin, code, id);
       expect(result).toBeNull();
     });
   });
 
   describe('plugin shape', () => {
-    it('has enforce pre', () => {
-      expect(plugin.enforce).toBe('pre');
+    it('returns array of sub-plugins with enforce pre for resolve/transform/build', () => {
+      expect(resolvePlugin.enforce).toBe('pre');
+      expect(transformPlugin.enforce).toBe('pre');
+      expect(buildPlugin.enforce).toBe('pre');
     });
 
-    it('exposes resolveId and transform', () => {
-      expect(plugin.resolveId).toBeDefined();
-      expect(plugin.transform).toBeDefined();
+    it('exposes resolveId and transform on respective plugins', () => {
+      expect(resolvePlugin.resolveId).toBeDefined();
+      expect(transformPlugin.transform).toBeDefined();
     });
   });
 
   describe('buildStart', () => {
     it('generates api.services.ts and api.types.ts when buildStart runs', async () => {
       fs.writeFileSync(path.join(rootDir, 'tsconfig.json'), '{}', 'utf-8');
-      const buildStart = (plugin as { buildStart?: () => Promise<void> }).buildStart;
+      const buildStart = (buildPlugin as { buildStart?: () => Promise<void> }).buildStart;
       if (!buildStart) {
         expect.fail('Plugin does not have buildStart hook');
       }
@@ -224,6 +241,35 @@ describe('vitek plugin resolveId and transform', () => {
       expect(fs.existsSync(typesPath)).toBe(true);
       expect(fs.readFileSync(servicesPath, 'utf-8')).toContain('getHealth');
       expect(fs.readFileSync(typesPath, 'utf-8')).toContain('VitekParams');
+    });
+  });
+
+  describe('srcDir option', () => {
+    it('transform respects srcDir when custom srcDir is set', () => {
+      fs.mkdirSync(path.join(rootDir, 'lib', 'shared'), { recursive: true });
+      fs.writeFileSync(
+        path.join(rootDir, 'lib', 'shared', 'helper.ts'),
+        "export function help() { return 'ok'; }\n",
+        'utf-8'
+      );
+      fs.writeFileSync(
+        path.join(rootDir, 'lib', 'entry.ts'),
+        "import { help } from './shared/helper';\nexport default help;\n",
+        'utf-8'
+      );
+      const customPlugins = vitek({ apiDir: path.join('src', 'api'), srcDir: 'lib' });
+      const customTransform = findPlugin(customPlugins, 'vitek:transform')!;
+      const customBuild = findPlugin(customPlugins, 'vitek:build')!;
+      const configResolved = customBuild.configResolved;
+      if (configResolved) {
+        const fn = typeof configResolved === 'function' ? configResolved : configResolved.handler;
+        fn.call(null as never, { root: rootDir, build: { outDir: 'dist' } } as never);
+      }
+      const code = "import { help } from './shared/helper';\nexport default help;\n";
+      const id = pathToFileURL(path.join(rootDir, 'lib', 'entry.ts')).href;
+      const result = callTransform(customTransform, code, id);
+      expect(result).not.toBeNull();
+      expect(result!.code).toContain('/lib/shared/helper');
     });
   });
 });
