@@ -23,6 +23,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "node scripts/e2e.mjs",
+    "bench": "node scripts/bench.mjs",
     "examples:build": "bash examples/build-all.sh",
     "examples:test": "bash examples/run-all-tests.sh",
     "examples:build-and-test": "bash examples/build-and-test.sh"

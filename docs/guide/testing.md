@@ -75,6 +75,28 @@ Each example includes `post-build.test.ts` (or `.js`) that runs after `vite buil
 
 Run: `pnpm run build && pnpm test` from each example directory. The [build-and-test.sh](../examples/build-and-test.sh) script runs this for all examples.
 
+### E2E test
+
+An end-to-end test builds the plugin and the **basic-js** example, starts **vitek-serve**, and sends GET and POST requests to the API:
+
+```bash
+pnpm test:e2e
+```
+
+This runs `scripts/e2e.mjs`. Ensure the plugin is buildable and that `examples/basic-js` can be built (e.g. after `pnpm build` at repo root).
+
+### Benchmark
+
+A simple benchmark script sends many requests to a URL and reports latency (p50, p99) and throughput (req/s):
+
+```bash
+pnpm bench
+# or with custom URL and count:
+node scripts/bench.mjs http://127.0.0.1:3000/api/health 5000
+```
+
+Default URL is `http://127.0.0.1:3000/api/health` and default count is 1000. Start a server (e.g. from an example) before running the benchmark.
+
 ## Writing Tests
 
 Tests follow the naming convention: `[filename].test.ts`

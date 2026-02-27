@@ -1,4 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
+import { Readable } from 'stream';
+import { EventEmitter } from 'events';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Connect } from 'vite';
 import { createRequestHandler } from './request-handler.js';
@@ -36,47 +38,56 @@ function mockRequest(
   return req;
 }
 
-type MockResponseOut = {
+type MockResponseOut = ServerResponse & {
   _statusCode: number;
   _headers: Record<string, string>;
   _body: string;
   _ended: boolean;
-  statusCode: number;
-  writableEnded: boolean;
-  setHeader(name: string, value: string | number | string[]): MockResponseOut;
-  end(chunk?: string | (() => void), _encoding?: (() => void) | string, cb?: () => void): MockResponseOut;
-  writeHead: ReturnType<typeof vi.fn>;
 };
 
-function mockResponse(): ServerResponse & { _statusCode: number; _headers: Record<string, string>; _body: string } {
-  const out: MockResponseOut = {
-    _statusCode: 0,
-    _headers: {},
-    _body: '',
-    _ended: false,
-    get statusCode() {
-      return out._statusCode;
-    },
-    set statusCode(code: number) {
-      out._statusCode = code;
-    },
-    get writableEnded() {
-      return out._ended;
-    },
-    setHeader(name: string, value: string | number | string[]) {
-      out._headers[name] = Array.isArray(value) ? value.join(', ') : String(value);
-      return out;
-    },
-    end(chunk?: string | (() => void), _encoding?: (() => void) | string, cb?: () => void) {
-      out._ended = true;
-      if (typeof chunk === 'string') out._body = chunk;
-      else if (typeof chunk === 'function') chunk();
+class MockResponse extends EventEmitter {
+  _statusCode = 0;
+  _headers: Record<string, string> = {};
+  _body = '';
+  _ended = false;
+  get statusCode() {
+    return this._statusCode;
+  }
+  set statusCode(code: number) {
+    this._statusCode = code;
+  }
+  get writableEnded() {
+    return this._ended;
+  }
+  writable = true;
+  setHeader(name: string, value: string | number | string[]) {
+    this._headers[name] = Array.isArray(value) ? value.join(', ') : String(value);
+    return this;
+  }
+  write(chunk: Buffer | string, encoding?: string | (() => void), cb?: () => void) {
+    const callback = typeof encoding === 'function' ? encoding : cb;
+    this._body += typeof chunk === 'string' ? chunk : chunk?.toString?.() ?? '';
+    (callback as () => void)?.();
+    return true;
+  }
+  end(chunk?: string | Buffer | (() => void), _encoding?: (() => void) | string, cb?: () => void) {
+    this._ended = true;
+    if (typeof chunk === 'function' && _encoding === undefined && cb === undefined) {
+      (chunk as () => void)();
+    } else {
+      if (typeof chunk === 'string') this._body += chunk;
+      else if (Buffer.isBuffer(chunk)) this._body += chunk.toString();
+      else if (typeof chunk === 'function') (chunk as () => void)();
       (cb as () => void)?.();
-      return out;
-    },
-    writeHead: vi.fn(),
-  };
-  return out as unknown as ServerResponse & { _statusCode: number; _headers: Record<string, string>; _body: string };
+    }
+    this.emit('finish');
+    return this;
+  }
+  writeHead = vi.fn();
+}
+
+function mockResponse(): MockResponseOut {
+  return new MockResponse() as unknown as MockResponseOut;
 }
 
 function next(): Connect.NextFunction {
@@ -272,6 +283,33 @@ describe('createRequestHandler', () => {
     const res = mockResponse();
     await handler(req, res, next());
     expect(res._body).toBe('<html>ok</html>');
+  });
+
+  it('pipes Readable stream body to response', async () => {
+    const streamBody = new Readable({
+      read() {
+        this.push('streamed ');
+        this.push('data');
+        this.push(null);
+      },
+    });
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => ({
+        status: 200,
+        headers: { 'Content-Type': 'text/plain' },
+        body: streamBody,
+      })
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [] });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    const finishPromise = new Promise<void>((resolve) => res.once('finish', resolve));
+    await handler(req, res, next());
+    await finishPromise;
+    expect(res._statusCode).toBe(200);
+    expect(res._headers['Content-Type']).toBe('text/plain');
+    expect(res._body).toBe('streamed data');
   });
 
   it('sends Cache-Control and other custom headers when present in VitekResponse', async () => {

@@ -251,12 +251,12 @@ Documento de planejamento de melhorias incrementais. Cada fase é entregável de
 
 ### 4.3 Fase 4 — checklist final
 
-- [ ] Helpers text/html e streaming (incl. SSE) implementados e testados.
-- [ ] E2E com Playwright (ou similar) implementado.
-- [ ] Script de benchmark e documentação.
-- [ ] Refatorar testes existentes se necessário.
-- [ ] Todos os examples com build + test passando.
-- [ ] Documentação atualizada.
+- [x] Helpers text/html e streaming (incl. SSE) implementados e testados.
+- [x] E2E (Node script: build + start + GET/POST) implementado; doc em testing.md.
+- [x] Script de benchmark e documentação.
+- [x] Refatorar testes existentes se necessário (mock response com EventEmitter para pipe).
+- [ ] Todos os examples com build + test passando (rodar build-and-test.sh).
+- [x] Documentação atualizada (response-handling: text, html, streaming, SSE; testing: E2E e bench).
 
 ---
 

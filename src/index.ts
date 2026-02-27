@@ -38,6 +38,8 @@ export {
   tooManyRequests,
   internalServerError,
   redirect,
+  text,
+  html,
   cacheControl,
   noStore,
 } from './shared/response-helpers.js';

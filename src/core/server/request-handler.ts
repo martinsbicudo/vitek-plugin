@@ -51,6 +51,15 @@ export interface RequestHandlerOptions {
 
 const noop = () => {};
 
+/** True if value is a Node.js Readable stream (has .pipe). Used for streaming response body. */
+function isReadableStream(value: unknown): value is NodeJS.ReadableStream {
+  return (
+    value != null &&
+    typeof value === 'object' &&
+    typeof (value as NodeJS.ReadableStream).pipe === 'function'
+  );
+}
+
 /**
  * Creates a Connect-style middleware that handles /api/* requests using the given routes and middlewares.
  */
@@ -174,19 +183,27 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
             }
           }
           if (!response.headers || !response.headers['Content-Type']) {
-            if (response.body !== undefined) {
+            if (response.body !== undefined && !isReadableStream(response.body)) {
               res.setHeader('Content-Type', 'application/json');
             }
           }
           res.statusCode = statusCode;
           if (response.body === undefined) {
             res.end();
+            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
+          } else if (isReadableStream(response.body)) {
+            const stream = response.body as NodeJS.ReadableStream;
+            res.once('finish', () =>
+              logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime)
+            );
+            stream.pipe(res as NodeJS.WritableStream);
           } else if (typeof response.body === 'string') {
             res.end(response.body);
+            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
           } else {
             res.end(JSON.stringify(response.body));
+            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
           }
-          logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
         } else {
           if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
           res.setHeader('Content-Type', 'application/json');

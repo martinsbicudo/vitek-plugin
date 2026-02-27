@@ -131,6 +131,28 @@ export function redirect(
 }
 
 /**
+ * Creates a plain text response (Content-Type: text/plain).
+ */
+export function text(body: string, status: number = 200): VitekResponse {
+  return {
+    status,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    body,
+  };
+}
+
+/**
+ * Creates an HTML response (Content-Type: text/html).
+ */
+export function html(body: string, status: number = 200): VitekResponse {
+  return {
+    status,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    body,
+  };
+}
+
+/**
  * Cache-Control header helpers. Merge returned headers into your response, e.g.:
  * `{ ...ok(body), headers: { ...ok(body).headers, ...cacheControl(60) } }`
  */

@@ -54,6 +54,54 @@ export default function handler(context: VitekContext) {
 | `internalServerError` | 500 Internal Server Error | `internalServerError(body?, headers?)` |
 | `redirect` | 301/302/307/308 | `redirect(url, permanent?, preserveMethod?)` |
 | `json` | Custom | `json(body, options?)` with `status` and `headers` |
+| `text` | 200 (or custom) | `text(body: string, status?)` — plain text |
+| `html` | 200 (or custom) | `html(body: string, status?)` — HTML |
+
+## Plain text and HTML
+
+Use `text()` and `html()` for non-JSON responses:
+
+```typescript
+import { text, html } from "vitek-plugin";
+
+// Plain text (Content-Type: text/plain; charset=utf-8)
+return text("Hello, world!");
+return text("Error", 503);
+
+// HTML (Content-Type: text/html; charset=utf-8)
+return html("<h1>Welcome</h1><p>Page content.</p>");
+return html("<h1>Not Found</h1>", 404);
+```
+
+## Streaming and SSE
+
+You can return a **stream** as the response body. The handler must return a `VitekResponse` with `body` set to a Node.js `ReadableStream` (e.g. `stream.Readable`, or the result of `Readable.from()`). The server will pipe it to the client.
+
+Example: **Server-Sent Events (SSE)** — set `Content-Type: text/event-stream` and use a readable stream:
+
+```typescript
+import { Readable } from "stream";
+
+export default function handler() {
+  const stream = new Readable({
+    read() {
+      this.push("data: " + JSON.stringify({ t: Date.now() }) + "\n\n");
+      const t = setTimeout(() => {
+        this.push("data: " + JSON.stringify({ t: Date.now() }) + "\n\n");
+        this.push(null); // end stream
+      }, 1000);
+      this.on("close", () => clearTimeout(t));
+    },
+  });
+  return {
+    status: 200,
+    headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-store" },
+    body: stream,
+  };
+}
+```
+
+For one-off streaming (e.g. a file), you can use `Readable.from()` or `fs.createReadStream()` and pass the stream as `body`.
 
 ## Cache headers
 
