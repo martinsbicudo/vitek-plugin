@@ -30,16 +30,42 @@ function run(cmd, args, opts = {}) {
   });
 }
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: c.signal }).finally(() => clearTimeout(t));
+}
+
 async function waitUp(maxMs = 15000) {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
     try {
-      const r = await fetch(`${BASE_HTTP}/`);
+      const r = await fetchWithTimeout(`${BASE_HTTP}/`, {}, 5000);
       if (r.ok) return;
     } catch (_) {}
     await new Promise((r) => setTimeout(r, 200));
   }
   throw new Error('Server not ready');
+}
+
+function waitForServerExit(server, timeoutMs = 3000) {
+  return new Promise((resolve) => {
+    if (server.exitCode !== null) {
+      resolve();
+      return;
+    }
+    const done = () => {
+      clearTimeout(t);
+      server.removeListener('exit', onExit);
+      resolve();
+    };
+    const onExit = () => done();
+    server.once('exit', onExit);
+    const t = setTimeout(() => {
+      server.kill('SIGKILL');
+      setTimeout(done, 500);
+    }, timeoutMs);
+  });
 }
 
 function connectAndEcho(url, message, expectedSubstring) {
@@ -98,10 +124,15 @@ async function main() {
     console.log('[e2e-socket] OK');
   } finally {
     server.kill('SIGTERM');
+    await waitForServerExit(server, 3000);
   }
 }
 
-main().catch((e) => {
-  console.error('[e2e-socket]', e.message);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((e) => {
+    console.error('[e2e-socket]', e.message);
+    process.exit(1);
+  });

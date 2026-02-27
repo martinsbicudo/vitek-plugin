@@ -27,16 +27,42 @@ function run(cmd, args, opts = {}) {
   });
 }
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: c.signal }).finally(() => clearTimeout(t));
+}
+
 async function waitUp(maxMs = 15000) {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
     try {
-      const r = await fetch(`${BASE}/api/health`);
+      const r = await fetchWithTimeout(`${BASE}/api/health`, {}, 5000);
       if (r.ok) return;
     } catch (_) {}
     await new Promise((r) => setTimeout(r, 200));
   }
   throw new Error('Server not ready');
+}
+
+function waitForServerExit(server, timeoutMs = 3000) {
+  return new Promise((resolve) => {
+    if (server.exitCode !== null) {
+      resolve();
+      return;
+    }
+    const done = () => {
+      clearTimeout(t);
+      server.removeListener('exit', onExit);
+      resolve();
+    };
+    const onExit = () => done();
+    server.once('exit', onExit);
+    const t = setTimeout(() => {
+      server.kill('SIGKILL');
+      setTimeout(done, 500);
+    }, timeoutMs);
+  });
 }
 
 async function main() {
@@ -55,12 +81,12 @@ async function main() {
     console.log('[e2e] Wait for server');
     await waitUp();
     console.log('[e2e] GET /api/health');
-    const r1 = await fetch(`${BASE}/api/health`);
+    const r1 = await fetchWithTimeout(`${BASE}/api/health`);
     if (!r1.ok) throw new Error('GET health ' + r1.status);
     const b1 = await r1.json();
     if (!b1?.status && !b1?.ok) throw new Error('GET body ' + JSON.stringify(b1));
     console.log('[e2e] POST /api/posts');
-    const r2 = await fetch(`${BASE}/api/posts`, {
+    const r2 = await fetchWithTimeout(`${BASE}/api/posts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: 'E2E', content: 'x', authorId: 1 }),
@@ -71,10 +97,15 @@ async function main() {
     console.log('[e2e] OK');
   } finally {
     server.kill('SIGTERM');
+    await waitForServerExit(server, 3000);
   }
 }
 
-main().catch((e) => {
-  console.error('[e2e]', e.message);
-  process.exit(1);
-});
+main()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((e) => {
+    console.error('[e2e]', e.message);
+    process.exit(1);
+  });

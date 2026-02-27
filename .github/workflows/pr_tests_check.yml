@@ -66,12 +66,16 @@ jobs:
 
       - name: Build and test examples
         run: pnpm run examples:build-and-test
+        timeout-minutes: 10
 
       - name: Run e2e test
         run: pnpm run test:e2e
+        timeout-minutes: 3
 
       - name: Run e2e WebSocket test
         run: pnpm run test:e2e:socket
+        timeout-minutes: 3
 
       - name: Run example benchmark
         run: pnpm run example:bench
+        timeout-minutes: 5

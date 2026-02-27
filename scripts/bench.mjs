@@ -48,6 +48,26 @@ async function waitUp(baseUrl, maxMs = 15000) {
   throw new Error('Server not ready');
 }
 
+function waitForServerExit(server, timeoutMs = 3000) {
+  return new Promise((resolve) => {
+    if (server.exitCode !== null) {
+      resolve();
+      return;
+    }
+    const done = () => {
+      clearTimeout(t);
+      server.removeListener('exit', onExit);
+      resolve();
+    };
+    const onExit = () => done();
+    server.once('exit', onExit);
+    const t = setTimeout(() => {
+      server.kill('SIGKILL');
+      setTimeout(done, 500);
+    }, timeoutMs);
+  });
+}
+
 async function runBenchmark() {
   const times = [];
   const start = performance.now();
@@ -96,17 +116,20 @@ async function main() {
     console.log('[bench] Done');
   } finally {
     server.kill('SIGTERM');
+    await waitForServerExit(server, 3000);
   }
 }
 
-main().catch((err) => {
-  const code = err?.cause?.code ?? err?.code;
-  if (code === 'ECONNREFUSED') {
-    console.error('Error: No server is running at ' + url + '.');
-    console.error('Start the API first (e.g. cd examples/basic-js && pnpm run build && pnpm run start),');
-    console.error('or use: node scripts/bench.mjs --with-example [n]');
-  } else {
-    console.error(err);
-  }
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    const code = err?.cause?.code ?? err?.code;
+    if (code === 'ECONNREFUSED') {
+      console.error('Error: No server is running at ' + url + '.');
+      console.error('Start the API first (e.g. cd examples/basic-js && pnpm run build && pnpm run start),');
+      console.error('or use: node scripts/bench.mjs --with-example [n]');
+    } else {
+      console.error(err);
+    }
+    process.exit(1);
+  });
