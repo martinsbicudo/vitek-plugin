@@ -129,3 +129,57 @@ import type {
   BeforeApiRequestContext,
 } from "vitek-plugin";
 ```
+
+---
+
+## Recipes
+
+### Rate limiting (in-memory by IP)
+
+Rate limiting is not built into the core. You can implement it with a `beforeApiRequest` plugin that tracks requests per IP and short-circuits with 429 when a limit is exceeded.
+
+**In-memory example (single process):**
+
+```typescript
+import type { IncomingMessage } from "http";
+import type { VitekPlugin } from "vitek-plugin";
+import { tooManyRequests } from "vitek-plugin";
+
+const windowMs = 60_000;
+const maxPerWindow = 100;
+const store = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIp(req: IncomingMessage): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (forwarded) {
+    const first = typeof forwarded === "string" ? forwarded : forwarded[0];
+    return first.split(",")[0].trim();
+  }
+  return req.socket?.remoteAddress ?? "unknown";
+}
+
+const rateLimitPlugin: VitekPlugin = {
+  name: "rate-limit",
+  beforeApiRequest({ req, res, path, next }) {
+    const ip = getClientIp(req);
+    const now = Date.now();
+    let entry = store.get(ip);
+    if (!entry || now >= entry.resetAt) {
+      entry = { count: 0, resetAt: now + windowMs };
+      store.set(ip, entry);
+    }
+    entry.count++;
+    if (entry.count > maxPerWindow) {
+      res.statusCode = 429;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify(tooManyRequests({ error: "Too many requests" }).body));
+      return;
+    }
+    next();
+  },
+};
+```
+
+Use with `trustProxy: true` if the app is behind a proxy so `X-Forwarded-For` is used for the client IP.
+
+**Production:** For production (multiple instances or persistence), use a shared store (e.g. Redis) or put rate limiting in a reverse proxy (nginx, Caddy, Cloudflare). The in-memory plugin above is suitable for development or single-instance deployments.

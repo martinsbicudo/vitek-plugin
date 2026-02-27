@@ -6,7 +6,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-EXAMPLES=(basic-js js-react typescript-react import-external socket-only api-docs prisma docker)
+EXAMPLES=(basic-js js-react typescript-react import-external socket-only api-docs prisma docker rate-limit)
 PASSED=0
 FAILED=0
 FAILED_NAMES=()

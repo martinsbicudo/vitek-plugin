@@ -94,4 +94,30 @@ describe('loadProductionConfig', () => {
     expect(result.onError).toBeDefined();
     expect(typeof result.onError).toBe('function');
   });
+
+  it('loads onServerStart and onServerShutdown when vitek.config.mjs exports them', async () => {
+    const fixtureDir = path.join(__dirname, 'fixtures', 'serve-config');
+    const result = await loadProductionConfig(fixtureDir);
+    expect(result.onServerStart).toBeDefined();
+    expect(typeof result.onServerStart).toBe('function');
+    expect(result.onServerShutdown).toBeDefined();
+    expect(typeof result.onServerShutdown).toBe('function');
+  });
+
+  it('onServerStart receives context with api, sockets, server', async () => {
+    const fixtureDir = path.join(__dirname, 'fixtures', 'serve-config');
+    const result = await loadProductionConfig(fixtureDir);
+    const mockCtx = {
+      api: { fetch: async () => ({}) },
+      sockets: { emit: () => {} },
+      server: {} as import('http').Server,
+    };
+    delete (globalThis as Record<string, unknown>).__vitekOnServerStartCtx;
+    delete (globalThis as Record<string, unknown>).__vitekOnServerStartCalled;
+    result.onServerStart!(mockCtx);
+    expect((globalThis as Record<string, unknown>).__vitekOnServerStartCalled).toBe(true);
+    expect((globalThis as Record<string, unknown>).__vitekOnServerStartCtx).toEqual(mockCtx);
+    delete (globalThis as Record<string, unknown>).__vitekOnServerStartCtx;
+    delete (globalThis as Record<string, unknown>).__vitekOnServerStartCalled;
+  });
 });

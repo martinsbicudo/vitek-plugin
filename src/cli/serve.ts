@@ -21,23 +21,40 @@ const VITEK_SERVE_CONFIG_FILENAME = 'vitek.config.mjs';
 
 export type BeforeApiRequestHook = import('../core/server/request-handler.js').BeforeApiRequestHook;
 
-/** Load beforeApiRequest and onError from dist/vitek.config.mjs if present. Used by main() and by tests. Throws if file exists but import fails. */
-export async function loadProductionConfig(distDir: string): Promise<{
+export interface OnServerStartContext {
+  api: ApiClient;
+  sockets: SocketEmitter;
+  server: http.Server;
+}
+
+export type OnServerStartHook = (ctx: OnServerStartContext) => void | Promise<void>;
+export type OnServerShutdownHook = () => void | Promise<void>;
+
+export interface ProductionConfig {
   beforeApiRequest?: BeforeApiRequestHook[];
   onError?: (err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void>;
-}> {
+  onServerStart?: OnServerStartHook;
+  onServerShutdown?: OnServerShutdownHook;
+}
+
+/** Load beforeApiRequest, onError, onServerStart, onServerShutdown from dist/vitek.config.mjs if present. Throws if file exists but import fails. */
+export async function loadProductionConfig(distDir: string): Promise<ProductionConfig> {
   const configPath = path.join(distDir, VITEK_SERVE_CONFIG_FILENAME);
   if (!fs.existsSync(configPath)) return {};
   const configUrl = pathToFileURL(configPath).href;
   const configMod = await import(configUrl) as {
     beforeApiRequest?: BeforeApiRequestHook | BeforeApiRequestHook[];
     onError?: (err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void>;
+    onServerStart?: OnServerStartHook;
+    onServerShutdown?: OnServerShutdownHook;
   };
-  const result: { beforeApiRequest?: BeforeApiRequestHook[]; onError?: (err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void> } = {};
+  const result: ProductionConfig = {};
   if (configMod.beforeApiRequest) {
     result.beforeApiRequest = Array.isArray(configMod.beforeApiRequest) ? configMod.beforeApiRequest : [configMod.beforeApiRequest];
   }
   if (configMod.onError) result.onError = configMod.onError;
+  if (configMod.onServerStart) result.onServerStart = configMod.onServerStart;
+  if (configMod.onServerShutdown) result.onServerShutdown = configMod.onServerShutdown;
   return result;
 }
 
@@ -104,15 +121,13 @@ export async function main(): Promise<void> {
   const app = connect();
 
   const bundlePath = path.join(distDir, getApiBundleFilename());
-  let beforeApiRequest: BeforeApiRequestHook[] | undefined;
-  let onError: ((err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void>) | undefined;
+  let productionConfig: Awaited<ReturnType<typeof loadProductionConfig>> = {};
   try {
-    const productionConfig = await loadProductionConfig(distDir);
-    beforeApiRequest = productionConfig.beforeApiRequest;
-    onError = productionConfig.onError;
+    productionConfig = await loadProductionConfig(distDir);
   } catch (err) {
     console.warn('[vitek-serve] Failed to load vitek.config.mjs; continuing without production hooks:', err instanceof Error ? err.message : String(err));
   }
+  const { beforeApiRequest, onError, onServerStart, onServerShutdown } = productionConfig;
 
   if (fs.existsSync(bundlePath)) {
     try {
@@ -164,6 +179,32 @@ export async function main(): Promise<void> {
       console.warn('[vitek-serve] Failed to load sockets bundle:', err instanceof Error ? err.message : String(err));
     }
   }
+
+  if (onServerStart) {
+    try {
+      await Promise.resolve(onServerStart({ api: shared.api, sockets: shared.sockets, server }));
+    } catch (err) {
+      console.error('[vitek-serve] onServerStart failed:', err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  }
+
+  let shuttingDown = false;
+  const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    if (onServerShutdown) {
+      try {
+        await Promise.resolve(onServerShutdown());
+      } catch (err) {
+        console.warn('[vitek-serve] onServerShutdown error:', err instanceof Error ? err.message : String(err));
+      }
+    }
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 5000);
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 
   server.listen(port, host, () => {
     const base = `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`;

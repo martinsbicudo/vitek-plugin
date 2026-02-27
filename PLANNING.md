@@ -297,6 +297,14 @@ Documento de planejamento de melhorias incrementais. Cada fase é entregável de
 
 **Critério de conclusão:** Cobertura e estrutura de testes documentadas; links e docs consistentes.
 
+### 5.3 Fase 5 — checklist final
+
+- [x] Rate limiting documentado em plugin-api.md (Recipes) com exemplo in-memory por IP; menção a Redis/proxy para produção.
+- [x] Example rate-limit criado com post-build test e script test; incluído em build-and-test.sh e examples/README.md.
+- [x] testing.md atualizado (link build-and-test.sh, menção a rate-limit).
+- [x] Examples README e tabela de comparação atualizados com rate-limit.
+- [ ] Rodar build-and-test.sh e garantir que todos os examples (incl. rate-limit) passam.
+
 ---
 
 ## Fase 6 — Lifecycle em produção e cron in-process
@@ -341,9 +349,9 @@ Documento de planejamento de melhorias incrementais. Cada fase é entregável de
 
 ### 6.3 Fase 6 — checklist final
 
-- [ ] onServerStart em vitek.config.mjs implementado e testado.
-- [ ] (Opcional) onServerShutdown implementado e testado.
-- [ ] Documentação em production-server.md com exemplo de cron in-process.
+- [x] onServerStart em vitek.config.mjs implementado e testado.
+- [x] (Opcional) onServerShutdown implementado e testado.
+- [x] Documentação em production-server.md com exemplo de cron in-process.
 - [ ] Todos os examples com build + test passando.
 - [ ] (Opcional) schedules declarativos; senão, deixar para fase futura.
 
