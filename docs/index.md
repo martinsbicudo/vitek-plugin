@@ -4,7 +4,7 @@
 
 <div class="vp-badges">
 
-[![Version](https://img.shields.io/badge/version-0.1.2--beta-orange.svg)](https://github.com/martinsbicudo/vitek-plugin)
+[![Version](https://img.shields.io/badge/version-0.2.0--beta-orange.svg)](https://github.com/martinsbicudo/vitek-plugin)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/martinsbicudo/vitek-plugin/blob/main/LICENSE)
 [![Vite](https://img.shields.io/badge/vite-^5.0.0-646CFF.svg)](https://vitejs.dev/)
 
