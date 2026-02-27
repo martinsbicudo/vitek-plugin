@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { IncomingMessage } from 'http';
 import type { Duplex } from 'stream';
 import { patternToRegex } from '../normalize/normalize-path.js';
+import type { VitekApp } from '../shared/vitek-app.js';
 import { createSocketHandler } from './socket-handler.js';
 
 const mockHandleUpgrade = vi.fn((_req: unknown, _socket: unknown, _head: unknown, callback: (ws: unknown) => void) => {
@@ -95,11 +96,14 @@ describe('createSocketHandler', () => {
   });
 
   it('populates shared.sockets when shared app is provided', () => {
-    const shared = {} as { sockets?: unknown };
+    const shared: VitekApp = {
+      api: { fetch: vi.fn() },
+      sockets: { emit: vi.fn() },
+    };
     const sockets = [mockSocketEntry('chat')];
     createSocketHandler({ sockets, socketBasePath: '/api/ws', shared });
     expect(shared.sockets).toBeDefined();
-    expect(typeof (shared.sockets as { emit: (path: string, data: unknown) => void }).emit).toBe('function');
+    expect(typeof shared.sockets.emit).toBe('function');
   });
 
   it('calls logger when provided and connection matches', () => {
