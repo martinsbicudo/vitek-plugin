@@ -23,7 +23,7 @@ export default defineConfig({
       { text: 'Development', link: '/development' },
       { text: 'Contributing', link: '/contributing' },
       { text: 'Support', link: '/support' },
-      { text: 'Coverage', link: '/coverage/' },
+      { text: 'Coverage', link: 'https://martinsbicudo.github.io/vitek-plugin/coverage/' },
       { text: 'GitHub', link: 'https://github.com/martinsbicudo/vitek-plugin' },
       { text: 'NPM', link: 'https://www.npmjs.com/package/vitek-plugin' },
     ],

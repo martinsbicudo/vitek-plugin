@@ -73,7 +73,7 @@ Each example includes `post-build.test.ts` (or `.js`) that runs after `vite buil
 - `dist/vitek-api.mjs` and `dist/vitek-sockets.mjs` bundles load correctly
 - Routes and middlewares are exported as expected
 
-Run: `pnpm run build && pnpm test` from each example directory. The [build-and-test.sh](../../examples/build-and-test.sh) script runs this for all examples (including rate-limit).
+Run: `pnpm run build && pnpm test` from each example directory. The [build-and-test.sh](https://github.com/martinsbicudo/vitek-plugin/blob/main/examples/build-and-test.sh) script runs this for all examples (including rate-limit).
 
 ### E2E test
 

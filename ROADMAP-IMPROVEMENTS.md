@@ -214,17 +214,17 @@ Documento dividido em fases: testes, problemas potenciais, segurança, organiza�
 
 ### 7.2 Checklist de integração
 
-- [ ] Build: `pnpm run build` gera `dist/` sem erros.
-- [ ] Testes: `pnpm test` passa (todos os 30 arquivos de teste).
-- [ ] Exports: `index.ts` exporta plugin, tipos, helpers, erros, validação, manifest; nenhum export quebrado.
-- [ ] CLI: `vitek init` e `vitek-serve` funcionam após build; bins no package.json apontam para dist.
-- [ ] Examples: cada example tem `package.json` com scripts dev/build/start/test; scripts na raiz `examples:build`, `examples:test`, `examples:build-and-test` incluem todos (incl. rate-limit).
-- [ ] Docs: VitePress build e links internos OK; guias refletem a API atual.
+- [x] Build: `pnpm run build` gera `dist/` sem erros.
+- [x] Testes: `pnpm test` passa (33 arquivos de teste, 442 testes).
+- [x] Exports: `index.ts` exporta plugin, tipos, helpers, erros, validação, manifest; nenhum export quebrado.
+- [x] CLI: `vitek init` e `vitek-serve` funcionam após build; bins no package.json apontam para dist.
+- [x] Examples: cada example tem `package.json` com scripts dev/build/start/test (ou preview); scripts na raiz `examples:build`, `examples:test`, `examples:build-and-test` incluem todos (incl. rate-limit).
+- [x] Docs: VitePress build OK; link morto corrigido (nav Coverage → URL externa; testing.md build-and-test.sh → GitHub); guias refletem a API atual.
 
 ### 7.3 Testes faltando (resumo)
 
-- **Core**: openapi/generate, types/generate (complementar), asyncapi/generate, socket-handler, watch-api-dir; opcional: vitek-dev, vitek-build, vitek-preview.
-- **Examples**: typescript-react (validação, CORS, errors); api-docs (estrutura dos docs); rate-limit (429); prisma (opcional request). Novos examples: validation-only, error-handling, cors, minimal-ts (Fase 1.3).
+- **Core**: openapi/generate, asyncapi/generate, socket-handler, types/generate já cobertos (Fase 1); watch-api-dir opcional; vitek-dev, vitek-build, vitek-preview opcionais.
+- **Examples**: typescript-react, api-docs, rate-limit com post-build; novos examples (validation-only, error-handling, cors, minimal-ts) são Fase 1.3.
 
 ### 7.4 Exemplos – consistência
 
@@ -234,12 +234,12 @@ Documento dividido em fases: testes, problemas potenciais, segurança, organiza�
 
 ### 7.5 Próximos passos sugeridos (ordem sugerida)
 
-1. Fase 3: limite de body e documentação de segurança.
-2. Fase 1: testes para openapi/generate, asyncapi/generate, socket-handler; depois tipos generate.
+1. ~~Fase 3~~: limite de body e documentação de segurança (concluído).
+2. ~~Fase 1~~: testes para openapi/generate, asyncapi/generate, socket-handler, types/generate (concluído).
 3. Fase 1: reforçar post-build em typescript-react e api-docs; considerar E2E em script.
-4. Fase 4: quebrar openapi/generate e types/generate em arquivos menores.
+4. ~~Fase 4~~: quebrar openapi em arquivos menores (concluído); types/generate mantido.
 5. Fase 1.3: adicionar example validation-only ou error-handling.
-6. Fase 6: reduzir `any` em validator e revisar mensagens de erro do plugin.
+6. ~~Fase 6~~: reduzir `any` em validator e revisar mensagens de erro (concluído).
 
 ---
 
