@@ -275,6 +275,23 @@ describe('createRequestHandler', () => {
     expect(JSON.parse(res._body)).toEqual({ received: { name: 'test' } });
   });
 
+  it('strips CRLF from response header values to prevent response splitting', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => ({
+        status: 200,
+        body: { ok: true },
+        headers: { 'X-Custom': 'safe\r\nEvil-Header: injected' },
+      })
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [] });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._headers['X-Custom']).toBe('safeEvil-Header: injected');
+    expect(res._headers['Evil-Header']).toBeUndefined();
+  });
+
   it('returns 413 when body exceeds maxBodySize', async () => {
     const route = createTestRoute(
       { method: 'post', pattern: 'items', params: [], file: '/api/items.post.ts' },

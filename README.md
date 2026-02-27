@@ -97,6 +97,20 @@ Then open `http://localhost:5173/api-docs.html` for interactive API documentatio
 
 ---
 
+## Security
+
+- **Body size**: Use `maxBodySize` (bytes) in plugin options or in `vitek.config.mjs` for production to reject oversized bodies with 413 and avoid unbounded memory use.
+- **CORS**: Configure `cors` (e.g. specific `origin`) in production; avoid `*` with credentials.
+- **Trust proxy**: Set `trustProxy: true` only when behind a reverse proxy; do not trust client-sent `X-Forwarded-*` without it.
+- **Response headers**: Header values set from handler responses are sanitized (CRLF removed) to reduce response-splitting risk.
+- **Validation**: `ValidationRule.pattern` (string) is compiled with `new RegExp`. Avoid complex or user-supplied patterns (ReDoS); prefer allowlists or simple character classes.
+- **Dependencies**: Run `pnpm audit` (or `npm audit`) and keep `connect`, `serve-static`, `ws`, and other dependencies updated.
+- **Logging**: Avoid logging full request body or headers in production.
+
+[Security (full) →](./docs/guide/security.md) · [Configuration →](./docs/guide/configuration.md) · [Production →](./docs/guide/production-deploy.md)
+
+---
+
 ## Links
 
 - [Documentation](./docs/) — [view online](https://martinsbicudo.github.io/vitek-plugin/) · guides, API reference, configuration, examples

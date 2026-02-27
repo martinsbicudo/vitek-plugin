@@ -53,6 +53,17 @@ export interface RequestHandlerOptions {
 
 const noop = () => {};
 
+function sanitizeHeaderValue(value: string | number | string[]): string {
+  const s = Array.isArray(value)
+    ? value.map((v) => String(v).replace(/\r|\n/g, '')).join(', ')
+    : String(value).replace(/\r|\n/g, '');
+  return s;
+}
+
+function safeSetHeader(res: ServerResponse, key: string, value: string | number | string[]): void {
+  res.setHeader(key, sanitizeHeaderValue(value));
+}
+
 /** True if value is a Node.js Readable stream (has .pipe). Used for streaming response body. */
 function isReadableStream(value: unknown): value is NodeJS.ReadableStream {
   return (
@@ -62,12 +73,9 @@ function isReadableStream(value: unknown): value is NodeJS.ReadableStream {
   );
 }
 
-/**
- * Creates a Connect-style middleware that handles /api/* requests using the given routes and middlewares.
- */
 function applyCorsHeaders(res: ServerResponse, corsHeaders: Record<string, string>): void {
   for (const [key, value] of Object.entries(corsHeaders)) {
-    res.setHeader(key, value);
+    safeSetHeader(res, key, value);
   }
 }
 
@@ -115,7 +123,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
       if (!match) {
         const duration = Date.now() - startTime;
         res.statusCode = 404;
-        res.setHeader('Content-Type', 'application/json');
+        safeSetHeader(res, 'Content-Type', 'application/json');
         if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
         res.end(JSON.stringify({ error: 'Route not found' }));
         logRequest(requestMethod, requestPath, 404, duration);
@@ -172,7 +180,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
           if (err?.message === 'PAYLOAD_TOO_LARGE') {
             const duration = Date.now() - startTime;
             res.statusCode = 413;
-            res.setHeader('Content-Type', 'application/json');
+            safeSetHeader(res, 'Content-Type', 'application/json');
             if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
             res.end(JSON.stringify({ error: 'Payload Too Large' }));
             logRequest(requestMethod, requestPath, 413, duration);
@@ -209,12 +217,12 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
           if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
           if (response.headers) {
             for (const [key, value] of Object.entries(response.headers)) {
-              res.setHeader(key, value);
+              safeSetHeader(res, key, value);
             }
           }
           if (!response.headers || !response.headers['Content-Type']) {
             if (response.body !== undefined && !isReadableStream(response.body)) {
-              res.setHeader('Content-Type', 'application/json');
+              safeSetHeader(res, 'Content-Type', 'application/json');
             }
           }
           res.statusCode = statusCode;
@@ -236,7 +244,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
           }
         } else {
           if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
-          res.setHeader('Content-Type', 'application/json');
+          safeSetHeader(res, 'Content-Type', 'application/json');
           res.statusCode = 200;
           res.end(JSON.stringify(result));
           logRequest(requestMethod, requestPath, 200, Date.now() - startTime);
@@ -267,7 +275,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         const httpError = error as HttpError;
         logWarn(`HTTP Error ${httpError.statusCode}: ${httpError.message}`);
         res.statusCode = httpError.statusCode;
-        res.setHeader('Content-Type', 'application/json');
+        safeSetHeader(res, 'Content-Type', 'application/json');
         res.end(
           JSON.stringify({
             error: httpError.name,
@@ -288,7 +296,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         const errorMessage = err.message;
         logError(`Error handling request: ${errorMessage}`);
         res.statusCode = 500;
-        res.setHeader('Content-Type', 'application/json');
+        safeSetHeader(res, 'Content-Type', 'application/json');
         res.end(
           JSON.stringify({
             error: 'Internal server error',

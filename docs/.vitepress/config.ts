@@ -47,6 +47,7 @@ export default defineConfig({
           { text: 'Plugin API', link: '/guide/plugin-api' },
           { text: 'Introspection API', link: '/guide/introspection' },
           { text: 'Configuration', link: '/guide/configuration' },
+          { text: 'Security', link: '/guide/security' },
           { text: 'Production server', link: '/guide/production-server' },
           { text: 'Deployment & integrations', link: '/guide/production-deploy' },
           { text: 'Testing', link: '/guide/testing' },
