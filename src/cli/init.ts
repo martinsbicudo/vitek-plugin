@@ -100,6 +100,8 @@ export async function runInit(): Promise<void> {
       console.log(`[vitek init] ${path.basename(configPath)} already has vitek`);
     }
   } else {
-    console.log('[vitek init] No vite.config.js/ts/mjs/cjs found; add vitek() to your Vite config manually.');
+    console.log(
+      '[vitek init] No vite.config.js/ts/mjs/cjs found; add vitek() to your Vite config manually. See https://martinsbicudo.github.io/vitek-plugin/guide/getting-started'
+    );
   }
 }

@@ -6,11 +6,8 @@
 import { ValidationError } from '../../shared/errors.js';
 import type { ValidationSchema, ValidationResult, ValidationRule } from './types.js';
 
-/**
- * Validates a value against a validation rule
- */
 function validateField(
-  value: any,
+  value: unknown,
   fieldName: string,
   rule: ValidationRule
 ): string | null {
@@ -101,17 +98,17 @@ function validateField(
   return null;
 }
 
-/**
- * Validates an object against a validation schema
- */
 export function validate(
-  data: any,
+  data: unknown,
   schema: ValidationSchema
 ): ValidationResult {
   const errors: Record<string, string[]> = {};
+  const obj = data !== null && typeof data === 'object' && !Array.isArray(data)
+    ? (data as Record<string, unknown>)
+    : {};
 
   for (const [fieldName, rule] of Object.entries(schema)) {
-    const value = data?.[fieldName];
+    const value = obj[fieldName];
     const error = validateField(value, fieldName, rule);
     
     if (error) {
@@ -128,28 +125,19 @@ export function validate(
   };
 }
 
-/**
- * Validates and throws ValidationError if invalid
- */
-export function validateOrThrow(data: any, schema: ValidationSchema): void {
+export function validateOrThrow(data: unknown, schema: ValidationSchema): void {
   const result = validate(data, schema);
   if (!result.valid) {
     throw new ValidationError('Validation failed', result.errors);
   }
 }
 
-/**
- * Validates body parameters
- */
-export function validateBody(body: any, schema: ValidationSchema): any {
+export function validateBody<T>(body: unknown, schema: ValidationSchema): T {
   validateOrThrow(body, schema);
-  return body;
+  return body as T;
 }
 
-/**
- * Validates query parameters
- */
-export function validateQuery(query: any, schema: ValidationSchema): any {
+export function validateQuery<T>(query: unknown, schema: ValidationSchema): T {
   validateOrThrow(query, schema);
-  return query;
+  return query as T;
 }

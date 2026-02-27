@@ -13,7 +13,7 @@ export interface ValidationRule {
   max?: number;
   /** String is compiled with new RegExp(pattern). Avoid complex or user-supplied patterns (ReDoS risk). Prefer allowlists or simple character classes. */
   pattern?: string | RegExp;
-  custom?: (value: any) => boolean | string;
+  custom?: (value: unknown) => boolean | string;
 }
 
 /**
