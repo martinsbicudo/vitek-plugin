@@ -128,6 +128,10 @@ This is the simplest example and demonstrates:
 - **typescript-react**: Complete example with TypeScript and React, showing all features
 - **docker**: TypeScript + React with Docker and docker-compose (pnpm)
 
+## Production and CORS
+
+For production, run `pnpm build` then `pnpm start` (vitek-serve). If your frontend is on another origin, enable CORS in `vite.config.js`: `vitek({ cors: true })` or `cors: { origin: 'https://your-app.com' }`. When behind a reverse proxy (nginx, Caddy), use `trustProxy: true` or `vitek-serve --trust-proxy` so the API sees the correct client IP and URL.
+
 ## When to Use This Example
 
 Use this example when you want to:

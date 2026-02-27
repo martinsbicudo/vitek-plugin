@@ -17,10 +17,37 @@ import { getApiBundleFilename } from '../build/build-api-bundle.js';
 import { getSocketsBundleFilename } from '../build/build-sockets-bundle.js';
 import type { ApiClient, SocketEmitter, VitekApp } from '../core/shared/vitek-app.js';
 
-function parseArgs(): { dir: string; port: number; host: string; cors: boolean; trustProxy: boolean } {
+const VITEK_SERVE_CONFIG_FILENAME = 'vitek.config.mjs';
+
+export type BeforeApiRequestHook = import('../core/server/request-handler.js').BeforeApiRequestHook;
+
+/** Load beforeApiRequest and onError from dist/vitek.config.mjs if present. Used by main() and by tests. Throws if file exists but import fails. */
+export async function loadProductionConfig(distDir: string): Promise<{
+  beforeApiRequest?: BeforeApiRequestHook[];
+  onError?: (err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void>;
+}> {
+  const configPath = path.join(distDir, VITEK_SERVE_CONFIG_FILENAME);
+  if (!fs.existsSync(configPath)) return {};
+  const configUrl = pathToFileURL(configPath).href;
+  const configMod = await import(configUrl) as {
+    beforeApiRequest?: BeforeApiRequestHook | BeforeApiRequestHook[];
+    onError?: (err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void>;
+  };
+  const result: { beforeApiRequest?: BeforeApiRequestHook[]; onError?: (err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void> } = {};
+  if (configMod.beforeApiRequest) {
+    result.beforeApiRequest = Array.isArray(configMod.beforeApiRequest) ? configMod.beforeApiRequest : [configMod.beforeApiRequest];
+  }
+  if (configMod.onError) result.onError = configMod.onError;
+  return result;
+}
+
+export function parseArgs(): { dir: string; port: number; host: string; cors: boolean; trustProxy: boolean } {
   let dir = 'dist';
-  let port = 3000;
-  let host = '0.0.0.0';
+  const portEnv = process.env.PORT;
+  const hostEnv = process.env.HOST;
+  let port = portEnv !== undefined && portEnv !== '' ? parseInt(portEnv, 10) : 3000;
+  if (Number.isNaN(port)) port = 3000;
+  let host = hostEnv !== undefined && hostEnv !== '' ? hostEnv : '0.0.0.0';
   let cors = false;
   let trustProxy = false;
   const argv = process.argv.slice(2);
@@ -77,6 +104,16 @@ async function main(): Promise<void> {
   const app = connect();
 
   const bundlePath = path.join(distDir, getApiBundleFilename());
+  let beforeApiRequest: BeforeApiRequestHook[] | undefined;
+  let onError: ((err: Error, req: http.IncomingMessage, res: http.ServerResponse) => void | Promise<void>) | undefined;
+  try {
+    const productionConfig = await loadProductionConfig(distDir);
+    beforeApiRequest = productionConfig.beforeApiRequest;
+    onError = productionConfig.onError;
+  } catch (err) {
+    console.warn('[vitek-serve] Failed to load vitek.config.mjs; continuing without production hooks:', err instanceof Error ? err.message : String(err));
+  }
+
   if (fs.existsSync(bundlePath)) {
     try {
       const bundleUrl = pathToFileURL(bundlePath).href;
@@ -84,8 +121,10 @@ async function main(): Promise<void> {
       const apiHandler = createRequestHandler({
         routes: mod.routes as Parameters<typeof createRequestHandler>[0]['routes'],
         middlewares: mod.middlewares as Parameters<typeof createRequestHandler>[0]['middlewares'],
+        beforeApiRequest,
         cors: cors ? true : undefined,
         trustProxy,
+        onError,
         shared,
       });
       app.use(apiHandler as (req: http.IncomingMessage, res: http.ServerResponse, next: () => void) => void);
@@ -132,7 +171,9 @@ async function main(): Promise<void> {
   });
 }
 
-main().catch((err) => {
-  console.error('[vitek-serve]', err);
-  process.exit(1);
-});
+if (typeof process.env.VITEST === 'undefined') {
+  main().catch((err) => {
+    console.error('[vitek-serve]', err);
+    process.exit(1);
+  });
+}

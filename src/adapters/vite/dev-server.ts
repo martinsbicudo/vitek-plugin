@@ -68,6 +68,8 @@ export interface ViteDevServerOptions {
   cors?: boolean | import('../../core/server/cors.js').CorsOptions;
   /** Trust X-Forwarded-* headers. Passed to request handler. */
   trustProxy?: boolean;
+  /** Custom error handler when a non-HttpError is thrown. Passed to request handler. */
+  onError?: (err: Error, req: import('http').IncomingMessage, res: import('http').ServerResponse) => void | Promise<void>;
 }
 
 /**
@@ -324,6 +326,7 @@ export function createViteDevServerMiddleware(options: ViteDevServerOptions) {
       beforeApiRequest: options.beforeApiRequest,
       cors: options.cors,
       trustProxy: options.trustProxy,
+      onError: options.onError,
       logger: options.logger,
       shared,
     }),

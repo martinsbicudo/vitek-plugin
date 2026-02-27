@@ -38,4 +38,6 @@ export interface VitekOptions {
   cors?: boolean | CorsOptions;
   /** When true, trust X-Forwarded-* headers (use behind reverse proxy). Sets context.clientIp and effective url. */
   trustProxy?: boolean;
+  /** Custom error handler when a non-HttpError is thrown. Can send a custom response; if res is not ended, default 500 JSON is sent. */
+  onError?: (err: Error, req: import('http').IncomingMessage, res: import('http').ServerResponse) => void | Promise<void>;
 }

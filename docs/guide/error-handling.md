@@ -46,3 +46,21 @@ export default function handler(context: VitekContext) {
 | `InternalServerError` | 500 Internal Server Error |
 
 All errors automatically return the appropriate HTTP status code and a JSON error response (e.g. `name`, `message`, `code`).
+
+## Custom error handler (onError)
+
+For errors that are **not** `HttpError` (e.g. uncaught exceptions, database errors), you can provide an `onError` callback in the plugin options. It receives `(err, req, res)`. If you send a response and call `res.end()`, that response is used; otherwise the default 500 JSON response is sent.
+
+```typescript
+vitek({
+  onError(err, req, res) {
+    // Log to your error service
+    console.error(err);
+    res.statusCode = 503;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'Service Unavailable' }));
+  },
+});
+```
+
+In production with **vitek-serve**, export `onError` from `dist/vitek.config.mjs` so the same handler runs. See [Production server](/guide/production-server#production-config-vitekconfigmjs).

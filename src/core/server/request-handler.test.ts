@@ -40,7 +40,9 @@ type MockResponseOut = {
   _statusCode: number;
   _headers: Record<string, string>;
   _body: string;
+  _ended: boolean;
   statusCode: number;
+  writableEnded: boolean;
   setHeader(name: string, value: string | number | string[]): MockResponseOut;
   end(chunk?: string | (() => void), _encoding?: (() => void) | string, cb?: () => void): MockResponseOut;
   writeHead: ReturnType<typeof vi.fn>;
@@ -51,17 +53,22 @@ function mockResponse(): ServerResponse & { _statusCode: number; _headers: Recor
     _statusCode: 0,
     _headers: {},
     _body: '',
+    _ended: false,
     get statusCode() {
       return out._statusCode;
     },
     set statusCode(code: number) {
       out._statusCode = code;
     },
+    get writableEnded() {
+      return out._ended;
+    },
     setHeader(name: string, value: string | number | string[]) {
       out._headers[name] = Array.isArray(value) ? value.join(', ') : String(value);
       return out;
     },
     end(chunk?: string | (() => void), _encoding?: (() => void) | string, cb?: () => void) {
+      out._ended = true;
       if (typeof chunk === 'string') out._body = chunk;
       else if (typeof chunk === 'function') chunk();
       (cb as () => void)?.();
@@ -267,6 +274,24 @@ describe('createRequestHandler', () => {
     expect(res._body).toBe('<html>ok</html>');
   });
 
+  it('sends Cache-Control and other custom headers when present in VitekResponse', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => ({
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=60' },
+        body: { cached: true },
+      })
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [] });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(200);
+    expect(res._headers['Cache-Control']).toBe('max-age=60');
+    expect(JSON.parse(res._body)).toEqual({ cached: true });
+  });
+
   it('returns 500 when handler throws generic error', async () => {
     const route = createTestRoute(
       { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
@@ -282,6 +307,50 @@ describe('createRequestHandler', () => {
     const body = JSON.parse(res._body);
     expect(body.error).toBe('Internal server error');
     expect(body.message).toContain('Something broke');
+  });
+
+  it('when onError is set and sends response, uses that status and body', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => {
+        throw new Error('Unavailable');
+      }
+    );
+    const handler = createRequestHandler({
+      routes: [route],
+      middlewares: [],
+      onError: (_err, _req, res) => {
+        res.statusCode = 503;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'Service Unavailable' }));
+      },
+    });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(503);
+    expect(JSON.parse(res._body)).toEqual({ error: 'Service Unavailable' });
+  });
+
+  it('when onError is set but does not end response, default 500 is sent', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => {
+        throw new Error('Oops');
+      }
+    );
+    const handler = createRequestHandler({
+      routes: [route],
+      middlewares: [],
+      onError: () => {
+        // does not call res.end()
+      },
+    });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(500);
+    expect(JSON.parse(res._body).error).toBe('Internal server error');
   });
 
   describe('CORS', () => {

@@ -44,6 +44,7 @@ export default defineConfig({
 | `alias`                        | `Record<string, string>`                 | `undefined` | Resolve aliases merged into Vite's resolve.alias (e.g. `{ '@lib': 'src/lib' }`). See [Alias](/guide/alias).                                                                                                                                                 |
 | `cors`                         | `boolean \| CorsOptions`                 | `undefined` | Enable CORS for the API. `true` for permissive defaults (`*` origin, common methods). Use a `CorsOptions` object to restrict origin, methods, or headers. Applied in dev, preview, and when using `vitek-serve --cors`. |
 | `trustProxy`                   | `boolean`                                | `false`     | When `true`, the API trusts `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-For` from the reverse proxy. Use when running behind nginx, Caddy, or similar. Context gets the effective URL and `clientIp`. In production with vitek-serve, use `vitek-serve --trust-proxy`. |
+| `onError`                      | `(err, req, res) => void \| Promise<void>` | `undefined` | Custom error handler when a non-HttpError is thrown. You can send a custom response; if you do not call `res.end()`, the default 500 JSON is sent. See [Error handling](/guide/error-handling#custom-error-handler-onerror). In production, export from `dist/vitek.config.mjs`. |
 
 ## CORS example
 

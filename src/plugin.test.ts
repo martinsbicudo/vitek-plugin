@@ -273,3 +273,17 @@ describe('vitek plugin resolveId and transform', () => {
     });
   });
 });
+
+describe('vitek plugin options (cors, trustProxy, onError)', () => {
+  it('accepts cors and trustProxy and returns plugins', () => {
+    const plugins = vitek({ apiDir: 'src/api', cors: true, trustProxy: true });
+    expect(plugins.length).toBeGreaterThan(0);
+    expect(findPlugin(plugins, 'vitek:dev')).toBeDefined();
+  });
+
+  it('accepts onError option', () => {
+    const onError = () => {};
+    const plugins = vitek({ apiDir: 'src/api', onError });
+    expect(plugins.length).toBeGreaterThan(0);
+  });
+});

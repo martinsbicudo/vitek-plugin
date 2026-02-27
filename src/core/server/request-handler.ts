@@ -45,6 +45,8 @@ export interface RequestHandlerOptions {
   };
   /** When provided, context.sockets is set so route handlers can emit to WebSocket clients. */
   shared?: { sockets: SocketEmitter };
+  /** Called when a non-HttpError is thrown. May send a custom response; if res is not ended, default 500 JSON is sent. */
+  onError?: (err: Error, req: IncomingMessage, res: ServerResponse) => void | Promise<void>;
 }
 
 const noop = () => {};
@@ -59,7 +61,7 @@ function applyCorsHeaders(res: ServerResponse, corsHeaders: Record<string, strin
 }
 
 export function createRequestHandler(options: RequestHandlerOptions): (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => Promise<void> {
-  const { routes, middlewares, beforeApiRequest = [], cors, trustProxy = false, logger, shared } = options;
+  const { routes, middlewares, beforeApiRequest = [], cors, trustProxy = false, logger, shared, onError } = options;
   const corsOpts: NormalizedCorsOptions | null = cors != null ? normalizeCorsOptions(cors) : null;
   const logRouteMatched = logger?.routeMatched ?? noop;
   const logRequestStart = logger?.requestStart ?? noop;
@@ -228,7 +230,15 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         );
         logRequest(requestMethod, requestPath, httpError.statusCode, duration);
       } else {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const err = error instanceof Error ? error : new Error(String(error));
+        if (onError) {
+          await Promise.resolve(onError(err, req, res));
+          if (res.writableEnded) {
+            logRequest(requestMethod, requestPath, res.statusCode, duration);
+            return;
+          }
+        }
+        const errorMessage = err.message;
         logError(`Error handling request: ${errorMessage}`);
         res.statusCode = 500;
         res.setHeader('Content-Type', 'application/json');

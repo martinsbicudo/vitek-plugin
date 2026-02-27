@@ -113,7 +113,7 @@ Or via your npm/pnpm start script if the image has node_modules and the bin avai
 
 ## Options recap
 
-vitek-serve does not read port/host from environment variables; use CLI options:
+You can set `PORT` and `HOST` via environment variables when not passing `--port`/`--host` (e.g. `PORT=8080 pnpm start`). CLI flags override env. Full list:
 
 | Option           | Default   | Description                                                       |
 | ---------------- | --------- | ----------------------------------------------------------------- |

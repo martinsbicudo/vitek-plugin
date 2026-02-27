@@ -54,3 +54,30 @@ export default function handler(context: VitekContext) {
 | `internalServerError` | 500 Internal Server Error | `internalServerError(body?, headers?)` |
 | `redirect` | 301/302/307/308 | `redirect(url, permanent?, preserveMethod?)` |
 | `json` | Custom | `json(body, options?)` with `status` and `headers` |
+
+## Cache headers
+
+Use `cacheControl` and `noStore` to add `Cache-Control` headers. Merge the returned object into your response headers:
+
+```typescript
+import { ok, cacheControl, noStore } from "vitek-plugin";
+
+// Cache for 60 seconds (public)
+return { ...ok(data), headers: { ...ok(data).headers, ...cacheControl(60) } };
+
+// With stale-while-revalidate and private
+return {
+  ...ok(data),
+  headers: { ...ok(data).headers, ...cacheControl(60, { staleWhileRevalidate: 120, private: true }) },
+};
+
+// Disable caching
+return { ...ok(data), headers: { ...ok(data).headers, ...noStore() } };
+```
+
+| Helper | Returns | Description |
+|--------|--------|--------------|
+| `cacheControl(maxAgeSeconds, options?)` | `Record<string, string>` | `Cache-Control: max-age=N`. Options: `staleWhileRevalidate?: number`, `private?: boolean`. |
+| `noStore()` | `Record<string, string>` | `Cache-Control: no-store`. |
+
+For **ETag**, set the header manually in your response (e.g. `headers: { ...ok(body).headers, 'ETag': '"' + etagValue + '"' }`). The framework does not compute ETags automatically.

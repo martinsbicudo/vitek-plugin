@@ -54,6 +54,7 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
         afterTypesGenerated,
         cors: ctx.options.cors,
         trustProxy: ctx.options.trustProxy,
+        onError: ctx.options.onError,
       });
 
       ctx.cleanupFn = cleanup;

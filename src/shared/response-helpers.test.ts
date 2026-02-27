@@ -13,6 +13,8 @@ import {
   tooManyRequests,
   internalServerError,
   redirect,
+  cacheControl,
+  noStore,
 } from './response-helpers.js';
 
 describe('json', () => {
@@ -205,5 +207,38 @@ describe('redirect', () => {
   it('should create 308 redirect for permanent with method preservation', () => {
     const response = redirect('/new-path', true, true);
     expect(response.status).toBe(308);
+  });
+});
+
+describe('cacheControl', () => {
+  it('returns Cache-Control max-age only', () => {
+    const headers = cacheControl(60);
+    expect(headers).toEqual({ 'Cache-Control': 'max-age=60' });
+  });
+
+  it('includes stale-while-revalidate when provided', () => {
+    const headers = cacheControl(60, { staleWhileRevalidate: 120 });
+    expect(headers['Cache-Control']).toContain('max-age=60');
+    expect(headers['Cache-Control']).toContain('stale-while-revalidate=120');
+  });
+
+  it('includes private when set', () => {
+    const headers = cacheControl(300, { private: true });
+    expect(headers['Cache-Control']).toContain('max-age=300');
+    expect(headers['Cache-Control']).toContain('private');
+  });
+
+  it('combines all options', () => {
+    const headers = cacheControl(60, { staleWhileRevalidate: 120, private: true });
+    expect(headers['Cache-Control']).toContain('max-age=60');
+    expect(headers['Cache-Control']).toContain('stale-while-revalidate=120');
+    expect(headers['Cache-Control']).toContain('private');
+  });
+});
+
+describe('noStore', () => {
+  it('returns Cache-Control no-store', () => {
+    const headers = noStore();
+    expect(headers).toEqual({ 'Cache-Control': 'no-store' });
   });
 });
