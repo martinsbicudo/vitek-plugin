@@ -299,6 +299,56 @@ Documento de planejamento de melhorias incrementais. Cada fase é entregável de
 
 ---
 
+## Fase 6 — Lifecycle em produção e cron in-process
+
+**Objetivo:** Permitir que aplicações rodem lógica agendada (cron, interval) dentro do mesmo processo do vitek-serve, de forma automatizada, sem depender de cron externo + rota protegida.
+
+### 6.1 Hook onServerStart (e opcional onServerShutdown)
+
+**Contexto:** O vitek-serve só reage a requests (HTTP + WebSockets) e aos hooks beforeApiRequest/onError. Não há ponto de entrada “ao subir o servidor” nem “ao desligar”. Para cron/jobs in-process, o usuário precisa poder iniciar timers (setInterval, node-cron, etc.) quando o servidor sobe.
+
+**Ação:**
+
+- Em **vitek.config.mjs** (produção), suportar export opcional **`onServerStart(ctx)`**. Assinatura sugerida: `ctx` com `{ api?, sockets?, server? }` (o cliente interno da API e o emitter de sockets já existentes no processo; opcionalmente a instância `http.Server` para cleanup).
+- O **vitek-serve** (em `serve.ts`), após montar o app e **antes** de `server.listen`, carregar `vitek.config.mjs` e, se existir `onServerStart`, chamá-lo uma vez passando esse contexto. Assim o usuário pode, dentro do hook, usar `setInterval`, `node-cron`, ou chamar `api.fetch('/api/jobs/...')` para disparar jobs.
+- Opcional: **`onServerShutdown()`** exportado em vitek.config.mjs; vitek-serve regista `process.on('SIGTERM'|'SIGINT')` e chama esse hook antes de encerrar, para o usuário cancelar timers ou fechar conexões.
+
+**Testes:**
+
+- `serve.test.ts`: com mock de dist contendo vitek.config.mjs que exporta `onServerStart`, garantir que o hook é chamado uma vez após carregar o config (e que recebe objeto com `api` ou propriedades acordadas). Opcional: teste com `onServerShutdown`.
+- Não quebrar cenário em que vitek.config.mjs não exporta onServerStart (comportamento atual).
+
+**Docs:** `production-server.md`: seção “Lifecycle hooks (onServerStart / onServerShutdown)”, com exemplo de cron in-process usando `setInterval` ou `node-cron` e chamando uma rota interna ou executando lógica direta.
+
+**Critério de conclusão:** onServerStart (e opcionalmente onServerShutdown) funcionando em produção; testes e docs ok.
+
+---
+
+### 6.2 Schedules declarativos (opcional)
+
+**Contexto:** Além do hook genérico, algumas aplicações podem preferir declarar “a cada X” ou “cron expression” em vez de escrever setInterval/node-cron no onServerStart.
+
+**Ação:**
+
+- Se fizer sentido em fase posterior: em vitek.config.mjs, suportar export opcional **`schedules`**: array de `{ cron?: string, intervalMs?: number, handler: () => void | Promise<void> }`. O vitek-serve interpretaria e iniciaria os agendamentos (ex.: com dependência opcional `node-cron` ou apenas `setInterval` para intervalMs).
+- Manter onServerStart como forma flexível; schedules seria conveniência em cima disso ou implementação nativa no serve.
+
+**Testes e docs:** Se implementado, testes em serve.test.ts e documentação em production-server.md.
+
+**Critério de conclusão:** Opcional; pode ficar para fase seguinte. Prioridade: 6.1 (onServerStart).
+
+---
+
+### 6.3 Fase 6 — checklist final
+
+- [ ] onServerStart em vitek.config.mjs implementado e testado.
+- [ ] (Opcional) onServerShutdown implementado e testado.
+- [ ] Documentação em production-server.md com exemplo de cron in-process.
+- [ ] Todos os examples com build + test passando.
+- [ ] (Opcional) schedules declarativos; senão, deixar para fase futura.
+
+---
+
 ## Cobertura das Fases 1–3 nos examples
 
 **Objetivo:** Garantir que cada feature das Fases 1–3 apareça em pelo menos um example, com testes (post-build e, quando fizer sentido, integração) para validar.
@@ -427,6 +477,7 @@ Nenhum example novo obrigatório: basic-js, docker e typescript-react cobrem tud
 | **3** | DX e middleware global                 | vitek init; middleware global com matcher; testes e docs. |
 | **4** | Respostas e E2E                        | text/html/stream/SSE; E2E Playwright; benchmark; testes e docs. |
 | **5** | Extensões e polish                     | Doc (e optional example) rate limit; revisão testes e docs. |
+| **6** | Lifecycle e cron in-process            | onServerStart (e opcional onServerShutdown) em vitek.config.mjs; cron/jobs no mesmo processo; docs. |
 
 ---
 
