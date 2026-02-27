@@ -59,6 +59,10 @@ O import `../../../lib/comments` também é tratado, desde que o arquivo resolvi
 - **Imports relativos apenas** — Imports de pacotes npm (ex.: `import vue from 'vue'`) passam direto; não são alterados.
 - **apiDir configurável** — Se você usar `apiDir` fora de `src/` (ex.: `api/` na raiz), o `resolveId` ainda ajuda imports em arquivos da API; o `transform` continua aplicando-se a arquivos em `src/` (onde normalmente ficam as rotas).
 
+## Alias vs transform
+
+Para paths estáveis (ex.: `@lib/utils` em vez de `../../lib/utils`), use a opção [alias](/guide/alias). O alias é mesclado no `resolve.alias` do Vite; o transform continua tratando imports relativos.
+
 ## apiDir e srcDir personalizados
 
 Quando `apiDir` é configurado (ex.: `apiDir: 'api'` com `api/` na raiz), o `resolveId` continua funcionando para imports relativos **dentro** dos arquivos da API.

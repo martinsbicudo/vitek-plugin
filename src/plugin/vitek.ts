@@ -5,6 +5,7 @@
 import type { Plugin } from 'vite';
 import { API_DIR_NAME } from '../shared/constants.js';
 import { createPluginContext } from './context.js';
+import { createConfigPlugin } from './vitek-config.js';
 import { createBuildPlugin } from './vitek-build.js';
 import { createResolvePlugin } from './vitek-resolve.js';
 import { createTransformPlugin } from './vitek-transform.js';
@@ -21,6 +22,7 @@ export function vitek(options: VitekOptions = {}): Plugin[] {
   const ctx = createPluginContext(options, apiDirOption, buildApi);
 
   return [
+    createConfigPlugin(ctx),
     createBuildPlugin(ctx),
     createResolvePlugin(ctx),
     createTransformPlugin(ctx),

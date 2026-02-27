@@ -6,6 +6,7 @@ import type { Plugin } from 'vite';
 import * as path from 'path';
 import * as fs from 'fs';
 import { scanApiDirectory } from '../core/file-system/scan-api-dir.js';
+import { writeManifest } from '../core/introspection/manifest.js';
 import { parsedRoutesToSchema, runFileGeneration } from '../core/generation/run-file-generation.js';
 import { buildApiBundle, getApiBundleFilename } from '../build/build-api-bundle.js';
 import { buildSocketsBundle, getSocketsBundleFilename } from '../build/build-sockets-bundle.js';
@@ -47,6 +48,19 @@ export function createBuildPlugin(ctx: PluginContext): Plugin {
           serverPort: 5173,
           onGenerationError: ctx.options.onGenerationError,
         });
+        const plugins = ctx.options.plugins ?? [];
+        const apiBasePath = ctx.options.apiBasePath ?? API_BASE_PATH;
+        for (const plugin of plugins) {
+          if (plugin.afterTypesGenerated) {
+            await plugin.afterTypesGenerated({
+              root: ctx.root,
+              schema,
+              sockets: scanResult.sockets,
+              apiBasePath,
+              socketBasePath,
+            });
+          }
+        }
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
         console.error('[vitek] Failed to generate types/services:', error.message);
@@ -57,6 +71,11 @@ export function createBuildPlugin(ctx: PluginContext): Plugin {
     async closeBundle() {
       if (!ctx.buildApi || !ctx.root || !ctx.buildOutDir) return;
       const fullApiDir = path.resolve(ctx.root, ctx.apiDirOption);
+      try {
+        writeManifest(ctx.root, ctx.apiDirOption, ctx.buildOutDir);
+      } catch (err) {
+        console.error('[vitek] Failed to write manifest:', err instanceof Error ? err.message : err);
+      }
       try {
         await buildApiBundle({
           root: ctx.root,

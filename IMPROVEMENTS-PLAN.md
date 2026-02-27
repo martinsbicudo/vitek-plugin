@@ -4,9 +4,11 @@ Documento de planejamento de melhorias técnicas e organizacionais do vitek-plug
 
 ---
 
-## Fase 1 — Ganhos rápidos (curto prazo)
+## Fase 1 — Ganhos rápidos (curto prazo) ✅
 
 Objetivo: melhorar robustez e performance com esforço baixo.
+
+**Status:** Concluída. Magic String, filtros nos hooks, documentação de imports e `onGenerationError` implementados.
 
 ### 1.1 Transform com Magic String
 
@@ -150,9 +152,11 @@ Objetivo: melhorar estrutura do código e qualidade dos testes.
 
 ---
 
-## Fase 3 — Evolução e extensibilidade (longo prazo)
+## Fase 3 — Evolução e extensibilidade (longo prazo) ✅
 
 Objetivo: preparar o plugin para mais cenários e integrações.
+
+**Status:** Concluída. Plugin API, otimizações de build, alias, introspection e suporte a Vite 6+ implementados.
 
 ### 3.1 Sistema de plugins / hooks extensíveis
 

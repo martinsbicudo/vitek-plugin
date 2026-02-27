@@ -73,9 +73,15 @@ export function createPreviewPlugin(ctx: PluginContext): Plugin {
         bundleLoadPromise
           .then((mod) => {
             if (!apiHandler) {
-              apiHandler = createRequestHandler({
+              const beforeApiRequest = (ctx.options.plugins ?? [])
+              .filter((p): p is typeof p & { beforeApiRequest: NonNullable<typeof p.beforeApiRequest> } => !!p.beforeApiRequest)
+              .map((p) => (hookCtx: { req: import('http').IncomingMessage; res: import('http').ServerResponse; path: string; method: string }, next: () => void) =>
+                p.beforeApiRequest!({ ...hookCtx, next })
+              );
+            apiHandler = createRequestHandler({
                 routes: mod.routes,
                 middlewares: mod.middlewares,
+                beforeApiRequest,
                 shared,
               });
               server.config.logger.info('[vitek] API middleware registered for preview');

@@ -31,6 +31,14 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
         ctx.options.apiBasePath,
         typeof ctx.options.sockets === 'object' ? ctx.options.sockets?.path : undefined
       );
+      const beforeApiRequest = (ctx.options.plugins ?? [])
+        .filter((p): p is typeof p & { beforeApiRequest: NonNullable<typeof p.beforeApiRequest> } => !!p.beforeApiRequest)
+        .map((p) => (hookCtx: { req: import('http').IncomingMessage; res: import('http').ServerResponse; path: string; method: string }, next: () => void) =>
+          p.beforeApiRequest!({ ...hookCtx, next })
+        );
+      const afterTypesGenerated = (ctx.options.plugins ?? [])
+        .map((p) => p.afterTypesGenerated)
+        .filter((h): h is NonNullable<typeof h> => !!h);
       const { ready, middleware, cleanup, setupSockets } = createViteDevServerMiddleware({
         root: ctx.root,
         apiDir: fullApiDir,
@@ -40,7 +48,10 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
         openApi: ctx.options.openApi,
         sockets: socketsEnabled,
         socketBasePath,
+        apiBasePath: ctx.options.apiBasePath ?? API_BASE_PATH,
         onGenerationError: ctx.options.onGenerationError,
+        beforeApiRequest,
+        afterTypesGenerated,
       });
 
       ctx.cleanupFn = cleanup;

@@ -1,4 +1,5 @@
 import type { OpenApiOptions } from '../core/openapi/generate.js';
+import type { VitekPlugin } from './plugin-api.js';
 
 export interface VitekOptions {
   /** API directory (relative to root) */
@@ -26,4 +27,8 @@ export interface VitekOptions {
   sockets?: boolean | { path?: string };
   /** Callback when types/services/OpenAPI generation fails. Receives the error. */
   onGenerationError?: (error: Error) => void;
+  /** External plugins for extensibility. See [Plugin API](/guide/plugin-api). */
+  plugins?: VitekPlugin[];
+  /** Resolve aliases merged into Vite's resolve.alias (e.g. { '@lib': 'src/lib' }). See [Alias](/guide/alias). */
+  alias?: Record<string, string>;
 }

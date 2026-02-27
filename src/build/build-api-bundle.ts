@@ -105,6 +105,7 @@ export async function buildApiBundle(options: BuildApiBundleOptions): Promise<st
       platform: 'node',
       outfile: outFile,
       external: ['vitek-plugin'],
+      minify: true,
     });
     return outFile;
   } finally {

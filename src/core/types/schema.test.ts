@@ -1,17 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { routesToSchema } from './schema.js';
+import { patternToRegex } from '../normalize/normalize-path.js';
 import type { Route } from '../routing/route-types.js';
 
 describe('schema', () => {
   it('routesToSchema maps routes to schema', () => {
     const routes: Route[] = [
-      { pattern: '/health', method: 'get', params: [], file: '/src/api/health.get.ts', handler: () => ({}) },
+      { pattern: '/health', method: 'get', params: [], file: '/src/api/health.get.ts', handler: () => ({}), regex: patternToRegex('/health') },
       {
         pattern: '/users/[id]',
         method: 'get',
         params: ['id'],
         file: '/src/api/users/[id].get.ts',
         handler: () => ({}),
+        regex: patternToRegex('/users/:id'),
         bodyType: 'UsersIdGetBody',
         queryType: 'UsersIdGetQuery',
       },

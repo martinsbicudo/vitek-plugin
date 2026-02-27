@@ -23,6 +23,8 @@ import type { ApiClient, SocketEmitter, VitekApp } from '../../core/shared/vitek
 import type { OpenApiOptions } from '../../core/openapi/generate.js';
 import type { Route, RouteHandler, Middleware } from '../../core/routing/route-types.js';
 import type { LoadedMiddleware } from '../../core/middleware/get-applicable-middlewares.js';
+import type { BeforeApiRequestHook } from '../../core/server/request-handler.js';
+import type { AfterTypesGeneratedContext } from '../../plugin/plugin-api.js';
 import type { VitekLogger } from './logger.js';
 
 function deduplicateRoutesByKey(routes: Route[]): Route[] {
@@ -56,6 +58,12 @@ export interface ViteDevServerOptions {
   socketBasePath?: string;
   /** Callback when types/services/OpenAPI generation fails. */
   onGenerationError?: (error: Error) => void;
+  /** Hooks called before each API request. */
+  beforeApiRequest?: BeforeApiRequestHook[];
+  /** Hooks called after types/services/OpenAPI are generated. */
+  afterTypesGenerated?: ((ctx: AfterTypesGeneratedContext) => void | Promise<void>)[];
+  /** API base path (e.g. /api). Default from constants. */
+  apiBasePath?: string;
 }
 
 /**
@@ -232,6 +240,16 @@ class DevServerState {
         },
         onGenerationError: this.options.onGenerationError,
       });
+      const apiBasePath = this.options.apiBasePath ?? API_BASE_PATH;
+      for (const hook of this.options.afterTypesGenerated ?? []) {
+        await hook({
+          root: this.options.root,
+          schema,
+          sockets: this.sockets.map((s) => ({ pattern: s.pattern, params: s.params, file: s.file })),
+          apiBasePath,
+          socketBasePath,
+        });
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       this.options.logger.error(`Failed to generate types: ${err.message}`);
@@ -299,6 +317,7 @@ export function createViteDevServerMiddleware(options: ViteDevServerOptions) {
     middleware: createRequestHandler({
       routes: state.routes,
       middlewares: state.middlewares,
+      beforeApiRequest: options.beforeApiRequest,
       logger: options.logger,
       shared,
     }),

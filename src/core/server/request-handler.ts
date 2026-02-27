@@ -15,9 +15,17 @@ import type { Route } from '../routing/route-types.js';
 import type { LoadedMiddleware } from '../middleware/get-applicable-middlewares.js';
 import type { SocketEmitter } from '../shared/vitek-app.js';
 
+/** Callback for beforeApiRequest hook. Call next() to continue, or send response and return without next() to short-circuit. */
+export type BeforeApiRequestHook = (
+  ctx: { req: IncomingMessage; res: ServerResponse; path: string; method: string },
+  next: () => void
+) => void | Promise<void>;
+
 export interface RequestHandlerOptions {
   routes: Route[];
   middlewares: LoadedMiddleware[];
+  /** Hooks called before each API request. Call next() to continue. */
+  beforeApiRequest?: BeforeApiRequestHook[];
   logger?: {
     routeMatched?(pattern: string, method: string): void;
     requestStart?(method: string, path: string): void;
@@ -35,7 +43,7 @@ const noop = () => {};
  * Creates a Connect-style middleware that handles /api/* requests using the given routes and middlewares.
  */
 export function createRequestHandler(options: RequestHandlerOptions): (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => Promise<void> {
-  const { routes, middlewares, logger, shared } = options;
+  const { routes, middlewares, beforeApiRequest = [], logger, shared } = options;
   const logRouteMatched = logger?.routeMatched ?? noop;
   const logRequestStart = logger?.requestStart ?? noop;
   const logRequest = logger?.request ?? noop;
@@ -58,6 +66,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
       const routePath = url.pathname.replace(API_BASE_PATH, '') || '/';
       const method = requestMethod;
 
+      const doHandleRequest = async () => {
       const match = matchRoute(routes, routePath, method);
 
       if (!match) {
@@ -104,7 +113,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
 
       const context = createContext(
         {
-          url: req.url,
+          url: req.url!,
           method,
           headers: (req.headers || {}) as Record<string, string>,
           body,
@@ -153,6 +162,21 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
       };
 
       await composed(context, handler);
+      };
+
+      if (beforeApiRequest.length > 0) {
+        for (const hook of beforeApiRequest) {
+          await new Promise<void>((resolve, reject) => {
+            let done = false;
+            const next = () => { if (!done) { done = true; resolve(); } };
+            Promise.resolve(hook({ req, res, path: routePath, method }, next))
+              .then(() => { if (!done && res.writableEnded) { done = true; resolve(); } })
+              .catch(reject);
+          });
+          if (res.writableEnded) return;
+        }
+      }
+      await doHandleRequest();
     } catch (error) {
       const duration = Date.now() - startTime;
 
