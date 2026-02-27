@@ -104,4 +104,5 @@ export async function runInit(): Promise<void> {
       '[vitek init] No vite.config.js/ts/mjs/cjs found; add vitek() to your Vite config manually. See https://martinsbicudo.github.io/vitek-plugin/guide/getting-started'
     );
   }
+  console.log('[vitek init] Tip: expose your API to AI assistants with `vitek mcp` — https://martinsbicudo.github.io/vitek-plugin/guide/mcp-project');
 }

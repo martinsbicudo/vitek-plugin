@@ -46,6 +46,7 @@ export default defineConfig({
           { text: 'OpenAPI / Swagger + AsyncAPI', link: '/guide/openapi' },
           { text: 'Plugin API', link: '/guide/plugin-api' },
           { text: 'Introspection API', link: '/guide/introspection' },
+          { text: 'MCP – API do projeto', link: '/guide/mcp-project' },
           { text: 'Configuration', link: '/guide/configuration' },
           { text: 'Security', link: '/guide/security' },
           { text: 'Production server', link: '/guide/production-server' },

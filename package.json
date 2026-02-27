@@ -27,12 +27,13 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "node scripts/e2e.mjs",
+    "test:e2e:socket": "node scripts/e2e-socket.mjs",
     "bench": "node scripts/bench.mjs",
     "example:bench": "node scripts/bench.mjs --with-example",
     "examples:build": "bash examples/build-all.sh",
     "examples:test": "bash examples/run-all-tests.sh",
     "examples:build-and-test": "bash examples/build-and-test.sh",
-    "check": "pnpm i && pnpm run build && pnpm test && pnpm run examples:build-and-test && pnpm run test:e2e && pnpm run example:bench"
+    "check": "pnpm i && pnpm run build && pnpm test && pnpm run examples:build-and-test && pnpm run test:e2e && pnpm run test:e2e:socket && pnpm run example:bench"
   },
   "keywords": [
     "vite",
@@ -55,7 +56,9 @@
     "vite": "^5.0.0 || ^6.0.0"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "connect": "^3.7.0",
+    "zod": "^3.23.0",
     "esbuild": "^0.24.0",
     "magic-string": "^0.30.0",
     "serve-static": "^1.16.0",
