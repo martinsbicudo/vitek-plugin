@@ -5,7 +5,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { SocketEntry } from '../socket/socket-handler.js';
+
+export type SocketForDocs = { pattern: string };
 
 export interface AsyncApiInfo {
   title?: string;
@@ -34,7 +35,7 @@ function fullSocketPath(basePath: string, pattern: string): string {
  * Generates AsyncAPI 2.x specification from socket entries
  */
 export function generateAsyncApiSpec(
-  sockets: SocketEntry[],
+  sockets: SocketForDocs[],
   socketBasePath: string,
   options: AsyncApiOptions = {}
 ): object {
@@ -92,7 +93,7 @@ export function generateAsyncApiSpec(
  */
 export async function generateAsyncApiFile(
   outputPath: string,
-  sockets: SocketEntry[],
+  sockets: SocketForDocs[],
   socketBasePath: string,
   options: AsyncApiOptions = {}
 ): Promise<void> {

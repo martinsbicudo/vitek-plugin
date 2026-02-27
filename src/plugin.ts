@@ -11,6 +11,8 @@ import { createViteDevServerMiddleware } from './adapters/vite/dev-server.js';
 import { createViteLogger } from './adapters/vite/logger.js';
 import { createRequestHandler } from './core/server/request-handler.js';
 import { buildApiBundle, getApiBundleFilename } from './build/build-api-bundle.js';
+import { scanApiDirectory } from './core/file-system/scan-api-dir.js';
+import { parsedRoutesToSchema, runFileGeneration } from './core/generation/run-file-generation.js';
 import { buildSocketsBundle, getSocketsBundleFilename } from './build/build-sockets-bundle.js';
 import { createSocketHandler } from './core/socket/socket-handler.js';
 import { API_BASE_PATH, API_DIR_NAME, getSocketBasePath } from './shared/constants.js';
@@ -59,6 +61,35 @@ export function vitek(options: VitekOptions = {}): Plugin {
     configResolved(config) {
       root = config.root;
       buildOutDir = path.resolve(root, config.build?.outDir ?? 'dist');
+    },
+
+    async buildStart() {
+      if (!buildApi) return;
+      const fullApiDir = path.resolve(root, apiDirOption);
+      if (!fs.existsSync(fullApiDir)) return;
+
+      const scanResult = scanApiDirectory(fullApiDir);
+      if (scanResult.routes.length === 0 && scanResult.sockets.length === 0) return;
+
+      const schema = parsedRoutesToSchema(scanResult.routes);
+      const socketBasePath = getSocketBasePath(
+        options.apiBasePath,
+        typeof options.sockets === 'object' ? options.sockets?.path : undefined
+      );
+
+      try {
+        await runFileGeneration({
+          root,
+          schema,
+          sockets: scanResult.sockets,
+          apiBasePath: options.apiBasePath ?? API_BASE_PATH,
+          socketBasePath,
+          openApi: options.openApi,
+          serverPort: 5173,
+        });
+      } catch (err) {
+        console.error('[vitek] Failed to generate types/services:', err instanceof Error ? err.message : err);
+      }
     },
 
     resolveId(id, importer) {
