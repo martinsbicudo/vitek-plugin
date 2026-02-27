@@ -330,6 +330,15 @@ pnpm build
 - You need a reference for `beforeApiRequest` with 429 responses
 - You're evaluating rate limiting before moving to Redis or proxy
 
+### Additional examples
+
+- **[validation-only](./validation-only/)** — `validateBody` and 422 on invalid body
+- **[error-handling](./error-handling/)** — custom `onError` and route that throws
+- **[cors](./cors/)** — CORS with restricted origin, methods, headers
+- **[minimal-ts](./minimal-ts/)** — minimal TypeScript, one GET route, no React
+- **[buildApi-false](./buildApi-false/)** — API only in dev, no bundle in `dist/`
+- **[alias](./alias/)** — `alias: { '@lib': 'src/lib' }` in routes
+
 ---
 
 ## 📁 Example Structure
@@ -387,6 +396,12 @@ Nos exemplos usamos `vitek-serve`; é necessário rodar `pnpm build` na raiz do 
 - [api-docs README](./api-docs/README.md) - API docs (REST + WebSockets)
 - [prisma README](./prisma/README.md) - Prisma ORM + SQLite
 - [rate-limit README](./rate-limit/README.md) - In-memory rate limiting via plugin
+- [validation-only README](./validation-only/README.md) - validateBody and 422
+- [error-handling README](./error-handling/README.md) - onError and thrown errors
+- [cors README](./cors/README.md) - CORS options
+- [minimal-ts README](./minimal-ts/README.md) - Minimal TypeScript
+- [buildApi-false README](./buildApi-false/README.md) - buildApi: false
+- [alias README](./alias/README.md) - alias option
 
 ---
 

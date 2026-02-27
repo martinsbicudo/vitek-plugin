@@ -316,6 +316,13 @@ export async function putUsersId(params: UsersIdPutParams, body: UsersIdPutBody,
   }).then(res => res.json());
 }
 
+export async function postValidate(options?: RequestInit): Promise<any> {
+  return fetch(`${API_BASE_PATH}/validate`, {
+    method: 'POST',
+    ...options,
+  }).then(res => res.json());
+}
+
 export async function getVersion(options?: RequestInit): Promise<any> {
   return fetch(`${API_BASE_PATH}/version`, {
     method: 'GET',

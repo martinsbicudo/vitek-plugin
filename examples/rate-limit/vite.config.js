@@ -14,7 +14,7 @@ function getClientIp(req) {
   return req.socket?.remoteAddress ?? 'unknown';
 }
 
-const rateLimitPlugin = {
+export const rateLimitPlugin = {
   name: 'rate-limit',
   beforeApiRequest({ req, res, path, next }) {
     const ip = getClientIp(req);

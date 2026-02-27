@@ -18,7 +18,7 @@ The plugin is consumed as TypeScript/JavaScript by Vite. There is no separate Ro
 
 These files are produced by **esbuild** from your route and socket handlers. They are **minified** when you run `vite build`.
 
-- **Size depends on your code:** Everything imported by your route/socket files is included. Heavy dependencies (e.g. Prisma client, large SDKs) will increase the bundle.
+- **Size depends on your code:** Everything imported by your route/socket files is included. The main drivers of `vitek-api.mjs` size are: (1) number of routes and their imports, (2) heavy dependencies (e.g. Prisma client, SDKs) pulled into route files, and (3) shared code (e.g. middlewares, libs) imported by many routes. Heavy dependencies and large shared modules have the biggest impact.
 
 - **Recommendations:**
   - Prefer importing only what each route needs (e.g. a single Prisma model or helper) instead of pulling the whole client at the top level.

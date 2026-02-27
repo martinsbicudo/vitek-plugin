@@ -84,7 +84,16 @@ vitek-serve --cors          # enable CORS for the API
 To run **beforeApiRequest** or **onError** hooks in production, add a config file that vitek-serve will load from the output directory:
 
 - **Path:** `dist/vitek.config.mjs` (or `dist/vitek.config.js`). The file must be in the same directory you pass to `--dir` (default `dist`).
-- **Exports:** `beforeApiRequest` (single function or array of functions), `onError` (function), and optionally `onServerStart(ctx)` and `onServerShutdown()` for lifecycle hooks. Same signatures as in the plugin options for request hooks.
+
+**Exports from vitek.config.mjs:**
+
+| Export               | Type / signature                                      | Description |
+| -------------------- | ----------------------------------------------------- | ----------- |
+| `beforeApiRequest`   | `(ctx, next) => void` or array of such functions       | Run before each API request (e.g. auth, logging). Same as plugin option. |
+| `onError`            | `(err, req, res) => void \| Promise<void>`            | Custom error handler when a non-HttpError is thrown. Same as plugin option. |
+| `onServerStart`      | `(ctx: { api, sockets?, server }) => void`             | Called once before the server listens. See [Lifecycle hooks](#lifecycle-hooks-onserverstart--onservershutdown). |
+| `onServerShutdown`   | `() => void \| Promise<void>`                          | Called on SIGTERM/SIGINT before the server closes. |
+| `maxBodySize`        | `number`                                               | Max request body size in bytes (413 when exceeded). See [Security](/guide/security#request-body-limit). |
 
 Example `vitek.config.mjs` in your project root, and ensure it is **copied to `dist/`** during build (e.g. via Vite’s `publicDir` or a copy step):
 

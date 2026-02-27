@@ -275,6 +275,10 @@ export interface UsersIdPutParams extends VitekParams {
   id: string;
 }
 
+export interface ValidatePostParams extends VitekParams {
+
+}
+
 export interface VersionGetParams extends VitekParams {
 
 }
@@ -424,6 +428,11 @@ export type VitekRoute =
       pattern: 'users/:id';
       method: 'put';
       params: UsersIdPutParams;
+    }
+  | {
+      pattern: 'validate';
+      method: 'post';
+      params: ValidatePostParams;
     }
   | {
       pattern: 'version';

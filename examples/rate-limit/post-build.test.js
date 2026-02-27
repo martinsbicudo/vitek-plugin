@@ -29,4 +29,32 @@ describe('vitek-plugin build outputs (rate-limit)', () => {
     expect(healthRoute).toBeDefined();
     expect(healthRoute.method?.toLowerCase()).toBe('get');
   });
+
+  it('rate limit plugin returns 429 after max requests per window', async () => {
+    const { rateLimitPlugin } = await import(pathToFileURL(path.join(ROOT, 'vite.config.js')).href);
+    const beforeApiRequest = rateLimitPlugin.beforeApiRequest;
+    expect(beforeApiRequest).toBeDefined();
+    const req = { headers: {}, socket: { remoteAddress: `test-${Date.now()}` } };
+    let statusCode;
+    let body = '';
+    const res = {
+      statusCode: 0,
+      set statusCode(v) { statusCode = v; },
+      get statusCode() { return statusCode; },
+      setHeader: () => {},
+      end: (chunk) => { body = chunk ?? ''; },
+    };
+    const next = () => {};
+    for (let i = 0; i < 10; i++) {
+      statusCode = 0;
+      body = '';
+      beforeApiRequest({ req, res, path: '/api/health', next });
+      expect(statusCode).toBe(0);
+    }
+    statusCode = 0;
+    body = '';
+    beforeApiRequest({ req, res, path: '/api/health', next });
+    expect(statusCode).toBe(429);
+    expect(JSON.parse(body).error).toBe('Too many requests');
+  });
 });

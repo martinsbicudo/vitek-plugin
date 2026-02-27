@@ -275,6 +275,44 @@ describe('createRequestHandler', () => {
     expect(JSON.parse(res._body)).toEqual({ received: { name: 'test' } });
   });
 
+  it('passes raw string as body when POST body is invalid JSON', async () => {
+    let capturedBody: unknown;
+    const route = createTestRoute(
+      { method: 'post', pattern: 'items', params: [], file: '/api/items.post.ts' },
+      (ctx) => {
+        capturedBody = ctx.body;
+        return { received: ctx.body };
+      }
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [] });
+    const req = mockRequest({
+      method: 'POST',
+      url: `${API_BASE_PATH}/items`,
+      bodyChunks: ['not valid json {'],
+    });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(capturedBody).toBe('not valid json {');
+    expect(res._statusCode).toBe(200);
+    expect(JSON.parse(res._body)).toEqual({ received: 'not valid json {' });
+  });
+
+  it('parses query with many keys without crashing', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'search', params: [], file: '/api/search.get.ts' },
+      (ctx) => ({ q: ctx.query.q, keys: Object.keys(ctx.query).length })
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [] });
+    const query = new URLSearchParams({ q: 'x', a: '1', b: '2', c: '3' }).toString();
+    const req = mockRequest({ url: `${API_BASE_PATH}/search?${query}` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(200);
+    const body = JSON.parse(res._body);
+    expect(body.q).toBe('x');
+    expect(body.keys).toBe(4);
+  });
+
   it('strips CRLF from response header values to prevent response splitting', async () => {
     const route = createTestRoute(
       { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },

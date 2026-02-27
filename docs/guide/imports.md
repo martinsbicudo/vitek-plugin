@@ -1,34 +1,34 @@
-# Imports relativos
+# Relative imports
 
-O vitek-plugin trata automaticamente imports relativos (`./` e `../`) em arquivos dentro de `src/`, permitindo que rotas e sockets importem código compartilhado fora do diretório da API.
+The vitek-plugin automatically handles relative imports (`./` and `../`) in files under `src/`, so routes and sockets can import shared code outside the API directory.
 
-## Como funciona
+## How it works
 
-Arquivos em `src/api/` (e qualquer arquivo em `src/`) podem importar módulos relativos que estejam **dentro da raiz do projeto**. O plugin:
+Files in `src/api/` (and any file under `src/`) can import relative modules that lie **inside the project root**. The plugin:
 
-1. **resolveId** — resolve imports relativos em arquivos da API para o caminho absoluto correto (incluindo fallback de extensão `.ts`, `.js`, etc.).
-2. **transform** — reescreve imports relativos em arquivos em `src/` para caminhos root-relative (`/src/lib/...`) para que o Vite os resolva corretamente no dev e no build.
+1. **resolveId** — Resolves relative imports in API files to the correct absolute path (including extension fallback `.ts`, `.js`, etc.).
+2. **transform** — Rewrites relative imports in files under `src/` to root-relative paths (`/src/lib/...`) so Vite resolves them correctly in dev and build.
 
-## Estrutura recomendada
+## Recommended structure
 
 ```
 src/
-  ├── api/                    # Rotas (apiDir padrão)
+  ├── api/                    # Routes (default apiDir)
   │   ├── health.get.ts
   │   ├── users/
   │   │   └── [id].get.ts
   │   └── posts/
   │       └── index.post.ts
-  ├── lib/                    # Utilitários compartilhados
+  ├── lib/                    # Shared utilities
   │   ├── db.ts
   │   └── auth.ts
-  └── shared/                 # Código compartilhado entre api e frontend
+  └── shared/                 # Code shared between api and frontend
       └── types.ts
 ```
 
-## Exemplos
+## Examples
 
-### Import de lib dentro do projeto
+### Importing lib inside the project
 
 **src/api/users/[id].get.ts:**
 ```ts
@@ -41,40 +41,40 @@ export default async function handler(ctx) {
 }
 ```
 
-O import `../../lib/db` é reescrito para `/src/lib/db` e resolvido corretamente.
+The import `../../lib/db` is rewritten to `/src/lib/db` and resolved correctly.
 
-### Import aninhado
+### Nested import
 
 **src/api/posts/[id]/comments.get.ts:**
 ```ts
 import { getComments } from '../../../lib/comments';
 ```
 
-O import `../../../lib/comments` também é tratado, desde que o arquivo resolvido esteja dentro da raiz do projeto.
+The import `../../../lib/comments` is also handled, as long as the resolved file is inside the project root.
 
-## Limitações
+## Limitations
 
-- **Somente dentro do projeto** — Imports que resolvem para fora da raiz (ex.: `../../../etc/passwd`) **não** são reescritos por razões de segurança.
-- **Apenas arquivos em `src/` (ou `srcDir`)** — O transform aplica-se apenas a arquivos sob o diretório de source (padrão: `src/`). Use a opção `srcDir` se seu código ficar em outro diretório (ex.: `lib/` ou `app/`). Arquivos em `public/`, `node_modules/` ou fora de `srcDir` não são processados.
-- **Imports relativos apenas** — Imports de pacotes npm (ex.: `import vue from 'vue'`) passam direto; não são alterados.
-- **apiDir configurável** — Se você usar `apiDir` fora de `src/` (ex.: `api/` na raiz), o `resolveId` ainda ajuda imports em arquivos da API; o `transform` continua aplicando-se a arquivos em `src/` (onde normalmente ficam as rotas).
+- **Only inside the project** — Imports that resolve outside the project root (e.g. `../../../etc/passwd`) are **not** rewritten for security.
+- **Only files under `src/` (or `srcDir`)** — The transform applies only to files under the source directory (default: `src/`). Use the `srcDir` option if your code lives elsewhere (e.g. `lib/` or `app/`). Files in `public/`, `node_modules/`, or outside `srcDir` are not processed.
+- **Relative imports only** — npm package imports (e.g. `import vue from 'vue'`) are left unchanged.
+- **Configurable apiDir** — If you set `apiDir` outside `src/` (e.g. `api/` at root), `resolveId` still helps imports in API files; the transform continues to apply to files under `src/` (where routes usually live).
 
 ## Alias vs transform
 
-Para paths estáveis (ex.: `@lib/utils` em vez de `../../lib/utils`), use a opção [alias](/guide/alias). O alias é mesclado no `resolve.alias` do Vite; o transform continua tratando imports relativos.
+For stable paths (e.g. `@lib/utils` instead of `../../lib/utils`), use the [alias](/guide/alias) option. The alias is merged into Vite's resolve.alias; the transform still handles relative imports.
 
-## apiDir e srcDir personalizados
+## Custom apiDir and srcDir
 
-Quando `apiDir` é configurado (ex.: `apiDir: 'api'` com `api/` na raiz), o `resolveId` continua funcionando para imports relativos **dentro** dos arquivos da API.
+When `apiDir` is set (e.g. `apiDir: 'api'` with `api/` at root), `resolveId` still works for relative imports **inside** API files.
 
-Use `srcDir` quando seu código-fonte estiver em outro diretório (ex.: `srcDir: 'lib'`). O transform aplica-se a todos os arquivos sob `srcDir`, reescrevendo imports relativos para paths root-relative.
+Use `srcDir` when your source code lives in another directory (e.g. `srcDir: 'lib'`). The transform applies to all files under `srcDir`, rewriting relative imports to root-relative paths.
 
 ## Troubleshooting
 
-**Import não está sendo resolvido:**
-- Verifique se o caminho relativo está correto e se o arquivo existe.
-- Confirme que o alvo do import está dentro da raiz do projeto.
-- Em dev, o Vite pode cachear; tente reiniciar o servidor.
+**Import not resolving:**
+- Check that the relative path is correct and the file exists.
+- Ensure the import target is inside the project root.
+- In dev, Vite may cache; try restarting the server.
 
-**Build falha com "module not found":**
-- O esbuild do bundle da API usa os caminhos já reescritos. Garanta que todos os imports relativos apontem para arquivos existentes no projeto.
+**Build fails with "module not found":**
+- The API bundle uses esbuild with the rewritten paths. Ensure all relative imports point to existing files in the project.

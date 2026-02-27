@@ -81,6 +81,7 @@ export function createBuildPlugin(ctx: PluginContext): Plugin {
           root: ctx.root,
           apiDir: fullApiDir,
           outDir: ctx.buildOutDir,
+          alias: ctx.options.alias,
         });
       } catch (err) {
         console.error('[vitek] Failed to build API bundle:', err instanceof Error ? err.message : err);

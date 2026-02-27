@@ -64,3 +64,7 @@ vitek({
 ```
 
 In production with **vitek-serve**, export `onError` from `dist/vitek.config.mjs` so the same handler runs. See [Production server](/guide/production-server#production-config-vitekconfigmjs).
+
+## Error handling in production
+
+With vitek-serve, uncaught errors in route handlers are passed to your `onError` export from `vitek.config.mjs` if defined; otherwise the server sends a default 500 JSON response. Use `onError` to log to your monitoring (e.g. Sentry), return a custom status or body, or avoid leaking stack traces. The same request/response semantics apply as in dev; ensure you call `res.end()` when sending a custom response.

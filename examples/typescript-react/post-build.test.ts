@@ -65,4 +65,19 @@ describe('vitek-plugin build outputs (typescript-react)', () => {
     expect(globalWithPath).toBeDefined();
     expect(globalWithPath.pathPatterns).toEqual(expect.arrayContaining(['users/*', 'posts/*']));
   });
+
+  it('validate route returns 422 for invalid body when handler uses validateBody', async () => {
+    const apiBundle = path.join(ROOT, 'dist', 'vitek-api.mjs');
+    const mod = await import(pathToFileURL(apiBundle).href);
+    const route = mod.routes.find((r: { pattern: string; method: string }) => r.pattern === 'validate' && r.method === 'post');
+    expect(route).toBeDefined();
+    const handler = typeof route.handler === 'function' ? route.handler : route.handler.default;
+    const ctx = { body: {}, params: {}, query: {}, headers: {}, url: '', method: 'post', path: '/api/validate' };
+    try {
+      await handler(ctx);
+      expect.fail('expected ValidationError');
+    } catch (e: unknown) {
+      expect((e as { statusCode?: number }).statusCode).toBe(422);
+    }
+  });
 });
