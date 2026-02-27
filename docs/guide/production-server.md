@@ -54,17 +54,21 @@ The server listens at `http://localhost:3000` by default.
 
 ## Options
 
-| Option   | Default   | Description                                      |
-| -------- | --------- | ------------------------------------------------ |
-| `--dir`  | `dist`    | Directory to serve (relative to current directory) |
-| `--port` | `3000`    | Port to listen on                                |
-| `--host` | `0.0.0.0` | Host to bind to                                  |
+| Option           | Default   | Description                                                                 |
+| ---------------- | --------- | --------------------------------------------------------------------------- |
+| `--dir`          | `dist`    | Directory to serve (relative to current directory)                          |
+| `--port`         | `3000`    | Port to listen on                                                           |
+| `--host`         | `0.0.0.0` | Host to bind to                                                             |
+| `--cors`         | off       | Enable CORS (permissive `*` origin) for the API                             |
+| `--trust-proxy`  | off       | Trust `X-Forwarded-*` headers (use when behind nginx, Caddy, or similar)     |
 
 Examples:
 
 ```bash
 vitek-serve --port 8080
 vitek-serve --dir=dist --port 3000 --host 127.0.0.1
+vitek-serve --trust-proxy   # when behind a reverse proxy (correct client IP and URL)
+vitek-serve --cors          # enable CORS for the API
 ```
 
 ## When the API is not available

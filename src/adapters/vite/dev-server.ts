@@ -64,6 +64,10 @@ export interface ViteDevServerOptions {
   afterTypesGenerated?: ((ctx: AfterTypesGeneratedContext) => void | Promise<void>)[];
   /** API base path (e.g. /api). Default from constants. */
   apiBasePath?: string;
+  /** Enable CORS (true or CorsOptions). Passed to request handler. */
+  cors?: boolean | import('../../core/server/cors.js').CorsOptions;
+  /** Trust X-Forwarded-* headers. Passed to request handler. */
+  trustProxy?: boolean;
 }
 
 /**
@@ -318,6 +322,8 @@ export function createViteDevServerMiddleware(options: ViteDevServerOptions) {
       routes: state.routes,
       middlewares: state.middlewares,
       beforeApiRequest: options.beforeApiRequest,
+      cors: options.cors,
+      trustProxy: options.trustProxy,
       logger: options.logger,
       shared,
     }),

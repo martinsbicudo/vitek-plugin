@@ -283,4 +283,82 @@ describe('createRequestHandler', () => {
     expect(body.error).toBe('Internal server error');
     expect(body.message).toContain('Something broke');
   });
+
+  describe('CORS', () => {
+    it('with cors: true, OPTIONS request returns 204 and CORS headers', async () => {
+      const handler = createRequestHandler({ routes: [], middlewares: [], cors: true });
+      const req = mockRequest({ method: 'OPTIONS', url: `${API_BASE_PATH}/health` });
+      const res = mockResponse();
+      const nextFn = next();
+      await handler(req, res, nextFn);
+      expect(nextFn).not.toHaveBeenCalled();
+      expect(res._statusCode).toBe(204);
+      expect(res._headers['Access-Control-Allow-Origin']).toBe('*');
+      expect(res._body).toBe('');
+    });
+
+    it('with cors: true, GET request returns 200 with CORS headers', async () => {
+      const route = createTestRoute(
+        { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+        () => ({ ok: true })
+      );
+      const handler = createRequestHandler({ routes: [route], middlewares: [], cors: true });
+      const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+      const res = mockResponse();
+      await handler(req, res, next());
+      expect(res._statusCode).toBe(200);
+      expect(res._headers['Access-Control-Allow-Origin']).toBe('*');
+      expect(JSON.parse(res._body)).toEqual({ ok: true });
+    });
+
+    it('with cors: { origin: "https://example.com" }, allows that origin', async () => {
+      const route = createTestRoute(
+        { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+        () => ({ ok: true })
+      );
+      const handler = createRequestHandler({
+        routes: [route],
+        middlewares: [],
+        cors: { origin: 'https://example.com' },
+      });
+      const req = mockRequest({
+        url: `${API_BASE_PATH}/health`,
+        headers: { host: 'localhost', origin: 'https://example.com' },
+      });
+      const res = mockResponse();
+      await handler(req, res, next());
+      expect(res._statusCode).toBe(200);
+      expect(res._headers['Access-Control-Allow-Origin']).toBe('https://example.com');
+    });
+  });
+
+  describe('proxy (trustProxy)', () => {
+    it('with trustProxy: true, sets context.url and context.clientIp from X-Forwarded-*', async () => {
+      let capturedContext: any;
+      const route = createTestRoute(
+        { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+        (ctx) => {
+          capturedContext = ctx;
+          return { url: ctx.url, clientIp: ctx.clientIp };
+        }
+      );
+      const handler = createRequestHandler({ routes: [route], middlewares: [], trustProxy: true });
+      const req = mockRequest({
+        url: `${API_BASE_PATH}/health`,
+        headers: {
+          host: 'localhost',
+          'x-forwarded-proto': 'https',
+          'x-forwarded-host': 'api.example.com',
+          'x-forwarded-for': '1.2.3.4',
+        },
+      });
+      const res = mockResponse();
+      await handler(req, res, next());
+      expect(res._statusCode).toBe(200);
+      const body = JSON.parse(res._body);
+      expect(body.url).toMatch(/^https:\/\/api\.example\.com\/api\/health/);
+      expect(body.clientIp).toBe('1.2.3.4');
+      expect(capturedContext.clientIp).toBe('1.2.3.4');
+    });
+  });
 });

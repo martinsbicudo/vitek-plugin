@@ -14,6 +14,12 @@ import { HttpError } from '../../shared/errors.js';
 import type { Route } from '../routing/route-types.js';
 import type { LoadedMiddleware } from '../middleware/get-applicable-middlewares.js';
 import type { SocketEmitter } from '../shared/vitek-app.js';
+import {
+  normalizeCorsOptions,
+  getCorsHeaders,
+  type NormalizedCorsOptions,
+} from './cors.js';
+import { getEffectiveRequest } from './proxy.js';
 
 /** Callback for beforeApiRequest hook. Call next() to continue, or send response and return without next() to short-circuit. */
 export type BeforeApiRequestHook = (
@@ -26,6 +32,10 @@ export interface RequestHandlerOptions {
   middlewares: LoadedMiddleware[];
   /** Hooks called before each API request. Call next() to continue. */
   beforeApiRequest?: BeforeApiRequestHook[];
+  /** Enable CORS. true or CorsOptions. When set, OPTIONS preflight and CORS headers on responses are handled. */
+  cors?: boolean | import('./cors.js').CorsOptions;
+  /** When true, trust X-Forwarded-* headers and set context.clientIp / effective url. */
+  trustProxy?: boolean;
   logger?: {
     routeMatched?(pattern: string, method: string): void;
     requestStart?(method: string, path: string): void;
@@ -42,8 +52,15 @@ const noop = () => {};
 /**
  * Creates a Connect-style middleware that handles /api/* requests using the given routes and middlewares.
  */
+function applyCorsHeaders(res: ServerResponse, corsHeaders: Record<string, string>): void {
+  for (const [key, value] of Object.entries(corsHeaders)) {
+    res.setHeader(key, value);
+  }
+}
+
 export function createRequestHandler(options: RequestHandlerOptions): (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => Promise<void> {
-  const { routes, middlewares, beforeApiRequest = [], logger, shared } = options;
+  const { routes, middlewares, beforeApiRequest = [], cors, trustProxy = false, logger, shared } = options;
+  const corsOpts: NormalizedCorsOptions | null = cors != null ? normalizeCorsOptions(cors) : null;
   const logRouteMatched = logger?.routeMatched ?? noop;
   const logRequestStart = logger?.requestStart ?? noop;
   const logRequest = logger?.request ?? noop;
@@ -61,8 +78,21 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
     const requestMethod = req.method?.toLowerCase() || 'get';
     const requestPath = pathname;
 
+    const effective = getEffectiveRequest(req, trustProxy);
+    const requestUrl = effective.url || req.url;
+
+    if (corsOpts) {
+      const corsHeaders = getCorsHeaders(req, corsOpts);
+      applyCorsHeaders(res, corsHeaders);
+      if (req.method === 'OPTIONS') {
+        res.statusCode = 204;
+        res.end();
+        return;
+      }
+    }
+
     try {
-      const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      const url = new URL(requestUrl, 'http://localhost');
       const routePath = url.pathname.replace(API_BASE_PATH, '') || '/';
       const method = requestMethod;
 
@@ -73,6 +103,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         const duration = Date.now() - startTime;
         res.statusCode = 404;
         res.setHeader('Content-Type', 'application/json');
+        if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
         res.end(JSON.stringify({ error: 'Route not found' }));
         logRequest(requestMethod, requestPath, 404, duration);
         return;
@@ -113,7 +144,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
 
       const context = createContext(
         {
-          url: req.url!,
+          url: requestUrl,
           method,
           headers: (req.headers || {}) as Record<string, string>,
           body,
@@ -121,6 +152,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         match.params,
         query
       );
+      if (effective.clientIp) context.clientIp = effective.clientIp;
       if (shared?.sockets) {
         context.sockets = shared.sockets;
       }
@@ -133,7 +165,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         if (isVitekResponse(result)) {
           const response = result as VitekResponse;
           const statusCode = response.status || 200;
-
+          if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
           if (response.headers) {
             for (const [key, value] of Object.entries(response.headers)) {
               res.setHeader(key, value);
@@ -154,6 +186,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
           }
           logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
         } else {
+          if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
           res.setHeader('Content-Type', 'application/json');
           res.statusCode = 200;
           res.end(JSON.stringify(result));
@@ -180,6 +213,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
     } catch (error) {
       const duration = Date.now() - startTime;
 
+      if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
       if (error instanceof HttpError) {
         const httpError = error as HttpError;
         logWarn(`HTTP Error ${httpError.statusCode}: ${httpError.message}`);

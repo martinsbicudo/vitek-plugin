@@ -42,6 +42,24 @@ export default defineConfig({
 | `onGenerationError`            | `(error: Error) => void`                 | `undefined` | Callback when types/services/OpenAPI generation fails. Use for error reporting (e.g. Sentry) or custom handling. See [Relative Imports](/guide/imports) for context.                                                                                         |
 | `plugins`                      | `VitekPlugin[]`                          | `undefined` | External plugins for extensibility. See [Plugin API](/guide/plugin-api).                                                                                                                                                                                   |
 | `alias`                        | `Record<string, string>`                 | `undefined` | Resolve aliases merged into Vite's resolve.alias (e.g. `{ '@lib': 'src/lib' }`). See [Alias](/guide/alias).                                                                                                                                                 |
+| `cors`                         | `boolean \| CorsOptions`                 | `undefined` | Enable CORS for the API. `true` for permissive defaults (`*` origin, common methods). Use a `CorsOptions` object to restrict origin, methods, or headers. Applied in dev, preview, and when using `vitek-serve --cors`. |
+| `trustProxy`                   | `boolean`                                | `false`     | When `true`, the API trusts `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-For` from the reverse proxy. Use when running behind nginx, Caddy, or similar. Context gets the effective URL and `clientIp`. In production with vitek-serve, use `vitek-serve --trust-proxy`. |
+
+## CORS example
+
+To allow cross-origin requests from a specific frontend:
+
+```typescript
+vitek({
+  cors: {
+    origin: 'https://myapp.example.com',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  },
+})
+```
+
+With `cors: true`, the API sends `Access-Control-Allow-Origin: *` and allows common methods and headers.
 
 ## Preview and production
 

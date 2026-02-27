@@ -1,5 +1,8 @@
 import type { OpenApiOptions } from '../core/openapi/generate.js';
 import type { VitekPlugin } from './plugin-api.js';
+import type { CorsOptions } from '../core/server/cors.js';
+
+export type { CorsOptions };
 
 export interface VitekOptions {
   /** API directory (relative to root) */
@@ -31,4 +34,8 @@ export interface VitekOptions {
   plugins?: VitekPlugin[];
   /** Resolve aliases merged into Vite's resolve.alias (e.g. { '@lib': 'src/lib' }). See [Alias](/guide/alias). */
   alias?: Record<string, string>;
+  /** Enable CORS. `true` for defaults, or [CorsOptions](/guide/configuration#cors). */
+  cors?: boolean | CorsOptions;
+  /** When true, trust X-Forwarded-* headers (use behind reverse proxy). Sets context.clientIp and effective url. */
+  trustProxy?: boolean;
 }

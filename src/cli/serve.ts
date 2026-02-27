@@ -17,10 +17,12 @@ import { getApiBundleFilename } from '../build/build-api-bundle.js';
 import { getSocketsBundleFilename } from '../build/build-sockets-bundle.js';
 import type { ApiClient, SocketEmitter, VitekApp } from '../core/shared/vitek-app.js';
 
-function parseArgs(): { dir: string; port: number; host: string } {
+function parseArgs(): { dir: string; port: number; host: string; cors: boolean; trustProxy: boolean } {
   let dir = 'dist';
   let port = 3000;
   let host = '0.0.0.0';
+  let cors = false;
+  let trustProxy = false;
   const argv = process.argv.slice(2);
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -30,12 +32,14 @@ function parseArgs(): { dir: string; port: number; host: string } {
     else if (arg === '--port' && argv[i + 1]) port = parseInt(argv[++i], 10);
     else if (arg.startsWith('--host=')) host = arg.slice(7);
     else if (arg === '--host' && argv[i + 1]) host = argv[++i];
+    else if (arg === '--cors') cors = true;
+    else if (arg === '--trust-proxy') trustProxy = true;
   }
-  return { dir, port, host };
+  return { dir, port, host, cors, trustProxy };
 }
 
 async function main(): Promise<void> {
-  const { dir, port, host } = parseArgs();
+  const { dir, port, host, cors, trustProxy } = parseArgs();
   const distDir = path.resolve(process.cwd(), dir);
 
   if (!fs.existsSync(distDir) || !fs.statSync(distDir).isDirectory()) {
@@ -80,6 +84,8 @@ async function main(): Promise<void> {
       const apiHandler = createRequestHandler({
         routes: mod.routes as Parameters<typeof createRequestHandler>[0]['routes'],
         middlewares: mod.middlewares as Parameters<typeof createRequestHandler>[0]['middlewares'],
+        cors: cors ? true : undefined,
+        trustProxy,
         shared,
       });
       app.use(apiHandler as (req: http.IncomingMessage, res: http.ServerResponse, next: () => void) => void);

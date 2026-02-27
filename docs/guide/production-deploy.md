@@ -26,10 +26,10 @@ server {
 }
 ```
 
-Run vitek-serve with the port you chose:
+Run vitek-serve with the port you chose. If the proxy sends `X-Forwarded-*` headers, use `--trust-proxy` so the API sees the correct client IP and URL:
 
 ```bash
-vitek-serve --port 3000
+vitek-serve --port 3000 --trust-proxy
 ```
 
 ### Caddy
@@ -115,11 +115,13 @@ Or via your npm/pnpm start script if the image has node_modules and the bin avai
 
 vitek-serve does not read port/host from environment variables; use CLI options:
 
-| Option   | Default   | Description                                  |
-| -------- | --------- | -------------------------------------------- |
-| `--dir`  | `dist`    | Directory to serve (relative to cwd)         |
-| `--port` | `3000`    | Port to listen on                            |
-| `--host` | `0.0.0.0` | Host to bind to (use `0.0.0.0` in containers) |
+| Option           | Default   | Description                                                       |
+| ---------------- | --------- | ----------------------------------------------------------------- |
+| `--dir`          | `dist`    | Directory to serve (relative to cwd)                              |
+| `--port`         | `3000`    | Port to listen on                                                 |
+| `--host`         | `0.0.0.0` | Host to bind to (use `0.0.0.0` in containers)                      |
+| `--cors`         | off       | Enable CORS for the API                                           |
+| `--trust-proxy`  | off       | Trust `X-Forwarded-*` headers (recommended when behind a proxy)   |
 
 ---
 

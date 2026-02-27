@@ -82,6 +82,8 @@ export function createPreviewPlugin(ctx: PluginContext): Plugin {
                 routes: mod.routes,
                 middlewares: mod.middlewares,
                 beforeApiRequest,
+                cors: ctx.options.cors,
+                trustProxy: ctx.options.trustProxy,
                 shared,
               });
               server.config.logger.info('[vitek] API middleware registered for preview');

@@ -13,6 +13,8 @@ export interface VitekContext {
   params: Record<string, string>;
   headers: Record<string, string>;
   body?: any;
+  /** When trustProxy is true, client IP from X-Forwarded-For or socket.remoteAddress. */
+  clientIp?: string;
   /** When the app runs with shared context (dev, preview, serve), use to broadcast to WebSocket clients. */
   sockets?: SocketEmitter;
 }
