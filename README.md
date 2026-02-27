@@ -5,9 +5,9 @@
   
   **File-based HTTP API generation for Vite**
   
-  [![Version](https://img.shields.io/badge/version-0.1.1--beta-orange.svg)](https://github.com/martinsbicudo/vitek-plugin)
+  [![Version](https://img.shields.io/badge/version-0.1.2--beta-orange.svg)](https://github.com/martinsbicudo/vitek-plugin)
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-  [![Vite](https://img.shields.io/badge/vite-^5.0.0-646CFF.svg)](https://vitejs.dev/)
+  [![Vite](https://img.shields.io/badge/vite-^5.0.0%20%7C%7C%20^6.0.0-646CFF.svg)](https://vitejs.dev/)
   
   > **Beta Version**: This project is currently in beta. APIs may change in future releases.
 </div>
@@ -20,7 +20,7 @@ Vitek is a Vite plugin that turns a folder of files into an HTTP API.
 
 **Full documentation:** [docs/](./docs/) · [View online](https://martinsbicudo.github.io/vitek-plugin/) (VitePress — run `npm run docs:dev` or `pnpm docs:dev` to view locally).
 
-**Examples:** [examples/](./examples/) — `basic-js`, `js-react`, `typescript-react`, `docker`, and `api-docs`.
+**Examples:** [examples/](./examples/) — `basic-js`, `js-react`, `typescript-react`, `import-external`, `socket-only`, `api-docs`, `prisma`, and `docker`.
 
 ---
 
@@ -90,7 +90,10 @@ Then open `http://localhost:5173/api-docs.html` for interactive API documentatio
 
 - [Documentation](./docs/) — [view online](https://martinsbicudo.github.io/vitek-plugin/) · guides, API reference, configuration, examples
 - [OpenAPI / Swagger + AsyncAPI](./docs/guide/openapi.md) — Auto-generate API docs (REST + WebSockets)
-- [Examples](./examples/) — socket-only, basic-js, js-react, typescript-react, docker, api-docs
+- [Plugin API](./docs/guide/plugin-api.md) — Extend Vitek with `afterTypesGenerated` and `beforeApiRequest` hooks
+- [Alias](./docs/guide/alias.md) — Use `resolve.alias` for stable import paths
+- [Introspection](./docs/guide/introspection.md) — Programmatic API: `getRoutes`, `getSockets`, `vitek-manifest.json`
+- [Examples](./examples/) — socket-only, basic-js, js-react, typescript-react, import-external, api-docs, prisma, docker
 - [GitHub](https://github.com/martinsbicudo/vitek-plugin)
 - [NPM](https://www.npmjs.com/package/vitek-plugin)
 - [License](LICENSE)

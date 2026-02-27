@@ -17,7 +17,6 @@ export default defineConfig({
         'examples/',
       ],
       thresholds: {
-        // Phase 2 baseline; improve incrementally (see IMPROVEMENTS-PLAN 2.3)
         lines: 55,
         functions: 60,
         branches: 50,

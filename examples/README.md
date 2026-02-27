@@ -231,23 +231,19 @@ pnpm build
 
 ## 📊 Comparison Table
 
-| Feature                | socket-only     | basic-js       | js-react       | typescript-react | docker         |
-| ---------------------- | --------------- | -------------- | -------------- | ---------------- | -------------- |
-| **Focus**              | WebSockets only | HTTP + Sockets | HTTP + Sockets | HTTP + Sockets   | HTTP + Sockets |
-| **Language**           | JavaScript      | JavaScript     | JavaScript     | TypeScript       | TypeScript     |
-| **Framework**          | None            | None           | React          | React            | React          |
-| **Type Safety**        | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **Response Helpers**   | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **Error Classes**      | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **Validation**         | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **Generated Types**    | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **Generated Services** | ✅ (socket)     | ✅ (JS)        | ✅ (JS)        | ✅ (TS)          | ✅ (TS)        |
-| **Middlewares**        | ❌              | ❌             | ❌             | ✅               | ✅             |
-| **HTTP Methods**       | None            | GET, POST      | GET, POST      | All methods      | All methods    |
-| **Docker**             | ❌              | ❌             | ❌             | ❌               | ✅             |
-| **WebSockets**         | ✅              | ✅             | ✅             | ✅               | ✅             |
-| **Complexity**         | ⭐              | ⭐             | ⭐⭐           | ⭐⭐⭐           | ⭐⭐⭐         |
-| **Best For**           | WebSockets      | Learning       | React (JS)     | Production       | Docker         |
+| Feature                | socket-only     | basic-js       | js-react       | typescript-react | import-external | api-docs   | prisma     | docker     |
+| ---------------------- | --------------- | -------------- | -------------- | ---------------- | -------------- | ---------- | ---------- | ---------- |
+| **Focus**              | WebSockets only | HTTP + Sockets | HTTP + Sockets | HTTP + Sockets   | External libs  | OpenAPI    | Prisma DB  | Docker     |
+| **Language**           | JavaScript      | JavaScript     | JavaScript     | TypeScript       | TypeScript     | TypeScript | TypeScript | TypeScript |
+| **Framework**          | None            | None           | React          | React            | None           | None       | None       | React      |
+| **Type Safety**        | ❌              | ❌             | ❌             | ✅               | ✅             | ✅         | ✅         | ✅         |
+| **OpenAPI**            | ❌              | ❌             | ❌             | ❌               | ❌             | ✅         | ✅         | ❌         |
+| **Database**           | ❌              | ❌             | ❌             | ❌               | ❌             | ❌         | ✅ Prisma  | ❌         |
+| **Generated Services** | ✅ (socket)     | ✅ (JS)        | ✅ (JS)        | ✅ (TS)          | ✅ (TS)        | ✅ (TS)    | ✅ (TS)    | ✅ (TS)    |
+| **Docker**             | ❌              | ❌             | ❌             | ❌               | ❌             | ❌         | ❌         | ✅         |
+| **WebSockets**         | ✅              | ✅             | ✅             | ✅               | ❌             | ❌         | ❌         | ✅         |
+| **Complexity**         | ⭐              | ⭐             | ⭐⭐           | ⭐⭐⭐           | ⭐⭐           | ⭐⭐        | ⭐⭐⭐      | ⭐⭐⭐     |
+| **Best For**           | WebSockets      | Learning       | React (JS)     | Production       | Shared libs    | API docs   | DB-backed  | Docker     |
 
 ---
 
@@ -279,6 +275,24 @@ pnpm build
 - You want full type-safety
 - You need all Vitek features
 - You want the complete reference implementation
+
+### Use `import-external` if:
+
+- You want to import shared code from outside `src/api`
+- You're structuring libs or shared utilities
+- You need to see how external imports work with Vitek
+
+### Use `api-docs` if:
+
+- You want OpenAPI/Swagger documentation
+- You're building API-first or documenting your API
+- You need the minimal setup for API docs
+
+### Use `prisma` if:
+
+- You're building a REST API with a database
+- You want to see Vitek + Prisma + SQLite
+- You need a backend-only example without frontend
 
 ### Use `docker` if:
 

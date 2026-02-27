@@ -6,6 +6,7 @@
     "dev": "vite",
     "build": "prisma generate && tsc && vite build",
     "preview": "vite preview",
+    "test": "vitest run",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
@@ -19,6 +20,7 @@
     "prisma": "^6.0.0",
     "typescript": "^5.0.0",
     "vite": "^5.0.0",
-    "vitek-plugin": "file:../.."
+    "vitek-plugin": "file:../..",
+    "vitest": "^4.0.0"
   }
 }

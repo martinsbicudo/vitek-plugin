@@ -5,7 +5,17 @@ Overview of the public API provided by `vitek-plugin`. Import from `vitek-plugin
 ## Plugin
 
 - **`vitek(options?)`** - Returns a Vite plugin. Call from `vite.config.ts` in the `plugins` array.
-- **`VitekOptions`** - Type for plugin options: `apiDir`, `apiBasePath`, `openApi`, `enableValidation`, `logging`, `sockets`, `socketBasePath`, etc. See [Configuration](/guide/configuration).
+- **`VitekOptions`** - Type for plugin options: `apiDir`, `apiBasePath`, `openApi`, `enableValidation`, `logging`, `sockets`, `plugins`, `alias`, `onGenerationError`, etc. See [Configuration](/guide/configuration).
+
+## Plugin API (Extensibility)
+
+- **`VitekPlugin`** - Type for external plugins with hooks.
+- **`afterTypesGenerated(ctx)`** - Hook called after types/services/OpenAPI are generated.
+- **`beforeApiRequest(ctx)`** - Hook called before each API request; call `next()` to continue or send a response to short-circuit.
+- **`AfterTypesGeneratedContext`** - Context: `root`, `schema`, `sockets`, `apiBasePath`, `socketBasePath`.
+- **`BeforeApiRequestContext`** - Context: `req`, `res`, `path`, `method`, `next`.
+
+Pass plugins via `vitek({ plugins: [myPlugin] })`. See [Plugin API](/guide/plugin-api) for usage.
 
 ## Introspection
 

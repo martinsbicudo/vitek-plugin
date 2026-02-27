@@ -4,7 +4,7 @@
 
 <div class="vp-badges">
 
-[![Version](https://img.shields.io/badge/version-0.1.1--beta-orange.svg)](https://github.com/martinsbicudo/vitek-plugin)
+[![Version](https://img.shields.io/badge/version-0.1.2--beta-orange.svg)](https://github.com/martinsbicudo/vitek-plugin)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/martinsbicudo/vitek-plugin/blob/main/LICENSE)
 [![Vite](https://img.shields.io/badge/vite-^5.0.0-646CFF.svg)](https://vitejs.dev/)
 
@@ -70,8 +70,11 @@ The "tek" suffix is commonly used in technology naming to denote tools and frame
 - [Getting Started](/guide/getting-started) - Set up your first route in minutes
 - [WebSockets](/guide/websockets) - File-based WebSocket routes, socket ↔ API integration
 - [OpenAPI / Swagger + AsyncAPI](/guide/openapi) - Auto-generate API docs (REST + WebSockets)
+- [Plugin API](/guide/plugin-api) - Extend with `afterTypesGenerated`, `beforeApiRequest` hooks
+- [Alias](/guide/alias) - Use `resolve.alias` for stable import paths
+- [Introspection](/guide/introspection) - Programmatic API: `getRoutes`, `getSockets`, `vitek-manifest.json`
 - [API Reference](/api/) - Plugin options and exports
-- [Examples](/examples) - socket-only, basic-js, js-react, typescript-react, docker, api-docs
+- [Examples](/examples) - socket-only, basic-js, js-react, typescript-react, import-external, api-docs, prisma, docker
 - [GitHub](https://github.com/martinsbicudo/vitek-plugin)
 - [NPM](https://www.npmjs.com/package/vitek-plugin)
 
@@ -81,7 +84,7 @@ The "tek" suffix is commonly used in technology naming to denote tools and frame
 
 This project is currently in beta/testing phase.
 
-- Version: `0.1.1-beta`
+- Version: `0.1.2-beta`
 - APIs may change in future releases
 - Some features may be experimental
 - Feedback and bug reports are welcome

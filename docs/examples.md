@@ -1,6 +1,6 @@
 # Examples
 
-This repository includes four complete examples demonstrating different use cases of the Vitek plugin. Each example is self-contained and can be run independently.
+This repository includes multiple complete examples demonstrating different use cases of the Vitek plugin. Each example is self-contained and can be run independently. See [examples/README.md](https://github.com/martinsbicudo/vitek-plugin/blob/main/examples/README.md) for the full list, including socket-only, import-external, and prisma.
 
 ## basic-js
 
