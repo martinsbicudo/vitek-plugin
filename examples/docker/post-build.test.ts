@@ -42,4 +42,16 @@ describe('vitek-plugin build outputs (docker)', () => {
     expect(Array.isArray(mod.routes)).toBe(true);
     expect(mod.middlewares).toBeDefined();
   });
+
+  it('dist/vitek.config.mjs exists after build', () => {
+    const configPath = path.join(ROOT, 'dist', 'vitek.config.mjs');
+    expect(fs.existsSync(configPath)).toBe(true);
+  });
+
+  it('vitek.config.mjs exports beforeApiRequest and onError', async () => {
+    const configPath = path.join(ROOT, 'dist', 'vitek.config.mjs');
+    const mod = await import(pathToFileURL(configPath).href);
+    expect(typeof mod.beforeApiRequest).toBe('function');
+    expect(typeof mod.onError).toBe('function');
+  });
 });

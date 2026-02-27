@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && cp vitek.config.mjs dist/",
     "preview": "vite preview --host 0.0.0.0 --port 5173",
-    "start": "vitek-serve --port=5173 --host=0.0.0.0",
+    "start": "vitek-serve --port=5173 --host=0.0.0.0 --trust-proxy",
     "test": "vitest run"
   },
   "dependencies": {

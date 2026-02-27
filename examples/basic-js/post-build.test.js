@@ -22,6 +22,7 @@ describe('vitek-plugin build outputs (basic-js)', () => {
     const content = fs.readFileSync(servicesPath, 'utf-8');
     expect(content).toContain('getHealth');
     expect(content).toContain('getUsersId');
+    expect(content).toContain('getCache');
   });
 
   it('generated socket.services.js exists (has sockets)', () => {
@@ -47,5 +48,13 @@ describe('vitek-plugin build outputs (basic-js)', () => {
     expect(mod.routes.length).toBeGreaterThan(0);
     expect(mod.middlewares).toBeDefined();
     expect(Array.isArray(mod.middlewares)).toBe(true);
+  });
+
+  it('includes cache route (GET /api/cache) with cache headers', async () => {
+    const apiBundle = path.join(ROOT, 'dist', 'vitek-api.mjs');
+    const mod = await import(pathToFileURL(apiBundle).href);
+    const cacheRoute = mod.routes.find((r) => r.pattern === 'cache');
+    expect(cacheRoute).toBeDefined();
+    expect(cacheRoute.method?.toLowerCase()).toBe('get');
   });
 });

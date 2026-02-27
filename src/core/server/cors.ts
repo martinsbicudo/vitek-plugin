@@ -42,13 +42,14 @@ export function normalizeCorsOptions(cors: boolean | CorsOptions): NormalizedCor
       maxAge: undefined,
     };
   }
+  const opts = cors as CorsOptions;
   return {
-    origin: cors.origin ?? '*',
-    methods: cors.methods ?? DEFAULT_METHODS,
-    allowedHeaders: cors.allowedHeaders ?? DEFAULT_ALLOWED_HEADERS,
-    exposeHeaders: cors.exposeHeaders ?? [],
-    credentials: cors.credentials ?? false,
-    maxAge: cors.maxAge,
+    origin: opts.origin ?? '*',
+    methods: opts.methods ?? DEFAULT_METHODS,
+    allowedHeaders: opts.allowedHeaders ?? DEFAULT_ALLOWED_HEADERS,
+    exposeHeaders: opts.exposeHeaders ?? [],
+    credentials: opts.credentials ?? false,
+    maxAge: opts.maxAge,
   };
 }
 

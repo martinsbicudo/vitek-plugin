@@ -54,5 +54,15 @@ describe('vitek-plugin build outputs (typescript-react)', () => {
     expect(Array.isArray(mod.routes)).toBe(true);
     expect(mod.routes.length).toBeGreaterThan(0);
     expect(mod.middlewares).toBeDefined();
+    expect(Array.isArray(mod.middlewares)).toBe(true);
+    expect(mod.middlewares.length).toBeGreaterThan(0);
+  });
+
+  it('global middleware has path matcher (config.path)', async () => {
+    const apiBundle = path.join(ROOT, 'dist', 'vitek-api.mjs');
+    const mod = await import(pathToFileURL(apiBundle).href);
+    const globalWithPath = mod.middlewares.find((m: { basePattern: string; pathPatterns?: string[] }) => m.basePattern === '' && m.pathPatterns?.length);
+    expect(globalWithPath).toBeDefined();
+    expect(globalWithPath.pathPatterns).toEqual(expect.arrayContaining(['users/*', 'posts/*']));
   });
 });

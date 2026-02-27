@@ -12,42 +12,50 @@ import type { MiddlewareInfo } from '../file-system/scan-api-dir.js';
 export interface LoadedMiddleware {
   middleware: Middleware[];
   basePattern: string;
+  /** Optional path matcher for global middleware (basePattern ''). Only routes matching one of these patterns get this middleware. E.g. ['protected/*', 'admin'] */
+  pathPatterns?: string[];
+}
+
+/**
+ * Returns true if routePattern matches a single path pattern.
+ * Pattern may be exact ('admin') or prefix with * ('admin/*'). No leading slash.
+ */
+export function matchPathPattern(routePattern: string, configPattern: string): boolean {
+  const route = routePattern.replace(/^\/+|\/+$/g, '');
+  const pattern = configPattern.replace(/^\/+|\/+$/g, '');
+  if (pattern.endsWith('/*')) {
+    const prefix = pattern.slice(0, -2);
+    return route === prefix || route.startsWith(prefix + '/');
+  }
+  return route === pattern || route.startsWith(pattern + '/');
 }
 
 /**
  * Checks if a middleware base pattern applies to a route pattern
  * A middleware applies if its basePattern is a prefix of the routePattern
- * 
- * Examples:
- * - basePattern: "" → applies to all routes (global)
- * - basePattern: "posts" → applies to "posts", "posts/:id", "posts/:id/comments", etc
- * - basePattern: "posts/:id" → applies to "posts/:id", "posts/:id/comments", but not to "posts"
+ * For global middleware (basePattern '') with pathPatterns, applies only if route matches one of them.
  */
-function isMiddlewareApplicable(basePattern: string, routePattern: string): boolean {
-  // Global middleware (empty basePattern) applies to all routes
+function isMiddlewareApplicable(loaded: LoadedMiddleware, routePattern: string): boolean {
+  const { basePattern, pathPatterns } = loaded;
+
+  // Global middleware (empty basePattern)
   if (basePattern === '') {
+    if (pathPatterns != null && pathPatterns.length > 0) {
+      return pathPatterns.some((p) => matchPathPattern(routePattern, p));
+    }
     return true;
   }
-  
+
   // If route is empty (root), only global middleware applies
   if (routePattern === '') {
     return false;
   }
-  
-  // Normalize patterns for comparison (remove leading/trailing slashes)
+
   const normalizedBase = basePattern.replace(/^\/+|\/+$/g, '');
   const normalizedRoute = routePattern.replace(/^\/+|\/+$/g, '');
-  
-  // Check if basePattern is an exact prefix of routePattern
-  // Or if route starts with basePattern followed by /
-  if (normalizedRoute === normalizedBase) {
-    return true;
-  }
-  
-  if (normalizedRoute.startsWith(normalizedBase + '/')) {
-    return true;
-  }
-  
+
+  if (normalizedRoute === normalizedBase) return true;
+  if (normalizedRoute.startsWith(normalizedBase + '/')) return true;
   return false;
 }
 
@@ -59,13 +67,13 @@ export function getApplicableMiddlewares(
   routePattern: string
 ): Middleware[] {
   const applicable: Middleware[] = [];
-  
+
   for (const loadedMiddleware of middlewares) {
-    if (isMiddlewareApplicable(loadedMiddleware.basePattern, routePattern)) {
+    if (isMiddlewareApplicable(loadedMiddleware, routePattern)) {
       applicable.push(...loadedMiddleware.middleware);
     }
   }
-  
+
   return applicable;
 }
 

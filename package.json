@@ -61,6 +61,7 @@
     "vitest": "^4.0.18"
   },
   "bin": {
+    "vitek": "./dist/cli/cli.js",
     "vitek-serve": "./dist/cli/serve.js"
   }
 }

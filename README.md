@@ -26,6 +26,17 @@ Vitek is a Vite plugin that turns a folder of files into an HTTP API.
 
 ## Quick Start
 
+**Option A — scaffold with init (recommended for new projects):**
+
+```bash
+npm install vitek-plugin
+npx vitek init
+```
+
+Then `npm run dev` and open `http://localhost:5173/api/health`. The init command creates `src/api/health.get.ts` and adds vitek to your Vite config.
+
+**Option B — manual setup:**
+
 ```bash
 npm install vitek-plugin
 ```

@@ -401,6 +401,56 @@ describe('createRequestHandler', () => {
     });
   });
 
+  describe('global middleware with pathPatterns', () => {
+    it('applies global middleware with pathPatterns; when middleware does not call next(), handler is not run', async () => {
+      let handlerRan = false;
+      const route = createTestRoute(
+        { method: 'get', pattern: 'protected/me', params: [], file: '/api/protected/me.get.ts' },
+        () => {
+          handlerRan = true;
+          return { user: 'me' };
+        }
+      );
+      const authMiddleware: LoadedMiddleware = {
+        basePattern: '',
+        pathPatterns: ['protected/*'],
+        middleware: [
+          async (_ctx, _next) => {
+            // short-circuit: do not call next()
+          },
+        ],
+      };
+      const handler = createRequestHandler({
+        routes: [route],
+        middlewares: [authMiddleware],
+      });
+      const req = mockRequest({ url: `${API_BASE_PATH}/protected/me` });
+      const res = mockResponse();
+      await handler(req, res, next());
+      expect(handlerRan).toBe(false);
+    });
+    it('does not apply global middleware with pathPatterns to non-matching route', async () => {
+      const route = createTestRoute(
+        { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+        () => ({ ok: true })
+      );
+      const authMiddleware: LoadedMiddleware = {
+        basePattern: '',
+        pathPatterns: ['protected/*'],
+        middleware: [async (_ctx, next) => next()],
+      };
+      const handler = createRequestHandler({
+        routes: [route],
+        middlewares: [authMiddleware],
+      });
+      const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+      const res = mockResponse();
+      await handler(req, res, next());
+      expect(res._statusCode).toBe(200);
+      expect(JSON.parse(res._body)).toEqual({ ok: true });
+    });
+  });
+
   describe('proxy (trustProxy)', () => {
     it('with trustProxy: true, sets context.url and context.clientIp from X-Forwarded-*', async () => {
       let capturedContext: any;

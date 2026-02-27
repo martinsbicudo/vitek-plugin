@@ -26,7 +26,7 @@ The "tek" suffix is commonly used in technology naming to denote tools and frame
 
 ## Overview
 
-**Vitek** is a powerful Vite plugin that enables automatic file-based HTTP API generation. Write your API endpoints as simple TypeScript/JavaScript files, and Vitek handles all the configuration, type generation, and integration with the Vite development server. A production server (vitek-serve) serves static assets and the API from the same process after `vite build`.
+**Vitek** is a powerful Vite plugin that enables automatic file-based HTTP API generation. Write your API endpoints as simple TypeScript/JavaScript files, and Vitek handles all the configuration, type generation, and integration with the Vite development server. Run `npx vitek init` to scaffold a new project (creates `src/api` and adds the plugin to your Vite config). For production, **vitek-serve** serves static assets and the API from the same process after `vite build`.
 
 ### Why Vitek?
 

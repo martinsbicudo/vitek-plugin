@@ -65,7 +65,7 @@ export function parseArgs(): { dir: string; port: number; host: string; cors: bo
   return { dir, port, host, cors, trustProxy };
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const { dir, port, host, cors, trustProxy } = parseArgs();
   const distDir = path.resolve(process.cwd(), dir);
 
@@ -171,7 +171,8 @@ async function main(): Promise<void> {
   });
 }
 
-if (typeof process.env.VITEST === 'undefined') {
+const isServeEntry = process.argv[1]?.endsWith('serve.js');
+if (typeof process.env.VITEST === 'undefined' && isServeEntry) {
   main().catch((err) => {
     console.error('[vitek-serve]', err);
     process.exit(1);

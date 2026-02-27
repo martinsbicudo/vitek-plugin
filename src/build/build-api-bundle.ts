@@ -38,7 +38,8 @@ function generateEntryContent(
   scanResult.middlewares.forEach((mw, i) => {
     const rel = path.relative(entryDir, mw.path).replace(/\\/g, '/');
     const importPath = rel.startsWith('.') ? rel : `./${rel}`;
-    lines.push(`import mw_${i} from ${JSON.stringify(importPath)};`);
+    // Use namespace import so we can read both default and named export 'config' (for global pathPatterns)
+    lines.push(`import * as mw_${i}_ns from ${JSON.stringify(importPath)};`);
   });
 
   const routeEntries = scanResult.routes.map((parsed, i) => {
@@ -52,7 +53,11 @@ function generateEntryContent(
   lines.push('];');
 
   const mwEntries = scanResult.middlewares.map((mw, i) => {
-    return `  { basePattern: ${JSON.stringify(mw.basePattern)}, middleware: (() => { const m = mw_${i}; const fn = typeof m === 'function' || Array.isArray(m) ? m : (m.default ?? m.middleware); return Array.isArray(fn) ? fn : [fn]; })() }`;
+    const base = `  { basePattern: ${JSON.stringify(mw.basePattern)}, middleware: (() => { const m = mw_${i}_ns.default ?? mw_${i}_ns; const fn = typeof m === 'function' || Array.isArray(m) ? m : (m?.default ?? m?.middleware); return Array.isArray(fn) ? fn : [fn]; })()`;
+    if (mw.basePattern === '') {
+      return `${base}, pathPatterns: (() => { const c = mw_${i}_ns?.config; if (!c?.path) return undefined; const p = Array.isArray(c.path) ? c.path : [c.path]; return p.map((x) => String(x).replace(/^\\/api\\/?/, '').replace(/^\\/+|\\/+$/g, '')); })() }`;
+    }
+    return `${base} }`;
   });
   lines.push('');
   lines.push('const middlewares = [');

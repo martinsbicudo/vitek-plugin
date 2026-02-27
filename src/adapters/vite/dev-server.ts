@@ -119,9 +119,15 @@ class DevServerState {
         }
         
         if (middlewareArray.length > 0) {
+          let pathPatterns: string[] | undefined;
+          if (middlewareInfo.basePattern === '' && middlewareModule.config?.path) {
+            const raw = Array.isArray(middlewareModule.config.path) ? middlewareModule.config.path : [middlewareModule.config.path];
+            pathPatterns = raw.map((p: string) => String(p).replace(/^\/api\/?/, '').replace(/^\/+|\/+$/g, '')).filter(Boolean);
+          }
           this.middlewares.push({
             middleware: middlewareArray,
             basePattern: middlewareInfo.basePattern,
+            pathPatterns,
           });
         }
       } catch (error) {

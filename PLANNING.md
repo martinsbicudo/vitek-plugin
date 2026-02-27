@@ -299,6 +299,125 @@ Documento de planejamento de melhorias incrementais. Cada fase é entregável de
 
 ---
 
+## Cobertura das Fases 1–3 nos examples
+
+**Objetivo:** Garantir que cada feature das Fases 1–3 apareça em pelo menos um example, com testes (post-build e, quando fizer sentido, integração) para validar.
+
+**Estratégia:** Reaproveitar examples existentes; criar novo example só se a combinação de features ficar confusa.
+
+### Mapa feature → example
+
+| Feature | Example | Onde / como |
+|--------|---------|-------------|
+| **CORS** (opção no plugin) | basic-js | `cors: true` em `vite.config.js`; README menciona CORS em produção. |
+| **trustProxy** | docker | `trustProxy: true` no plugin; script de start com `--trust-proxy` quando atrás de proxy; README. |
+| **onError** (dev + prod) | basic-js (dev), docker (prod) | basic-js: `onError` em `vite.config.js`. docker: `onError` em `vitek.config.mjs`. |
+| **cacheControl / noStore** | basic-js | Uma rota (ex.: `GET /api/posts` ou `cache.get.js`) que usa `cacheControl(60)` ou `noStore()`. |
+| **vitek.config.mjs** (produção) | docker | Arquivo na raiz (ou `config/`), copiado para `dist/` no build/Dockerfile; exportar `beforeApiRequest` e `onError`. |
+| **Middleware global com path** (`config.path`) | typescript-react | Em `src/api/middleware.ts`, `export const config = { path: ['/api/users/*', ...] }`; comentário. |
+
+Nenhum example novo obrigatório: basic-js, docker e typescript-react cobrem tudo.
+
+---
+
+### 1. Example basic-js
+
+**Implementação:**
+
+- **CORS:** Em `vite.config.js`, adicionar `vitek({ cors: true })`. README: na seção de produção, mencionar CORS (plugin ou proxy).
+- **onError (dev):** Em `vite.config.js`, adicionar `onError` (ex.: log + resposta 500 customizada) para mostrar a opção.
+- **cacheControl / noStore:** Criar rota que use os helpers (ex.: `src/api/cache.get.js` com `cacheControl(60)` ou em `posts/index.get.js` usar `noStore()`/`cacheControl(...)`). Garantir que uma resposta tenha header `Cache-Control`.
+
+**Testes:**
+
+- **Post-build (post-build.test.js):**
+  - Manter todos os testes atuais (dist, bundles, load vitek-api.mjs).
+  - Adicionar: verificar que existe rota que expõe cache (ex.: se criou `cache.get.js`, checar que `routes` no bundle inclui path correspondente; ou que o handler da rota de posts/cache está presente).
+  - Adicionar (opcional, se não pesar): teste que sobe o servidor (`vitek-serve` ou `createRequestHandler`), faz `GET /api/cache` (ou a rota com cache) e verifica que a resposta tem header `Cache-Control` (ex.: `max-age=60` ou `no-store`). Se o exemplo usar apenas checagem estática do bundle, documentar no README do example que a rota demonstra cache.
+- Garantir que `pnpm run build && pnpm test` passam.
+
+**Checklist basic-js:**
+
+- [ ] `vite.config.js`: `cors: true` e `onError`.
+- [ ] Pelo menos uma rota usando `cacheControl` ou `noStore`.
+- [ ] README atualizado (CORS, cache, referência a onError).
+- [ ] Post-build test atualizado (rota de cache no bundle e, se possível, assertiva de Cache-Control em resposta).
+- [ ] `pnpm build` e `pnpm test` passando.
+
+---
+
+### 2. Example docker
+
+**Implementação:**
+
+- **trustProxy:** Em `vite.config.ts`, `trustProxy: true`. No script de produção (e Dockerfile/compose prod), usar `vitek-serve --trust-proxy` quando atrás de proxy. README: explicar uso atrás de proxy.
+- **vitek.config.mjs:** Criar `vitek.config.mjs` na raiz (ou `config/vitek.config.mjs`) exportando `beforeApiRequest` e `onError`. Garantir cópia para `dist/` no build (script pós-build ou `COPY` no Dockerfile). README e doc: referência a production config.
+
+**Testes:**
+
+- **Post-build (post-build.test.ts):**
+  - Manter testes atuais (dist, bundles, load vitek-api.mjs).
+  - Adicionar: após o build, verificar que `dist/vitek.config.mjs` existe (o script de build deve copiar o arquivo para dist).
+  - Adicionar (opcional): carregar `dist/vitek.config.mjs` e verificar que exporta `beforeApiRequest` e `onError` (funções).
+- Garantir que `pnpm run build && pnpm test` passam no example; se possível, rodar uma vez `docker compose -f docker-compose.prod.yml up --build` (ou documentar que é manual) para validar que a imagem inclui `vitek.config.mjs` em dist.
+
+**Checklist docker:**
+
+- [ ] `vite.config.ts`: `trustProxy: true`.
+- [ ] `vitek.config.mjs` criado com `beforeApiRequest` e `onError`.
+- [ ] Build (e Docker prod) copiam `vitek.config.mjs` para `dist/`.
+- [ ] README atualizado (trustProxy, production config, --trust-proxy).
+- [ ] Post-build test: existe `dist/vitek.config.mjs` e (opcional) exports corretos.
+- [ ] `pnpm build` e `pnpm test` passando.
+
+---
+
+### 3. Example typescript-react
+
+**Implementação:**
+
+- **Middleware global com path matcher:** Em `src/api/middleware.ts`, adicionar `export const config = { path: ['/api/users/*', '/api/posts/*'] }`. Comentário no topo: "Global middleware with path matcher: only runs for /api/users/* and /api/posts/*". Garantir que exista ao menos uma rota fora do matcher (ex.: `/api/health`) para demonstrar que o global não aplica a todas.
+
+**Testes:**
+
+- **Post-build (post-build.test.ts):**
+  - Manter testes atuais (dist, bundles, routes, middlewares).
+  - Adicionar: ao carregar `vitek-api.mjs`, verificar que `mod.middlewares` está definido e que há pelo menos um middleware (o global). Se a estrutura do bundle expuser que o middleware global tem matcher de path (ex.: metadados ou ordem de rotas), assertar; caso contrário, basta garantir que o build inclui middlewares e que a app continua funcionando (rota sem middleware e rota com middleware).
+- Garantir que `pnpm run build && pnpm test` passam.
+
+**Checklist typescript-react:**
+
+- [ ] `config.path` em `src/api/middleware.ts`.
+- [ ] Comentário e rota fora do matcher para demonstração.
+- [ ] Post-build test: middlewares presentes no bundle.
+- [ ] `pnpm build` e `pnpm test` passando.
+
+---
+
+### Ordem de implementação sugerida
+
+1. **basic-js:** CORS + rota com cache + onError no vite.config + README; em seguida atualizar post-build.test.js (rota de cache, opcional Cache-Control em resposta).
+2. **typescript-react:** config.path no middleware global + comentário; atualizar post-build.test.ts (middlewares no bundle).
+3. **docker:** trustProxy, vitek.config.mjs e cópia para dist + README; atualizar post-build.test.ts (existência e exports de dist/vitek.config.mjs).
+
+---
+
+### Testes globais (examples)
+
+- **build-and-test.sh:** Manter os 8 examples; após as mudanças, rodar `./examples/build-and-test.sh` e corrigir falhas (ex.: prisma EPERM em ambiente restrito pode ser documentada ou ignorada no script se necessário).
+- **Regra:** Todo example alterado deve ter `test` no package.json e post-build test cobrindo as novas partes (CORS/onError podem ser apenas config e não assertados no post-build se não subirmos servidor; cache: assertar rota ou header; vitek.config.mjs: assertar arquivo e exports; middleware path: assertar middlewares no bundle).
+
+---
+
+### Resumo
+
+- **3 examples alterados:** basic-js, docker, typescript-react.
+- **0 examples novos** para Fases 1–3.
+- **Cobertura:** CORS, trustProxy, onError (dev + prod), cacheControl/noStore, vitek.config.mjs, middleware global com config.path.
+- **Testes:** Cada example tem checklist de testes (post-build atualizado + script test); build-and-test.sh continua passando para todos.
+
+---
+
 ## Resumo por fase
 
 | Fase | Foco principal                         | Entregas principais                                      |
@@ -318,6 +437,7 @@ Documento de planejamento de melhorias incrementais. Cada fase é entregável de
 3. **Refatorar testes:** se a API do request-handler, do plugin ou do CLI mudar, ajustar testes existentes na mesma fase.
 4. **Docs:** opções novas em `configuration.md`; comportamentos novos nas guias correspondentes; links internos revisados.
 5. **Novo example:** só criar quando a feature for mais clara com um example dedicado; quando criado, incluí-lo em `examples/README.md` e em `build-and-test.sh`.
+6. **Cobertura nos examples (Fases 1–3):** aplicar features e testes conforme a seção [Cobertura das Fases 1–3 nos examples](#cobertura-das-fases-13-nos-examples); todo example alterado deve ter post-build test atualizado e `pnpm test` passando.
 
 ---
 

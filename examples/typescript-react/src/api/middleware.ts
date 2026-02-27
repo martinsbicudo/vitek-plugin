@@ -1,9 +1,11 @@
 /**
- * Global middleware for all API routes
- * This middleware is executed for ALL API routes
+ * Global middleware with path matcher: only runs for /api/users/* and /api/posts/*.
+ * Routes like /api/health do not get this middleware.
  */
 
 import type { Middleware } from 'vitek-plugin';
+
+export const config = { path: ['/api/users/*', '/api/posts/*'] };
 
 export default [
   // Global logging middleware

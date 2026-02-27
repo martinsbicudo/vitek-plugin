@@ -25,7 +25,7 @@ No need to build the plugin from the repo root—this example depends on the pub
 
 ## Production (local)
 
-Build the app (produces `dist/` including `vitek-api.mjs`), then run the production server (vitek-serve):
+Build the app (produces `dist/` including `vitek-api.mjs` and `vitek.config.mjs`), then run the production server (vitek-serve):
 
 ```bash
 pnpm run build
@@ -33,6 +33,11 @@ pnpm run start
 ```
 
 Open http://localhost:5173 (this example's start script uses port 5173).
+
+This example is set up for production behind a reverse proxy:
+- **trustProxy:** `vite.config.ts` uses `vitek({ trustProxy: true })` so the API sees the correct client IP and URL from `X-Forwarded-*` headers.
+- **vitek-serve:** The `start` script runs with `--trust-proxy`; use it when the app is behind nginx, Caddy, or another proxy.
+- **Production config:** `vitek.config.mjs` in the project root is copied to `dist/` during build. It exports `beforeApiRequest` (logging) and `onError` (503 JSON). See [Production server](https://vitek.dev/guide/production-server#production-config-vitekconfigmjs) in the docs.
 
 ## Production with Docker
 
