@@ -93,9 +93,12 @@ A simple benchmark script sends many requests to a URL and reports latency (p50,
 pnpm bench
 # or with custom URL and count:
 node scripts/bench.mjs http://127.0.0.1:3000/api/health 5000
+# or build basic-js, start server, run benchmark, run example tests, then stop:
+pnpm run example:bench
+node scripts/bench.mjs --with-example 2000
 ```
 
-Default URL is `http://127.0.0.1:3000/api/health` and default count is 1000. Start a server (e.g. from an example) before running the benchmark.
+Default URL is `http://127.0.0.1:3000/api/health` and default count is 1000. Start a server (e.g. from an example) before running the benchmark, or use `pnpm run example:bench` to do everything with the basic-js example.
 
 ## Writing Tests
 

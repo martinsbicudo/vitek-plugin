@@ -1,6 +1,6 @@
 # Alias
 
-Vitek supports `resolve.alias` via the `alias` option, merging your aliases into Vite's config. Use aliases for stable import paths instead of relative paths when the transform or resolveId do not fit your needs.
+Vitek supports `resolve.alias` via the `alias` option, merging your aliases into Vite's config. The same aliases are applied when building the API bundle (`vitek-api.mjs`), so you can use alias imports in route files in both development and production.
 
 ## When to use alias vs relative imports
 

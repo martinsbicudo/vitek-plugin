@@ -2,15 +2,53 @@
 /**
  * Benchmark: run N requests to a URL and report latency (p50, p99) and throughput (req/s).
  * Usage: node scripts/bench.mjs [url] [n]
+ *        node scripts/bench.mjs --with-example [n]
  *   url  default http://127.0.0.1:3000/api/health
  *   n    default 1000
+ * --with-example: build plugin + basic-js, start vitek-serve, run bench, run example tests, then stop.
  * Example: pnpm run bench
- *          node scripts/bench.mjs http://localhost:35173/api/health 5000
+ *          node scripts/bench.mjs --with-example 2000
  */
-const url = process.argv[2] || 'http://127.0.0.1:3000/api/health';
-const n = Number(process.argv[3]) || 1000;
+import { spawn } from 'child_process';
+import { join } from 'path';
+import { fileURLToPath } from 'url';
 
-async function run() {
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const ROOT = join(__dirname, '..');
+const EXAMPLE = join(ROOT, 'examples', 'basic-js');
+const BENCH_PORT = Number(process.env.BENCH_PORT) || 39567;
+
+const withExample = process.argv[2] === '--with-example';
+const url = withExample ? `http://127.0.0.1:${BENCH_PORT}/api/health` : (process.argv[2] || 'http://127.0.0.1:3000/api/health');
+const n = Number(withExample ? process.argv[3] : process.argv[3]) || 1000;
+
+function run(cmd, args, opts = {}) {
+  return new Promise((resolve, reject) => {
+    const p = spawn(cmd, args, {
+      stdio: 'pipe',
+      shell: true,
+      cwd: opts.cwd || ROOT,
+      env: { ...process.env, ...opts.env },
+    });
+    let err = '';
+    p.stderr?.on('data', (d) => { err += d; });
+    p.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`Exit ${code}: ${err}`))));
+  });
+}
+
+async function waitUp(baseUrl, maxMs = 15000) {
+  const start = Date.now();
+  while (Date.now() - start < maxMs) {
+    try {
+      const r = await fetch(baseUrl);
+      if (r.ok) return;
+    } catch (_) {}
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  throw new Error('Server not ready');
+}
+
+async function runBenchmark() {
   const times = [];
   const start = performance.now();
   for (let i = 0; i < n; i++) {
@@ -32,12 +70,41 @@ async function run() {
   console.log(`Latency p99: ${p99.toFixed(2)}ms`);
 }
 
-run().catch((err) => {
+async function main() {
+  if (!withExample) {
+    await runBenchmark();
+    return;
+  }
+  console.log('[bench] Build plugin');
+  await run('pnpm', ['run', 'build']);
+  console.log('[bench] Build basic-js');
+  await run('pnpm', ['run', 'build'], { cwd: EXAMPLE });
+
+  const server = spawn('pnpm', ['run', 'start'], {
+    cwd: EXAMPLE,
+    stdio: 'pipe',
+    env: { ...process.env, PORT: String(BENCH_PORT) },
+  });
+
+  try {
+    console.log('[bench] Wait for server');
+    await waitUp(`http://127.0.0.1:${BENCH_PORT}/api/health`);
+    console.log('[bench] Run benchmark');
+    await runBenchmark();
+    console.log('[bench] Run example tests');
+    await run('pnpm', ['test'], { cwd: EXAMPLE });
+    console.log('[bench] Done');
+  } finally {
+    server.kill('SIGTERM');
+  }
+}
+
+main().catch((err) => {
   const code = err?.cause?.code ?? err?.code;
   if (code === 'ECONNREFUSED') {
     console.error('Error: No server is running at ' + url + '.');
     console.error('Start the API first (e.g. cd examples/basic-js && pnpm run build && pnpm run start),');
-    console.error('or pass the correct URL: node scripts/bench.mjs <url> [n]');
+    console.error('or use: node scripts/bench.mjs --with-example [n]');
   } else {
     console.error(err);
   }

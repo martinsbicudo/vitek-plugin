@@ -57,4 +57,30 @@ describe('build-api-bundle', () => {
     expect(content).toContain('middlewares');
     expect(content).toContain('export');
   });
+
+  it('builds bundle when route uses alias import', async () => {
+    const libDir = path.join(rootDir, 'src', 'lib');
+    fs.mkdirSync(libDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(libDir, 'now.js'),
+      'export function now() { return new Date().toISOString(); }\n',
+      'utf-8'
+    );
+    fs.writeFileSync(
+      path.join(apiDir, 'time.get.ts'),
+      "import { now } from '@lib/now';\nexport default function handler() { return { at: now() }; }\n",
+      'utf-8'
+    );
+    const result = await buildApiBundle({
+      root: rootDir,
+      apiDir,
+      outDir,
+      alias: { '@lib': 'src/lib' },
+    });
+    expect(result).toBe(path.join(outDir, 'vitek-api.mjs'));
+    expect(fs.existsSync(result!)).toBe(true);
+    const content = fs.readFileSync(result!, 'utf-8');
+    expect(content).toContain('routes');
+    expect(content).toMatch(/at|now|iso/i);
+  });
 });
