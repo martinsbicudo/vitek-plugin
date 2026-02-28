@@ -5,7 +5,10 @@ import { vitek } from 'vitek-plugin';
 export default defineConfig({
   plugins: [
     react(),
-    vitek({ trustProxy: true }),
+    vitek({
+      trustProxy: true,
+      alias: { '@': 'src' },
+    }),
   ],
 });
 

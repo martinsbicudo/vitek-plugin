@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "./prepare-docker.sh && docker compose up --build",
-    "dev:local": "vite --host 0.0.0.0",
+    "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build && cp vitek.config.mjs dist/",
     "preview": "vite preview --host 0.0.0.0 --port 5173",
     "start": "vitek-serve --port=5173 --host=0.0.0.0 --trust-proxy",
@@ -21,7 +20,7 @@
     "@vitejs/plugin-react": "^4.2.0",
     "typescript": "^5.0.0",
     "vite": "^5.0.0",
-    "vitek-plugin": "file:../..",
+    "vitek-plugin": "file:./vitek-plugin-0.2.0-beta.tgz",
     "vitest": "^4.0.0"
   }
 }

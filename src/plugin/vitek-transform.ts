@@ -1,5 +1,5 @@
 /**
- * vitek:transform — rewrite relative imports to root-relative paths
+ * vitek:transform — rewrite relative and alias imports to root-relative paths
  */
 
 import type { Plugin } from 'vite';
@@ -11,29 +11,32 @@ import {
 } from '../adapters/vite/path-utils.js';
 import type { PluginContext } from './context.js';
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function createTransformPlugin(ctx: PluginContext): Plugin {
   return {
     name: 'vitek:transform',
     enforce: 'pre',
 
-    // filter is supported in Vite 6.3+; ignored in Vite 5 (handler still works)
     transform: {
       filter: {
         id: { include: /\.(tsx?|jsx?|mjs)$/, exclude: /node_modules/ },
       },
       handler(code: string, id: string) {
         if (!ctx.root) return null;
-        // Early return for Vite 5 (filter ignored); filter handles this in Vite 6.3+
         if (id.includes('node_modules') || !/\.(tsx?|jsx?|mjs)$/.test(id)) return null;
         const srcDir = path.resolve(ctx.root, ctx.options.srcDir ?? 'src');
         const normalizedId = normalizeModuleIdPath(id, ctx.root);
         if (!normalizedId.startsWith(srcDir)) return null;
         const dir = path.dirname(normalizedId);
         const rootSlash = path.resolve(ctx.root) + path.sep;
-        const relImportRe = /from\s+['"](\.\.?[^'"]+)['"]/g;
-        let match: RegExpExecArray | null;
         const s = new MagicString(code);
         let hasChanges = false;
+
+        const relImportRe = /from\s+['"](\.\.?[^'"]+)['"]/g;
+        let match: RegExpExecArray | null;
         while ((match = relImportRe.exec(code)) !== null) {
           const specifier = match[1];
           const candidate = path.resolve(dir, specifier);
@@ -46,6 +49,31 @@ export function createTransformPlugin(ctx: PluginContext): Plugin {
           s.overwrite(match.index, match.index + match[0].length, `from ${quote}${newSpecifier}${quote}`);
           hasChanges = true;
         }
+
+        const alias = ctx.options.alias;
+        if (alias && Object.keys(alias).length > 0) {
+          const entries = Object.entries(alias)
+            .filter(([, v]) => v != null && v !== '')
+            .sort(([a], [b]) => b.length - a.length);
+          for (const [key, replacement] of entries) {
+            const escapedKey = escapeRegex(key);
+            const aliasRe = new RegExp(`from\\s+(['"])(${escapedKey})(/[^'"]*)?\\1`, 'g');
+            while ((match = aliasRe.exec(code)) !== null) {
+              const quote = match[1];
+              const rest = (match[3] || '').replace(/^\//, '');
+              const base = path.isAbsolute(replacement)
+                ? path.join(replacement, rest)
+                : path.join(ctx.root, replacement, rest);
+              const target = resolveWithExtension(base);
+              if (!target) continue;
+              const rootRelative = path.relative(ctx.root, target).replace(/\\/g, '/');
+              const newSpecifier = `/${rootRelative}`;
+              s.overwrite(match.index, match.index + match[0].length, `from ${quote}${newSpecifier}${quote}`);
+              hasChanges = true;
+            }
+          }
+        }
+
         if (!hasChanges) return null;
         return {
           code: s.toString(),

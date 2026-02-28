@@ -1,9 +1,11 @@
 /**
  * Get all posts
  * GET /api/posts
+ * Uses alias import (@/lib/storage)
  */
 
 import type { VitekContext } from 'vitek-plugin';
+import { getStoragePrefix } from '@/lib/storage';
 
 export default async function handler(context: VitekContext) {
   const { query } = context;
@@ -12,7 +14,9 @@ export default async function handler(context: VitekContext) {
   const limit = query.limit ? Number(query.limit) : 10;
   const offset = query.offset ? Number(query.offset) : 0;
   
+  const prefix = getStoragePrefix();
   return {
+    prefix,
     posts: Array.from({ length: limit }, (_, i) => ({
       id: offset + i + 1,
       title: `Post ${offset + i + 1}`,

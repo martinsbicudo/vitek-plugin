@@ -4,11 +4,10 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-
 COPY . .
+COPY package.docker.json package.json
+RUN pnpm install
 
 EXPOSE 5173
 
-CMD ["pnpm", "run", "dev"]
+CMD ["pnpm", "run", "dev:local"]

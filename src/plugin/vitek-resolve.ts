@@ -17,9 +17,10 @@ export function createResolvePlugin(ctx: PluginContext): Plugin {
     enforce: 'pre',
 
     resolveId(id, importer) {
-      if (!id.startsWith('.') || !importer || !ctx.root) return null;
-      const fullApiDir = path.resolve(ctx.root, ctx.apiDirOption);
-      const importerPath = normalizeImporterPath(importer, ctx.root);
+      const root = ctx.root ?? process.cwd();
+      if (!id.startsWith('.') || !importer) return null;
+      const fullApiDir = path.resolve(root, ctx.apiDirOption);
+      const importerPath = normalizeImporterPath(importer, root);
       const normalizedApiDir = path.resolve(fullApiDir);
       const normalizedImporter = path.resolve(importerPath);
       if (!normalizedImporter.startsWith(normalizedApiDir)) return null;

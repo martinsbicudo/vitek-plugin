@@ -14,7 +14,8 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^6.0.0"
+    "@prisma/client": "^6.0.0",
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

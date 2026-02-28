@@ -1,6 +1,6 @@
 # Alias
 
-Vitek supports `resolve.alias` via the `alias` option, merging your aliases into Vite's config. The same aliases are applied when building the API bundle (`vitek-api.mjs`), so you can use alias imports in route files in both development and production.
+Vitek supports `resolve.alias` via the `alias` option, merging your aliases into Vite's config. Alias imports are resolved by the `resolveId` hook (including in SSR during dev) and when building the API bundle (`vitek-api.mjs`), so you can use alias imports in route files in both development and production, including when running in Docker.
 
 ## When to use alias vs relative imports
 

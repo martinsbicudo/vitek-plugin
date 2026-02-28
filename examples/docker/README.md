@@ -13,15 +13,20 @@ Open http://localhost:5173.
 
 ## Run with Docker (dev)
 
-From this directory:
+From this directory, first pack the vitek-plugin and then build/run:
 
 ```bash
+./prepare-docker.sh
 docker compose up --build
 ```
 
-The container uses **pnpm** to install dependencies and start the dev server. Open http://localhost:5173.
+Or use the wrapper script:
 
-No need to build the plugin from the repo root—this example depends on the published `vitek-plugin` from npm. **Note:** The production `start` script uses the `vitek-serve` bin; the published package is expected to include the CLI (`dist/cli/serve.js`). For local testing with a linked plugin, use `"vitek-plugin": "file:../.."` and run `pnpm build` at the plugin root.
+```bash
+./run-docker.sh
+```
+
+`prepare-docker.sh` builds the vitek-plugin at the repo root and creates a `.tgz` tarball in this directory. Docker uses `package.docker.json` (which references the tarball) so the container does not need access to the monorepo. Open http://localhost:5173.
 
 ## Production (local)
 

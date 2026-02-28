@@ -212,6 +212,31 @@ describe('vitek plugin resolveId and transform', () => {
       const result = callTransform(transformPlugin, code, id);
       expect(result).toBeNull();
     });
+
+    it('rewrites alias import to root-relative path when alias option is set', () => {
+      const aliasPlugins = vitek({
+        apiDir: path.join('src', 'api'),
+        alias: { '@': 'src' },
+      });
+      const aliasTransform = findPlugin(aliasPlugins, 'vitek:transform')!;
+      const aliasBuild = findPlugin(aliasPlugins, 'vitek:build')!;
+      const configResolvedHook = aliasBuild.configResolved;
+      if (configResolvedHook) {
+        const fn = typeof configResolvedHook === 'function' ? configResolvedHook : configResolvedHook.handler;
+        fn.call(null as never, { root: rootDir, build: { outDir: 'dist' } } as never);
+      }
+      fs.writeFileSync(
+        path.join(rootDir, 'src', 'lib', 'utils.ts'),
+        "export const APP_NAME = 'test';\n",
+        'utf-8'
+      );
+      const code = "import { APP_NAME } from '@/lib/utils';\nexport default function handler() { return APP_NAME; }";
+      const id = pathToFileURL(path.join(apiDir, 'health.get.ts')).href;
+      const result = callTransform(aliasTransform, code, id);
+      expect(result).not.toBeNull();
+      expect(result!.code).toContain('/src/lib/utils');
+      expect(result!.code).not.toContain('@/lib/utils');
+    });
   });
 
   describe('plugin shape', () => {
