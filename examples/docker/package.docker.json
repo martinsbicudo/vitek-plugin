@@ -20,7 +20,7 @@
     "@vitejs/plugin-react": "^4.2.0",
     "typescript": "^5.0.0",
     "vite": "^5.0.0",
-    "vitek-plugin": "file:./vitek-plugin-0.2.0-beta.tgz",
+    "vitek-plugin": "file:./vitek-plugin-0.2.1-beta.tgz",
     "vitest": "^4.0.0"
   }
 }

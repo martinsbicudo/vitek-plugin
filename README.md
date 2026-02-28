@@ -5,7 +5,7 @@
   
   **File-based HTTP API generation for Vite**
   
-  [![Version](https://img.shields.io/badge/version-0.2.0--beta-orange.svg)](https://github.com/martinsbicudo/vitek-plugin)
+  [![Version](https://img.shields.io/badge/version-0.2.1--beta-orange.svg)](https://github.com/martinsbicudo/vitek-plugin)
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
   [![Vite](https://img.shields.io/badge/vite-^5.0.0%20%7C%7C%20^6.0.0-646CFF.svg)](https://vitejs.dev/)
   
