@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vitek + Vite 6 Minimal</title>
+  </head>
+  <body>
+    <h1>Vitek + Vite 6 Minimal</h1>
+    <script type="module">
+      ;(async () => {
+        const res = await fetch('/api/health')
+        const json = await res.json()
+        document.body.insertAdjacentHTML('beforeend', `<pre>${JSON.stringify(json, null, 2)}</pre>`)
+      })()
+    </script>
+  </body>
+</html>

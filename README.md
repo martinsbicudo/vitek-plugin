@@ -7,7 +7,7 @@
   
   [![Version](https://img.shields.io/badge/version-0.2.1--beta-orange.svg)](https://github.com/martinsbicudo/vitek-plugin)
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-  [![Vite](https://img.shields.io/badge/vite-^5.0.0%20%7C%7C%20^6.0.0-646CFF.svg)](https://vitejs.dev/)
+[![Vite](https://img.shields.io/badge/vite-^6.0.0%20%7C%7C%20^7.0.0-646CFF.svg)](https://vitejs.dev/)
   
   > **Beta Version**: This project is currently in beta. APIs may change in future releases.
 </div>

@@ -1,4 +1,4 @@
-# buildApi-false
+# build-api-false
 
 Example: `buildApi: false` — API runs only in dev; no API bundle in `dist/` after build.
 

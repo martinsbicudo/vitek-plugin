@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
 
-describe('buildApi-false example', () => {
+describe('build-api-false example', () => {
   it('dist exists', () => {
     expect(fs.existsSync(path.join(ROOT, 'dist'))).toBe(true);
   });

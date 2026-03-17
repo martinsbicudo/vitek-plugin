@@ -9,6 +9,10 @@ on:
 jobs:
   test_check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        vite: ["^7.0.0"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,7 +29,10 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Pin Vite version (matrix)
+        run: pnpm add -D vite@${{ matrix.vite }} --no-save
 
       - name: Run tests
         run: pnpm test
@@ -37,12 +44,13 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-report-vite-${{ matrix.vite }}
           path: coverage/
           retention-days: 7
 
-  examples_check:
+  test_check_vite6_best_effort:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,7 +67,40 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Pin Vite 6 (best-effort)
+        run: pnpm add -D vite@^6.0.0 --no-save
+
+      - name: Run unit tests (best-effort)
+        run: pnpm test
+
+  examples_check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        vite: ["^7.0.0"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Pin Vite version (matrix)
+        run: pnpm add -D vite@${{ matrix.vite }} --no-save
 
       - name: Build plugin
         run: pnpm run build

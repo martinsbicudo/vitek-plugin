@@ -20,6 +20,16 @@ pnpm run check
 
 This runs: install dependencies, build the plugin, unit tests, examples build-and-test, e2e test, and example benchmark. All of these must pass for your PR to be merged.
 
+## Definition of Done (for changes in core/plugin)
+
+- All checks pass: `pnpm run check`
+- If you changed behavior, update at least one guide page under `docs/guide/`
+- If you changed DX/APIs, update at least one relevant example under `examples/`
+- If you touched examples, ensure their **post-build tests** still pass via `pnpm run examples:build-and-test`
+- If you touched runtime/server behavior, ensure both e2e suites pass:
+  - `pnpm run test:e2e`
+  - `pnpm run test:e2e:socket`
+
 A **pre-commit hook** (Husky) runs the same `pnpm run check` before each commit. If the check fails, the commit is aborted. A **commit-msg hook** (Husky + Commitlint) enforces [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `chore:`). After `pnpm i`, hooks are configured automatically via the `prepare` script.
 
 You can also test the plugin in a real app using **npm link**:

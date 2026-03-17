@@ -336,7 +336,7 @@ pnpm build
 - **[error-handling](./error-handling/)** — custom `onError` and route that throws
 - **[cors](./cors/)** — CORS with restricted origin, methods, headers
 - **[minimal-ts](./minimal-ts/)** — minimal TypeScript, one GET route, no React
-- **[buildApi-false](./buildApi-false/)** — API only in dev, no bundle in `dist/`
+- **[build-api-false](./build-api-false/)** — API only in dev, no bundle in `dist/`
 - **[alias](./alias/)** — `alias: { '@lib': 'src/lib' }` in routes
 
 ---
@@ -400,7 +400,7 @@ In the examples we use `vitek-serve`; you must run `pnpm build` at the plugin ro
 - [error-handling README](./error-handling/README.md) - onError and thrown errors
 - [cors README](./cors/README.md) - CORS options
 - [minimal-ts README](./minimal-ts/README.md) - Minimal TypeScript
-- [buildApi-false README](./buildApi-false/README.md) - buildApi: false
+- [build-api-false README](./build-api-false/README.md) - buildApi: false
 - [alias README](./alias/README.md) - alias option
 
 ---
