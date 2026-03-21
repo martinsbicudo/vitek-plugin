@@ -48,24 +48,27 @@ npm link vitek-plugin
 
 This creates a symlink so your app uses the local plugin. You can iterate on the plugin and see changes after rebuilding. See [npm link](https://docs.npmjs.com/cli/v9/commands/npm-link) for details.
 
-## 3. Open a pull request
+## 3. Add a changeset (when the package changes)
 
-Before pushing, open a pull request and fill all required fields in the template.
+If your PR changes code, APIs, or anything that should ship on npm, add a changeset:
 
-**Important:** You must fill the **Release** section in the PR description with a summary of what the PR changes. This section is required to merge.
+```bash
+pnpm changeset
+```
 
-## 4. Set the semver label
+Pick **patch**, **minor**, or **major** as appropriate. Commit the generated `.changeset/*.md` file.
 
-Apply exactly one of these labels to your PR:
+**You do not need a changeset** if any of these apply:
 
-| Label | Use when |
-|-------|----------|
-| `semver:patch` | Bug fix, performance improvement, docs-only in code |
-| `semver:minor` | New feature, new component, backward-compatible change |
-| `semver:major` | Breaking change |
-| `semver:prerelease` | Prerelease version (e.g. 0.1.0-beta.1) |
-| `semver:bypass` | Changes that do not affect the build (e.g. docs, README) |
+- Add the label **`no-changeset`** (e.g. internal tooling, CI-only, or you explicitly skip release).
+- Your diff is **only** under the allowlist: `docs/**`, root `*.md` (e.g. `README.md`, `CHANGELOG.md`), `LICENSE*`, `.changeset/README.md`, `.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/**`.
+
+## 4. Open a pull request
+
+Fill the PR template. CI fails if a changeset is required and none of the bypass rules above apply.
 
 ## After merge
 
-Once the PR is merged with the Release section and a semver label, GitHub Actions will run the build and publish the new version to NPM and create a GitHub Release.
+When a PR **with pending changesets** merges into `main`, CI runs `changeset version`, commits the bump, publishes to npm, pushes tags, and opens a GitHub Release in one go.
+
+PRs without changesets (bypass or docs-only) do not trigger a release.

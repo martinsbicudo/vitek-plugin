@@ -78,3 +78,11 @@ export type { AsyncApiOptions, AsyncApiInfo } from './core/asyncapi/generate.js'
 
 export type { VitekPlugin, AfterTypesGeneratedContext, BeforeApiRequestContext } from './plugin/plugin-api.js';
 
+export {
+  createMockContext,
+  createMockReq,
+  createMockRes,
+  runMiddlewareChain,
+} from './testing/testing.js';
+export type { MockServerResponse } from './testing/testing.js';
+

@@ -130,6 +130,8 @@ Aplicar nos exemplos para mostrar o estilo novo (sem quebrar compat):
 
 ## 2) `vitek-plugin/testing` (test utils oficiais)
 
+> **Feito:** `createMockContext`, `createMockReq`, `createMockRes`, `runMiddlewareChain`; subpath `vitek-plugin/testing`; testes em `src/public/testing.test.ts`; doc em `docs/guide/testing.md`; exemplo `examples/minimal-ts/health.handler.test.ts`.
+
 ### Objetivo
 Permitir que usuários testem handlers e middlewares sem reimplementar mocks de `req/res/context`.
 
@@ -184,6 +186,8 @@ await runMiddlewareChain(ctx, [authMiddleware])
 ---
 
 ## 3) Changesets + automação de release (fundação para crescer)
+
+> **Feito:** `@changesets/cli`, pnpm workspace, release em **um push** (version + commit + publish + tag + GitHub Release), bypass por label **`no-changeset`** e allowlist de paths só-docs, `pr_changeset_check.yml`, `docs/contributing.md`, PR template.
 
 ### Objetivo
 Padronizar versões e releases (especialmente com `packages/vitek-mcp`), evitando “esquecer” mudanças em docs/examples.

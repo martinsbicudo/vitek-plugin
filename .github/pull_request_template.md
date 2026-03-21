@@ -16,9 +16,8 @@
 
 ## How
 
-## Release
+## Changeset / release
 
-```
-- example change 1
-- example change 2
-```
+- Code or API changes: run `pnpm changeset` and commit `.changeset/*.md`.
+- Docs / README / LICENSE only: no changeset needed (paths under `docs/`, root `*.md`, etc.).
+- Other cases without release: add label **`no-changeset`**.

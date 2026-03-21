@@ -1,0 +1,80 @@
+name: PR Changeset Check
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+jobs:
+  changeset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bypass label
+        id: bypass_label
+        run: |
+          if echo '${{ toJson(github.event.pull_request.labels) }}' | jq -e 'map(.name) | index("no-changeset") != null' >/dev/null 2>&1; then
+            echo "ok=true" >> $GITHUB_OUTPUT
+            echo "Label no-changeset: changeset not required"
+          else
+            echo "ok=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout
+        if: steps.bypass_label.outputs.ok != 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Has changeset file
+        id: has_changeset
+        if: steps.bypass_label.outputs.ok != 'true'
+        run: |
+          FILES=$(git diff --name-only origin/main...HEAD -- ".changeset/*.md" | grep -v "README.md" || true)
+          if [ -n "$FILES" ]; then
+            echo "ok=true" >> $GITHUB_OUTPUT
+            echo "Found: $FILES"
+          else
+            echo "ok=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Docs-only paths allowlist
+        id: docs_only
+        if: steps.bypass_label.outputs.ok != 'true' && steps.has_changeset.outputs.ok != 'true'
+        run: |
+          allowed() {
+            [[ "$1" == docs/* ]] && return 0
+            [[ "$1" == .github/ISSUE_TEMPLATE/* ]] && return 0
+            case "$1" in
+              README.md|LICENSE|CHANGELOG.md|.changeset/README.md|.github/pull_request_template.md) return 0 ;;
+              LICENSE.*) return 0 ;;
+            esac
+            [[ "$1" =~ ^[^/]+\.md$ ]] && return 0
+            return 1
+          }
+          CHANGED=$(git diff --name-only origin/main...HEAD)
+          if [ -z "$CHANGED" ]; then
+            echo "ok=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          NEED=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! allowed "$f"; then NEED=1; break; fi
+          done <<< "$CHANGED"
+          if [ "$NEED" -eq 0 ]; then
+            echo "ok=true" >> $GITHUB_OUTPUT
+            echo "All changes under docs-only allowlist"
+          else
+            echo "ok=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pass
+        if: steps.bypass_label.outputs.ok == 'true' || steps.has_changeset.outputs.ok == 'true' || steps.docs_only.outputs.ok == 'true'
+        run: echo "Changeset requirement satisfied"
+
+      - name: Fail
+        if: steps.bypass_label.outputs.ok != 'true' && steps.has_changeset.outputs.ok != 'true' && steps.docs_only.outputs.ok != 'true'
+        run: |
+          echo "::error::Add a changeset (pnpm changeset), or label this PR with no-changeset, or limit changes to docs/README/LICENSE/PR template/issue templates only."
+          exit 1

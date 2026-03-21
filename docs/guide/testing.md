@@ -100,6 +100,38 @@ node scripts/bench.mjs --with-example 2000
 
 Default URL is `http://127.0.0.1:3000/api/health` and default count is 1000. Start a server (e.g. from an example) before running the benchmark, or use `pnpm run example:bench` to do everything with the basic-js example.
 
+## Testing handlers with `vitek-plugin/testing`
+
+Use `createMockContext` to call route handlers in unit tests without HTTP or Vite:
+
+```ts
+import { describe, it, expect } from 'vitest';
+import { createMockContext } from 'vitek-plugin/testing';
+import handler from './src/api/health.get';
+
+describe('GET /api/health', () => {
+  it('returns ok', async () => {
+    const ctx = createMockContext({
+      params: {},
+      query: {},
+      headers: {},
+    });
+    const result = await handler(ctx);
+    expect(result).toMatchObject({ status: 'ok' });
+  });
+});
+```
+
+Optional helpers:
+
+- **`createMockReq`** — shape of `VitekRequest` for code that builds context from a request.
+- **`createMockRes`** — mock `setHeader`, `getHeader`, `end`, `statusCode`, and `bodyChunks` for Connect-style tests.
+- **`runMiddlewareChain(ctx, middlewares)`** — runs your `middleware.ts` stack with the same composer as production (Koa-style `next()`).
+
+Import from `vitek-plugin/testing` so test bundles do not pull the full plugin barrel.
+
+---
+
 ## Writing Tests
 
 Tests follow the naming convention: `[filename].test.ts`

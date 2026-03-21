@@ -1,4 +1,29 @@
-# Relative imports
+# Imports
+
+## Package subpath imports
+
+You can import from specific subpaths to reduce bundle size and improve clarity:
+
+```ts
+import { vitek } from 'vitek-plugin/plugin'
+import { json, ok, notFound } from 'vitek-plugin/response'
+import { NotFoundError, ValidationError } from 'vitek-plugin/errors'
+import { validateBody, validateQuery } from 'vitek-plugin/validation'
+import { getManifest, getRoutes } from 'vitek-plugin/introspection'
+import { createMockContext, runMiddlewareChain } from 'vitek-plugin/testing'
+```
+
+Types like `VitekContext`, `RouteHandler`, and `Middleware` remain in the main package:
+
+```ts
+import type { VitekContext } from 'vitek-plugin'
+```
+
+The barrel `vitek-plugin` continues to export everything for compatibility.
+
+---
+
+## Relative imports
 
 The vitek-plugin automatically handles relative imports (`./` and `../`) in files under `src/`, so routes and sockets can import shared code outside the API directory.
 

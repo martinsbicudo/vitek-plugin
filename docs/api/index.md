@@ -1,6 +1,14 @@
 # API Reference
 
-Overview of the public API provided by `vitek-plugin`. Import from `vitek-plugin` in your project.
+Overview of the public API provided by `vitek-plugin`. Use the main package or subpaths:
+
+- `vitek-plugin` — barrel (all exports)
+- `vitek-plugin/plugin` — `vitek`, `VitekOptions`
+- `vitek-plugin/response` — response helpers
+- `vitek-plugin/errors` — error classes
+- `vitek-plugin/validation` — validate, validateBody, validateQuery, schema types
+- `vitek-plugin/introspection` — getManifest, getRoutes, getSockets, writeManifest
+- `vitek-plugin/testing` — createMockContext, createMockReq, createMockRes, runMiddlewareChain
 
 ## Plugin
 
