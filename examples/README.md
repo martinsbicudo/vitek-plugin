@@ -330,6 +330,12 @@ pnpm build
 - You need a reference for `beforeApiRequest` with 429 responses
 - You're evaluating rate limiting before moving to Redis or proxy
 
+### Use `mcp-project` if:
+
+- You want to expose routes/sockets/openapi/asyncapi via `vitek mcp`
+- You need a minimal setup with `vitek.mcp.json`
+- You want a smoke test that validates MCP startup in CI
+
 ### Additional examples
 
 - **[validation-only](./validation-only/)** — `validateBody` and 422 on invalid body
@@ -338,6 +344,7 @@ pnpm build
 - **[minimal-ts](./minimal-ts/)** — minimal TypeScript, one GET route, no React
 - **[build-api-false](./build-api-false/)** — API only in dev, no bundle in `dist/`
 - **[alias](./alias/)** — `alias: { '@lib': 'src/lib' }` in routes
+- **[mcp-project](./mcp-project/)** — MCP resources via `vitek mcp`
 
 ---
 
@@ -406,6 +413,7 @@ In the examples we use `vitek-serve`; you must run `pnpm build` at the plugin ro
 - [minimal-ts README](./minimal-ts/README.md) - Minimal TypeScript
 - [build-api-false README](./build-api-false/README.md) - buildApi: false
 - [alias README](./alias/README.md) - alias option
+- [mcp-project README](./mcp-project/README.md) - MCP project server example
 
 ---
 

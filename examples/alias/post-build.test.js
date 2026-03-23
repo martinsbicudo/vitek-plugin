@@ -12,6 +12,13 @@ describe('alias example', () => {
     expect(fs.existsSync(path.join(ROOT, 'dist', 'vitek-api.mjs'))).toBe(true);
   });
 
+  it('resolves vitek-plugin subpath exports', async () => {
+    const { getRoutes } = await import('vitek-plugin/introspection');
+    expect(typeof getRoutes).toBe('function');
+    const { vitek } = await import('vitek-plugin/plugin');
+    expect(typeof vitek).toBe('function');
+  });
+
   it('health route returns ok with at timestamp', async () => {
     const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-api.mjs')).href);
     const route = mod.routes.find((r) => r.pattern === 'health' && r.method === 'get');

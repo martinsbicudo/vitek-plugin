@@ -35,6 +35,13 @@ describe('vitek-plugin build outputs (js-react)', () => {
     expect(fs.existsSync(socketsBundle)).toBe(true);
   });
 
+  it('resolves vitek-plugin subpath exports', async () => {
+    const { ok } = await import('vitek-plugin/response');
+    expect(typeof ok).toBe('function');
+    const { vitek } = await import('vitek-plugin/plugin');
+    expect(typeof vitek).toBe('function');
+  });
+
   it('can load vitek-api.mjs', async () => {
     const apiBundle = path.join(ROOT, 'dist', 'vitek-api.mjs');
     const mod = await import(pathToFileURL(apiBundle).href);

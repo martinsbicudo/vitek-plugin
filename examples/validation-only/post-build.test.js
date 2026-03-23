@@ -12,6 +12,13 @@ describe('validation-only example', () => {
     expect(fs.existsSync(path.join(ROOT, 'dist', 'vitek-api.mjs'))).toBe(true);
   });
 
+  it('resolves vitek-plugin subpath exports', async () => {
+    const { validateBody } = await import('vitek-plugin/validation');
+    expect(typeof validateBody).toBe('function');
+    const { vitek } = await import('vitek-plugin/plugin');
+    expect(typeof vitek).toBe('function');
+  });
+
   it('echo route validates body and throws 422 for invalid', async () => {
     const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-api.mjs')).href);
     const route = mod.routes.find((r) => r.pattern === 'echo' && r.method === 'post');

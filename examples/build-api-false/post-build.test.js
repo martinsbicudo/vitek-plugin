@@ -14,4 +14,11 @@ describe('build-api-false example', () => {
   it('vitek-api.mjs is not produced', () => {
     expect(fs.existsSync(path.join(ROOT, 'dist', 'vitek-api.mjs'))).toBe(false);
   });
+
+  it('resolves vitek-plugin subpath exports', async () => {
+    const { vitek } = await import('vitek-plugin/plugin');
+    expect(typeof vitek).toBe('function');
+    const { ok } = await import('vitek-plugin/response');
+    expect(typeof ok).toBe('function');
+  });
 });

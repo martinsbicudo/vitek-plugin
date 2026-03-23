@@ -12,6 +12,13 @@ describe('error-handling example', () => {
     expect(fs.existsSync(path.join(ROOT, 'dist', 'vitek-api.mjs'))).toBe(true);
   });
 
+  it('resolves vitek-plugin subpath exports', async () => {
+    const { NotFoundError } = await import('vitek-plugin/errors');
+    expect(typeof NotFoundError).toBe('function');
+    const { vitek } = await import('vitek-plugin/plugin');
+    expect(typeof vitek).toBe('function');
+  });
+
   it('fail route throws', async () => {
     const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-api.mjs')).href);
     const route = mod.routes.find((r) => r.pattern === 'fail' && r.method === 'get');

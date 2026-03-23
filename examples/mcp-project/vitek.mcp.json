@@ -1,0 +1,6 @@
+{
+  "apiDir": "src/api",
+  "apiBasePath": "/api",
+  "socketBasePath": "/api/ws",
+  "baseUrl": "http://localhost:5173"
+}

@@ -14,5 +14,12 @@ describe('vite6-minimal post-build', () => {
     const mod = await import(pathToFileURL(apiBundle).href)
     expect(Array.isArray(mod.routes)).toBe(true)
   })
+
+  it('resolves vitek-plugin subpath exports', async () => {
+    const response = await import('vitek-plugin/response')
+    expect(typeof response.ok).toBe('function')
+    const plugin = await import('vitek-plugin/plugin')
+    expect(typeof plugin.vitek).toBe('function')
+  })
 })
 

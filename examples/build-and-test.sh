@@ -12,7 +12,7 @@ if [ -f "$REPO_ROOT/package.json" ]; then
   (cd "$REPO_ROOT" && pnpm run build) || exit 1
 fi
 
-EXAMPLES=(basic-js js-react typescript-react import-external socket-only api-docs prisma docker rate-limit validation-only error-handling cors minimal-ts build-api-false alias vite6-minimal)
+EXAMPLES=(basic-js js-react typescript-react import-external socket-only api-docs prisma docker rate-limit validation-only error-handling cors minimal-ts build-api-false alias vite6-minimal mcp-project)
 PASSED=0
 FAILED=0
 FAILED_NAMES=()
@@ -27,20 +27,26 @@ for name in "${EXAMPLES[@]}"; do
   echo "  Build + Test: $name"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   cd "$SCRIPT_DIR/$name" || exit 1
-  if ! pnpm i --no-frozen-lockfile; then
+  if ! pnpm i --dir "$SCRIPT_DIR/$name" --ignore-workspace --no-frozen-lockfile; then
     echo "❌ $name: pnpm i FAILED"
     FAILED=$((FAILED + 1))
     FAILED_NAMES+=("$name")
     continue
   fi
-  if ! pnpm run build; then
+  if [ ! -d "$SCRIPT_DIR/$name/node_modules" ]; then
+    echo "❌ $name: node_modules missing after pnpm i"
+    FAILED=$((FAILED + 1))
+    FAILED_NAMES+=("$name")
+    continue
+  fi
+  if ! pnpm run --dir "$SCRIPT_DIR/$name" build; then
     echo "❌ $name: build FAILED"
     FAILED=$((FAILED + 1))
     FAILED_NAMES+=("$name")
     continue
   fi
   if grep -q '"test"' package.json 2>/dev/null; then
-    if pnpm test; then
+    if pnpm run --dir "$SCRIPT_DIR/$name" test; then
       echo "✅ $name: Build + Test OK"
     else
       echo "❌ $name: test FAILED"

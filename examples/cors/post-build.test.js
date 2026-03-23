@@ -12,6 +12,13 @@ describe('cors example', () => {
     expect(fs.existsSync(path.join(ROOT, 'dist', 'vitek-api.mjs'))).toBe(true);
   });
 
+  it('resolves vitek-plugin subpath exports', async () => {
+    const { ok } = await import('vitek-plugin/response');
+    expect(typeof ok).toBe('function');
+    const { vitek } = await import('vitek-plugin/plugin');
+    expect(typeof vitek).toBe('function');
+  });
+
   it('health route exists', async () => {
     const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-api.mjs')).href);
     const route = mod.routes.find((r) => r.pattern === 'health' && r.method === 'get');

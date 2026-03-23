@@ -1,0 +1,18 @@
+{
+  "name": "vitek-mcp-project-example",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vitek-serve",
+    "mcp": "vitek mcp",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0",
+    "vitek-plugin": "file:../..",
+    "vitest": "^4.0.0"
+  }
+}

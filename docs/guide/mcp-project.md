@@ -108,3 +108,4 @@ Start Claude Desktop from your Vitek project directory (or set `cwd` as per Clau
 - **Resources:** manifest, routes, sockets, openapi, asyncapi.
 - **Tool:** `vitek_api_call` (requires the API to be running).
 - **Usage:** configure the MCP client (Cursor, Claude Desktop) to run `vitek mcp` in the project cwd.
+- **Example:** `examples/mcp-project`.
