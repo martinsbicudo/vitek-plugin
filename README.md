@@ -47,7 +47,7 @@ npm install vitek-plugin
 
 ```typescript
 import { defineConfig } from "vite";
-import { vitek } from "vitek-plugin";
+import { vitek } from "vitek-plugin/plugin";
 
 export default defineConfig({
   plugins: [vitek()],
@@ -74,7 +74,7 @@ Vitek can automatically generate OpenAPI 3.0 (REST) and AsyncAPI 2.x (WebSockets
 
 ```typescript
 import { defineConfig } from "vite";
-import { vitek } from "vitek-plugin";
+import { vitek } from "vitek-plugin/plugin";
 
 export default defineConfig({
   plugins: [

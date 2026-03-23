@@ -9,7 +9,7 @@ Vitek exposes a programmatic API to inspect routes, middlewares, and sockets, an
 Returns a full manifest with routes, middlewares, and sockets. Paths in the manifest are relative to `root`.
 
 ```typescript
-import { getManifest } from "vitek-plugin";
+import { getManifest } from "vitek-plugin/introspection";
 
 const manifest = getManifest(process.cwd(), "src/api");
 // {
@@ -24,7 +24,7 @@ const manifest = getManifest(process.cwd(), "src/api");
 Returns parsed route metadata.
 
 ```typescript
-import { getRoutes } from "vitek-plugin";
+import { getRoutes } from "vitek-plugin/introspection";
 
 const routes = getRoutes(process.cwd(), "src/api");
 // ParsedRoute[]: { method, pattern, params, file }
@@ -35,7 +35,7 @@ const routes = getRoutes(process.cwd(), "src/api");
 Returns parsed socket metadata.
 
 ```typescript
-import { getSockets } from "vitek-plugin";
+import { getSockets } from "vitek-plugin/introspection";
 
 const sockets = getSockets(process.cwd(), "src/api");
 // ParsedSocket[]: { pattern, params, file }
@@ -46,7 +46,7 @@ const sockets = getSockets(process.cwd(), "src/api");
 Writes `vitek-manifest.json` to the given output directory. Use for custom build scripts when not using the Vite plugin.
 
 ```typescript
-import { writeManifest } from "vitek-plugin";
+import { writeManifest } from "vitek-plugin/introspection";
 
 writeManifest(process.cwd(), "src/api", "dist");
 // Writes dist/vitek-manifest.json

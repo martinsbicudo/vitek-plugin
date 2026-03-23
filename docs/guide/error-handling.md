@@ -10,7 +10,7 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
-} from "vitek-plugin";
+} from "vitek-plugin/errors";
 
 export default function handler(context: VitekContext) {
   const { params } = context;

@@ -17,7 +17,7 @@ export default function handler(context: VitekContext) {
 Use response helpers for full control over HTTP responses:
 
 ```typescript
-import { created, notFound, json } from "vitek-plugin";
+import { created, notFound, json } from "vitek-plugin/response";
 
 export default function handler(context: VitekContext) {
   // 201 Created
@@ -62,7 +62,7 @@ export default function handler(context: VitekContext) {
 Use `text()` and `html()` for non-JSON responses:
 
 ```typescript
-import { text, html } from "vitek-plugin";
+import { text, html } from "vitek-plugin/response";
 
 // Plain text (Content-Type: text/plain; charset=utf-8)
 return text("Hello, world!");
@@ -108,7 +108,7 @@ For one-off streaming (e.g. a file), you can use `Readable.from()` or `fs.create
 Use `cacheControl` and `noStore` to add `Cache-Control` headers. Merge the returned object into your response headers:
 
 ```typescript
-import { ok, cacheControl, noStore } from "vitek-plugin";
+import { ok, cacheControl, noStore } from "vitek-plugin/response";
 
 // Cache for 60 seconds (public)
 return { ...ok(data), headers: { ...ok(data).headers, ...cacheControl(60) } };

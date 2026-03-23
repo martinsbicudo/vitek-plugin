@@ -7,8 +7,8 @@ Vitek provides optional runtime validation for request body and query parameters
 Use `validateBody` and `validateQuery` in your handlers. If validation fails, a `ValidationError` (422) is thrown:
 
 ```typescript
-import { validateBody, validateQuery } from "vitek-plugin";
-import type { ValidationSchema } from "vitek-plugin";
+import { validateBody, validateQuery } from "vitek-plugin/validation";
+import type { ValidationSchema } from "vitek-plugin/validation";
 
 export type Body = {
   title: string;

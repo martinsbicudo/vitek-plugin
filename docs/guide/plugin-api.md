@@ -6,7 +6,7 @@ Vitek supports external plugins via the `plugins` option. Plugins can hook into 
 
 ```typescript
 import { defineConfig } from "vite";
-import { vitek } from "vitek-plugin";
+import { vitek } from "vitek-plugin/plugin";
 import type { VitekPlugin } from "vitek-plugin";
 
 const myPlugin: VitekPlugin = {
@@ -143,7 +143,7 @@ Rate limiting is not built into the core. You can implement it with a `beforeApi
 ```typescript
 import type { IncomingMessage } from "http";
 import type { VitekPlugin } from "vitek-plugin";
-import { tooManyRequests } from "vitek-plugin";
+import { tooManyRequests } from "vitek-plugin/response";
 
 const windowMs = 60_000;
 const maxPerWindow = 100;

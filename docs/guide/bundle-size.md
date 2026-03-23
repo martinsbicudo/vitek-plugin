@@ -9,7 +9,9 @@ The plugin is consumed as TypeScript/JavaScript by Vite. There is no separate Ro
 - **Tree-shaking:** The package uses **named exports**. Import only what you need so bundlers can drop unused code:
 
   ```ts
-  import { vitek, json, HttpError } from 'vitek-plugin';
+  import { vitek } from 'vitek-plugin/plugin';
+  import { json } from 'vitek-plugin/response';
+  import { HttpError } from 'vitek-plugin/errors';
   ```
 
 - **Dependencies:** Runtime and build dependencies (`connect`, `serve-static`, `ws`, `magic-string`, `esbuild`) are required for the features they support. Vite is a peer dependency so you control its version.

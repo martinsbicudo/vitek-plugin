@@ -14,6 +14,8 @@
 
 ## 0) Checklist de release antes de começar
 
+> **Feito:** suporte oficial definido (Vite 7 obrigatório, Vite 6 best-effort, Vite 5 descontinuado), política de breaking changes documentada para entrypoints/exports, e DoD aplicada com `pnpm run check` + post-build tests por exemplo alterado.
+
 - **Definir suporte de Vite**:
   - **Obrigatório**: Vite 7 (CI bloqueante).
   - **Best-effort**: Vite 6 por 1–2 releases (CI não-bloqueante ou subset).
@@ -39,6 +41,8 @@ Checklist:
 ---
 
 ## 1) Exports granulares (alto impacto, baixo risco se bem feito)
+
+> **Feito:** subpaths públicos (`./plugin`, `./response`, `./errors`, `./validation`, `./introspection`, `./testing`) adicionados no `exports`, barrels em `src/public/*`, barrel principal mantido por compat, docs e exemplos atualizados, e cobertura em testes unitários e post-build de exemplos.
 
 ### Objetivo
 Evitar que usuários importem “tudo” de `vitek-plugin` quando só precisam de helpers específicos (ex.: `json`, `HttpError`, `validateBody`), e permitir imports mais semânticos:
@@ -233,7 +237,7 @@ Evitar comportamento “surpresa” por depender de `NODE_ENV`.
 
 ## 5) Atualizações obrigatórias em examples + tests (para não “passar nada”)
 
-> **Feito:** `vite.config.*` migrados para `vitek-plugin/plugin` em todos os exemplos; Vitest com alias para raiz do pacote onde era `dist/index.js`; post-build tests com import de subpaths em `minimal-ts`, `typescript-react`, `prisma`, `docker`, `socket-only`.
+> **Feito:** `vite.config.*` migrados para `vitek-plugin/plugin` em todos os exemplos; Vitest ajustado para resolver `vitek-plugin` via dependência `file:../..` (sem alias para raiz do repo), preservando subpath exports; post-build tests com import de subpaths em `minimal-ts`, `typescript-react`, `prisma`, `docker`, `socket-only`.
 
 ### Objetivo
 Toda mudança de DX/exports/test utils precisa estar demonstrada e coberta nos exemplos.
@@ -269,6 +273,10 @@ Toda mudança de DX/exports/test utils precisa estar demonstrada e coberta nos e
 4. **Política de mode (dev/prod) documentada e unificada**
 5. Refactors estruturais (split shared/*) quando exports já estiverem estáveis
 6. Decisão de monorepo/split CLI/serve (quando a API estiver mais estável)
+
+Status atual:
+- Itens 1 a 4 concluídos neste ciclo.
+- Itens 5 e 6 são evolução arquitetural futura (não bloqueantes para release atual).
 
 ---
 
