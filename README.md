@@ -20,7 +20,7 @@ Vitek is a Vite plugin that turns a folder of files into an HTTP API.
 
 **Full documentation:** [docs/](./docs/) · [View online](https://martinsbicudo.github.io/vitek-plugin/) (VitePress — run `npm run docs:dev` or `pnpm docs:dev` to view locally).
 
-**MCP:** Expose your project API to AI assistants (Cursor, Claude) with `vitek mcp` — [MCP – API do projeto](docs/guide/mcp-project.md).
+**MCP:** Expose your project API to AI assistants (Cursor, Claude) with `vitek mcp` — [MCP - Project API](docs/guide/mcp-project.md).
 
 **Examples:** [examples/](./examples/) — `basic-js`, `js-react`, `typescript-react`, `import-external`, `socket-only`, `api-docs`, `prisma`, and `docker`.
 
