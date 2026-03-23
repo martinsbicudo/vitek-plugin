@@ -10,6 +10,10 @@ Overview of the public API provided by `vitek-plugin`. Use the main package or s
 - `vitek-plugin/introspection` — getManifest, getRoutes, getSockets, writeManifest
 - `vitek-plugin/testing` — createMockContext, createMockReq, createMockRes, runMiddlewareChain
 
+## Runtime mode
+
+- **`isProduction({ mode?, nodeEnv? })`** - Returns true when `mode` is the string `production` (case-insensitive); if `mode` is omitted or empty, falls back to `nodeEnv === 'production'`. Use with Vite’s mode or `vitek-serve` flags. See [Production server](/guide/production-server#development-vs-production-mode).
+
 ## Plugin
 
 - **`vitek(options?)`** - Returns a Vite plugin. Call from `vite.config.ts` in the `plugins` array.

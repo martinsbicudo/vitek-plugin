@@ -11,6 +11,7 @@ export interface PluginContext {
   buildApi: boolean;
   root?: string;
   buildOutDir?: string;
+  viteMode?: string;
   cleanupFn: (() => void) | null;
 }
 

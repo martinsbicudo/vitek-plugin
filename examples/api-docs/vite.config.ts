@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { vitek } from 'vitek-plugin';
+import { vitek } from 'vitek-plugin/plugin';
 
 // https://vitejs.dev/config/
 export default defineConfig({

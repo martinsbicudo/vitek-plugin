@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import { createViteDevServerMiddleware } from '../adapters/vite/dev-server.js';
 import { createViteLogger } from '../adapters/vite/logger.js';
 import { API_BASE_PATH, getSocketBasePath } from '../shared/constants.js';
+import { isProduction } from '../shared/utils.js';
 import type { Plugin } from 'vite';
 import type { PluginContext } from './context.js';
 
@@ -25,7 +26,11 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
         return;
       }
 
-      const logger = createViteLogger(server.config.logger, ctx.options.logging);
+      const production = isProduction({ mode: ctx.viteMode });
+      const logger = createViteLogger(server.config.logger, {
+        ...ctx.options.logging,
+        production,
+      });
       const socketsEnabled = ctx.options.sockets !== false;
       const socketBasePath = getSocketBasePath(
         ctx.options.apiBasePath,
@@ -56,6 +61,7 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
         trustProxy: ctx.options.trustProxy,
         maxBodySize: ctx.options.maxBodySize,
         onError: ctx.options.onError,
+        production,
       });
 
       ctx.cleanupFn = cleanup;

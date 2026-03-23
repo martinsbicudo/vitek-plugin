@@ -34,6 +34,13 @@ describe('vitek-plugin build outputs (socket-only)', () => {
     expect(fs.existsSync(socketsBundle)).toBe(true);
   });
 
+  it('resolves vitek-plugin subpath exports', async () => {
+    const { notFound } = await import('vitek-plugin/response');
+    expect(typeof notFound).toBe('function');
+    const { vitek } = await import('vitek-plugin/plugin');
+    expect(typeof vitek).toBe('function');
+  });
+
   it('can load vitek-sockets.mjs and get sockets', async () => {
     const socketsBundle = path.join(ROOT, 'dist', 'vitek-sockets.mjs');
     const mod = await import(pathToFileURL(socketsBundle).href);

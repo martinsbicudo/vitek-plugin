@@ -29,6 +29,7 @@ describe('parseArgs', () => {
     expect(result.host).toBe('0.0.0.0');
     expect(result.cors).toBe(false);
     expect(result.trustProxy).toBe(false);
+    expect(result.mode).toBeUndefined();
   });
 
   it('uses process.env.PORT when --port not passed', () => {
@@ -75,6 +76,17 @@ describe('parseArgs', () => {
     const result = parseArgs();
     expect(result.cors).toBe(true);
     expect(result.trustProxy).toBe(true);
+  });
+
+  it('parses --mode and --env', () => {
+    process.argv = ['node', 'vitek-serve', '--mode', 'staging'];
+    expect(parseArgs().mode).toBe('staging');
+    process.argv = ['node', 'vitek-serve', '--mode=production'];
+    expect(parseArgs().mode).toBe('production');
+    process.argv = ['node', 'vitek-serve', '--env', 'test'];
+    expect(parseArgs().mode).toBe('test');
+    process.argv = ['node', 'vitek-serve', '--env=development'];
+    expect(parseArgs().mode).toBe('development');
   });
 });
 

@@ -12,6 +12,11 @@ describe('vitek-plugin build outputs (rate-limit)', () => {
     expect(fs.existsSync(path.join(ROOT, 'dist', 'index.html'))).toBe(true);
   });
 
+  it('resolves vitek-plugin subpath exports', async () => {
+    const { tooManyRequests } = await import('vitek-plugin/response');
+    expect(typeof tooManyRequests).toBe('function');
+  });
+
   it('generated api.services.js exists with getHealth', () => {
     const servicesPath = path.join(ROOT, 'src', 'api.services.js');
     expect(fs.existsSync(servicesPath)).toBe(true);

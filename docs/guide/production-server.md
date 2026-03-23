@@ -69,6 +69,8 @@ PORT=8080 HOST=0.0.0.0 pnpm start
 | `--host`         | `0.0.0.0` | Host to bind to                                                             |
 | `--cors`         | off       | Enable CORS (permissive `*` origin) for the API                             |
 | `--trust-proxy`  | off       | Trust `X-Forwarded-*` headers (use when behind nginx, Caddy, or similar)     |
+| `--mode`         | (see below) | Same as `--env`. When set to `production`, API 500 responses omit internal `message` in JSON. |
+| `--env`          | (see below) | Alias for `--mode`. CLI wins over `NODE_ENV` when deciding production vs development. |
 
 Examples:
 
@@ -77,7 +79,25 @@ vitek-serve --port 8080
 vitek-serve --dir=dist --port 3000 --host 127.0.0.1
 vitek-serve --trust-proxy   # when behind a reverse proxy (correct client IP and URL)
 vitek-serve --cors          # enable CORS for the API
+vitek-serve --mode production
+vitek-serve --env development   # local run with dev-style error bodies
 ```
+
+## Development vs production mode
+
+vitek-serve does **not** rely only on `NODE_ENV`:
+
+1. If you pass **`--mode`** or **`--env`**, that string is used first. The runtime is **production** only when the value is `production` (case-insensitive).
+2. If neither flag is set, **`NODE_ENV`** is used: `production` → production runtime; anything else → development.
+
+**Vite** (`vite dev`, `vite build`, `vite preview`) uses Vite’s **`config.mode`** (from `--mode` / `vite build` defaults). The plugin stores that on the shared context so dev/preview behave consistently without reading `NODE_ENV` for those paths.
+
+**Effects today:**
+
+- **Production:** generic 500 JSON is `{ "error": "Internal server error" }` (no internal `message`). In dev, the Vitek logger will not emit **debug**-level lines even if `logging.level` is `debug`.
+- **Preview** (`vite preview`) uses the same production flag as `vite build` (typically production mode).
+
+You can reuse the same rule in app code: `import { isProduction } from 'vitek-plugin'` and `isProduction({ mode: viteMode, nodeEnv: process.env.NODE_ENV })`.
 
 ## Production config (vitek.config.mjs)
 

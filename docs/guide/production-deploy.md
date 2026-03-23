@@ -2,6 +2,8 @@
 
 vitek-serve is a single Node.js HTTP server listening on one port. You can put it behind a reverse proxy, run it with a process manager, or inside Docker. This page shows how to combine it with common tools.
 
+Set **`NODE_ENV=production`** in your process environment (Docker, PM2, systemd) so the server runs in **production** mode when you do not pass `--mode`. To override explicitly, use `vitek-serve --mode production` or `--mode development`. See [Production server — Development vs production mode](./production-server#development-vs-production-mode).
+
 ## Reverse proxy (nginx / Caddy)
 
 Use a reverse proxy when you need TLS (HTTPS), a custom domain, or to serve multiple apps from one host. vitek-serve listens on a port (e.g. 3000); the proxy forwards traffic to it.

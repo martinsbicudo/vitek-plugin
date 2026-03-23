@@ -11,6 +11,7 @@ export interface LoggingOptions {
   level?: LogLevel;
   enableRequestLogging?: boolean;
   enableRouteLogging?: boolean;
+  production?: boolean;
 }
 
 const RESET = '\x1b[0m';
@@ -93,9 +94,12 @@ export interface VitekLogger {
  */
 export function createViteLogger(viteLogger: Logger, options?: LoggingOptions): VitekLogger {
   const tag = formatTag('[vitek]');
-  const logLevel: LogLevel = options?.level || 'info';
+  let logLevel: LogLevel = options?.level || 'info';
+  if (options?.production && logLevel === 'debug') {
+    logLevel = 'info';
+  }
   const enableRequestLogging = options?.enableRequestLogging || false;
-  const enableRouteLogging = options?.enableRouteLogging !== false; // Default true
+  const enableRouteLogging = options?.enableRouteLogging !== false;
   
   const formatData = (data?: Record<string, any>): string => {
     if (!data || Object.keys(data).length === 0) {
@@ -272,6 +276,7 @@ export function createViteLogger(viteLogger: Logger, options?: LoggingOptions): 
         level: logLevel,
         enableRequestLogging,
         enableRouteLogging,
+        production: options?.production,
       };
     },
   };

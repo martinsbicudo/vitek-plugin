@@ -425,6 +425,21 @@ describe('createRequestHandler', () => {
     expect(body.message).toContain('Something broke');
   });
 
+  it('omits message in 500 body when production is true', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => {
+        throw new Error('Secret detail');
+      }
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [], production: true });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(500);
+    expect(JSON.parse(res._body)).toEqual({ error: 'Internal server error' });
+  });
+
   it('when onError is set and sends response, uses that status and body', async () => {
     const route = createTestRoute(
       { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },

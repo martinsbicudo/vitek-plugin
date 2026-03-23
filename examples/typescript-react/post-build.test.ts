@@ -42,6 +42,15 @@ describe('vitek-plugin build outputs (typescript-react)', () => {
     expect(fs.existsSync(apiBundle)).toBe(true);
   });
 
+  it('resolves vitek-plugin subpath exports', async () => {
+    const { validateBody } = await import('vitek-plugin/validation');
+    expect(typeof validateBody).toBe('function');
+    const { json } = await import('vitek-plugin/response');
+    expect(typeof json).toBe('function');
+    const { isProduction } = await import('vitek-plugin');
+    expect(isProduction({ mode: 'production' })).toBe(true);
+  });
+
   it('vitek-sockets.mjs bundle exists', () => {
     const socketsBundle = path.join(ROOT, 'dist', 'vitek-sockets.mjs');
     expect(fs.existsSync(socketsBundle)).toBe(true);

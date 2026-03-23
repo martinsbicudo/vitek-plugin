@@ -209,6 +209,8 @@ Padronizar versões e releases (especialmente com `packages/vitek-mcp`), evitand
 
 ## 4) Modo dev/prod: política clara (Vite vs Node)
 
+> **Feito:** `isProduction({ mode, nodeEnv })`, `ctx.viteMode` em `configResolved`, `vitek-serve --mode` / `--env`, `production` no request handler e logger, docs em `production-server` e `production-deploy`.
+
 ### Objetivo
 Evitar comportamento “surpresa” por depender de `NODE_ENV`.
 
@@ -230,6 +232,8 @@ Evitar comportamento “surpresa” por depender de `NODE_ENV`.
 ---
 
 ## 5) Atualizações obrigatórias em examples + tests (para não “passar nada”)
+
+> **Feito:** `vite.config.*` migrados para `vitek-plugin/plugin` em todos os exemplos; Vitest com alias para raiz do pacote onde era `dist/index.js`; post-build tests com import de subpaths em `minimal-ts`, `typescript-react`, `prisma`, `docker`, `socket-only`.
 
 ### Objetivo
 Toda mudança de DX/exports/test utils precisa estar demonstrada e coberta nos exemplos.

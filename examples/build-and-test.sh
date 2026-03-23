@@ -4,7 +4,13 @@
 # Full cycle: pnpm i, build, test per example.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$SCRIPT_DIR"
+
+if [ -f "$REPO_ROOT/package.json" ]; then
+  echo "Building vitek-plugin at repo root..."
+  (cd "$REPO_ROOT" && pnpm run build) || exit 1
+fi
 
 EXAMPLES=(basic-js js-react typescript-react import-external socket-only api-docs prisma docker rate-limit validation-only error-handling cors minimal-ts build-api-false alias vite6-minimal)
 PASSED=0

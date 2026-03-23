@@ -363,6 +363,10 @@ example-name/
 └── README.md                 # Example-specific documentation
 ```
 
+### Post-build checks and package exports
+
+Examples that ship `post-build.test.ts` / `post-build.test.js` validate the build output and, in several cases, **dynamic imports** of `vitek-plugin` subpaths (`/response`, `/plugin`, `/validation`, `/introspection`, `/errors`, `/testing`) so CI stays aligned with `package.json` `exports`. Use `vitek-plugin/plugin` in `vite.config.*`; keep shared helpers in route files on the main `vitek-plugin` entry when they are bundled into `vitek-api.mjs`.
+
 ---
 
 ## Using outside the examples folder

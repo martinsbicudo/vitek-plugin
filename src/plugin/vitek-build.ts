@@ -21,6 +21,7 @@ export function createBuildPlugin(ctx: PluginContext): Plugin {
     configResolved(config) {
       ctx.root = config.root;
       ctx.buildOutDir = path.resolve(ctx.root!, config.build?.outDir ?? 'dist');
+      ctx.viteMode = config.mode;
     },
 
     async buildStart() {

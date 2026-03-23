@@ -49,6 +49,8 @@ export interface RequestHandlerOptions {
   maxBodySize?: number;
   /** Called when a non-HttpError is thrown. May send a custom response; if res is not ended, default 500 JSON is sent. */
   onError?: (err: Error, req: IncomingMessage, res: ServerResponse) => void | Promise<void>;
+  /** When true, 500 responses omit internal error message in the JSON body (production). */
+  production?: boolean;
 }
 
 const noop = () => {};
@@ -80,7 +82,7 @@ function applyCorsHeaders(res: ServerResponse, corsHeaders: Record<string, strin
 }
 
 export function createRequestHandler(options: RequestHandlerOptions): (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => Promise<void> {
-  const { routes, middlewares, beforeApiRequest = [], cors, trustProxy = false, logger, shared, maxBodySize, onError } = options;
+  const { routes, middlewares, beforeApiRequest = [], cors, trustProxy = false, logger, shared, maxBodySize, onError, production = false } = options;
   const corsOpts: NormalizedCorsOptions | null = cors != null ? normalizeCorsOptions(cors) : null;
   const logRouteMatched = logger?.routeMatched ?? noop;
   const logRequestStart = logger?.requestStart ?? noop;
@@ -297,12 +299,10 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         logError(`Error handling request: ${errorMessage}`);
         res.statusCode = 500;
         safeSetHeader(res, 'Content-Type', 'application/json');
-        res.end(
-          JSON.stringify({
-            error: 'Internal server error',
-            message: errorMessage,
-          })
-        );
+        const body = production
+          ? { error: 'Internal server error' }
+          : { error: 'Internal server error', message: errorMessage };
+        res.end(JSON.stringify(body));
         logRequest(requestMethod, requestPath, 500, duration);
       }
     }

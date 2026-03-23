@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizePath, isHttpMethod, capitalize } from './utils.js';
+import { normalizePath, isHttpMethod, capitalize, isProduction } from './utils.js';
 
 describe('normalizePath', () => {
   it('collapses multiple slashes to one', () => {
@@ -57,5 +57,25 @@ describe('capitalize', () => {
 
   it('handles empty string', () => {
     expect(capitalize('')).toBe('');
+  });
+});
+
+describe('isProduction', () => {
+  it('uses mode when set', () => {
+    expect(isProduction({ mode: 'production' })).toBe(true);
+    expect(isProduction({ mode: 'PRODUCTION' })).toBe(true);
+    expect(isProduction({ mode: 'development' })).toBe(false);
+    expect(isProduction({ mode: 'staging', nodeEnv: 'production' })).toBe(false);
+  });
+
+  it('falls back to nodeEnv when mode empty', () => {
+    expect(isProduction({ nodeEnv: 'production' })).toBe(true);
+    expect(isProduction({ nodeEnv: 'development' })).toBe(false);
+    expect(isProduction({ mode: '', nodeEnv: 'production' })).toBe(true);
+  });
+
+  it('mode wins over nodeEnv', () => {
+    expect(isProduction({ mode: 'development', nodeEnv: 'production' })).toBe(false);
+    expect(isProduction({ mode: 'production', nodeEnv: 'development' })).toBe(true);
   });
 });

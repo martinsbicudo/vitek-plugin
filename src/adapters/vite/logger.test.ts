@@ -273,6 +273,16 @@ describe('createViteLogger', () => {
       logger.routeMatched('/health', 'get');
       expect(mockViteLogger.info).not.toHaveBeenCalled();
     });
+
+    it('caps debug to info when production', () => {
+      const logger = createViteLogger(mockViteLogger as any, {
+        level: 'debug',
+        enableRouteLogging: true,
+        production: true,
+      });
+      logger.routeMatched('/health', 'get');
+      expect(mockViteLogger.info).not.toHaveBeenCalled();
+    });
   });
 
   describe('response delegates to request', () => {

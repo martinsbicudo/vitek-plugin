@@ -29,6 +29,13 @@ describe('vitek-plugin build outputs (prisma)', () => {
     expect(fs.existsSync(apiBundle)).toBe(true);
   });
 
+  it('resolves vitek-plugin subpath exports', async () => {
+    const { getRoutes } = await import('vitek-plugin/introspection');
+    expect(typeof getRoutes).toBe('function');
+    const { vitek } = await import('vitek-plugin/plugin');
+    expect(typeof vitek).toBe('function');
+  });
+
   it('vitek-manifest.json exists', () => {
     const manifestPath = path.join(ROOT, 'dist', 'vitek-manifest.json');
     expect(fs.existsSync(manifestPath)).toBe(true);

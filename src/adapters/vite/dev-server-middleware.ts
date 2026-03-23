@@ -20,6 +20,7 @@ export function createApiMiddleware(
     onError: options.onError,
     logger: options.logger,
     shared,
+    production: options.production,
   });
 }
 

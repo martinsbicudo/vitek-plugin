@@ -21,6 +21,8 @@ import type { VitekContext } from 'vitek-plugin'
 
 The barrel `vitek-plugin` continues to export everything for compatibility.
 
+**API route bundles** (`dist/vitek-api.mjs`) should keep importing from `vitek-plugin` (barrel) for helpers such as `ok` or `validateBody`, so the runtime does not depend on extra package resolution. Config and tests can use subpaths freely; several examples assert subpath imports in post-build Vitest suites.
+
 ---
 
 ## Relative imports

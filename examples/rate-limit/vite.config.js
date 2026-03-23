@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { vitek } from 'vitek-plugin';
+import { vitek } from 'vitek-plugin/plugin';
 
 const windowMs = 60_000;
 const maxPerWindow = 10;

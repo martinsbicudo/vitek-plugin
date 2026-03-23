@@ -14,6 +14,7 @@ import type { Plugin } from 'vite';
 import type { ApiClient, SocketEmitter, VitekApp } from '../core/shared/vitek-app.js';
 import type { RequestHandlerOptions } from '../core/server/request-handler.js';
 import type { PluginContext } from './context.js';
+import { isProduction } from '../shared/utils.js';
 
 export function createPreviewPlugin(ctx: PluginContext): Plugin {
   return {
@@ -87,6 +88,7 @@ export function createPreviewPlugin(ctx: PluginContext): Plugin {
                 maxBodySize: ctx.options.maxBodySize,
                 onError: ctx.options.onError,
                 shared,
+                production: isProduction({ mode: ctx.viteMode }),
               });
               server.config.logger.info('[vitek] API middleware registered for preview');
             }

@@ -1,6 +1,6 @@
 /**
  * Production server (vitek-serve): serves static assets and the API from dist/
- * Usage: vitek-serve [--dir=dist] [--port=3000] [--host=0.0.0.0]
+ * Usage: vitek-serve [--dir=dist] [--port=3000] [--host=0.0.0.0] [--mode=production|--env=...]
  *        Also accepts space-separated: --dir dist --port 3000 --host 0.0.0.0
  */
 
@@ -16,6 +16,7 @@ import { API_BASE_PATH, getSocketBasePath } from '../shared/constants.js';
 import { getApiBundleFilename } from '../build/build-api-bundle.js';
 import { getSocketsBundleFilename } from '../build/build-sockets-bundle.js';
 import type { ApiClient, SocketEmitter, VitekApp } from '../core/shared/vitek-app.js';
+import { isProduction } from '../shared/utils.js';
 
 const VITEK_SERVE_CONFIG_FILENAME = 'vitek.config.mjs';
 
@@ -61,7 +62,14 @@ export async function loadProductionConfig(distDir: string): Promise<ProductionC
   return result;
 }
 
-export function parseArgs(): { dir: string; port: number; host: string; cors: boolean; trustProxy: boolean } {
+export function parseArgs(): {
+  dir: string;
+  port: number;
+  host: string;
+  cors: boolean;
+  trustProxy: boolean;
+  mode?: string;
+} {
   let dir = 'dist';
   const portEnv = process.env.PORT;
   const hostEnv = process.env.HOST;
@@ -70,6 +78,7 @@ export function parseArgs(): { dir: string; port: number; host: string; cors: bo
   let host = hostEnv !== undefined && hostEnv !== '' ? hostEnv : '0.0.0.0';
   let cors = false;
   let trustProxy = false;
+  let mode: string | undefined;
   const argv = process.argv.slice(2);
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -81,12 +90,17 @@ export function parseArgs(): { dir: string; port: number; host: string; cors: bo
     else if (arg === '--host' && argv[i + 1]) host = argv[++i];
     else if (arg === '--cors') cors = true;
     else if (arg === '--trust-proxy') trustProxy = true;
+    else if (arg.startsWith('--mode=')) mode = arg.slice(7);
+    else if (arg === '--mode' && argv[i + 1]) mode = argv[++i];
+    else if (arg.startsWith('--env=')) mode = arg.slice(6);
+    else if (arg === '--env' && argv[i + 1]) mode = argv[++i];
   }
-  return { dir, port, host, cors, trustProxy };
+  return { dir, port, host, cors, trustProxy, mode };
 }
 
 export async function main(): Promise<void> {
-  const { dir, port, host, cors, trustProxy } = parseArgs();
+  const { dir, port, host, cors, trustProxy, mode: modeArg } = parseArgs();
+  const production = isProduction({ mode: modeArg, nodeEnv: process.env.NODE_ENV });
   const distDir = path.resolve(process.cwd(), dir);
 
   if (!fs.existsSync(distDir) || !fs.statSync(distDir).isDirectory()) {
@@ -145,6 +159,7 @@ export async function main(): Promise<void> {
         maxBodySize,
         onError,
         shared,
+        production,
       });
       app.use(apiHandler as (req: http.IncomingMessage, res: http.ServerResponse, next: () => void) => void);
     } catch (err) {
@@ -212,7 +227,8 @@ export async function main(): Promise<void> {
 
   server.listen(port, host, () => {
     const base = `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`;
-    console.log(`[vitek-serve] Ready at ${base}`);
+    const hint = modeArg != null && modeArg !== '' ? `--mode ${modeArg}` : `NODE_ENV=${process.env.NODE_ENV ?? ''}`;
+    console.log(`[vitek-serve] Ready at ${base} (${production ? 'production' : 'development'}; ${hint})`);
   });
 }
 

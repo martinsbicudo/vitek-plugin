@@ -29,3 +29,11 @@ export function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+export function isProduction(input: { mode?: string; nodeEnv?: string }): boolean {
+  const m = input.mode?.trim().toLowerCase();
+  if (m !== undefined && m !== '') {
+    return m === 'production';
+  }
+  return input.nodeEnv === 'production';
+}
+

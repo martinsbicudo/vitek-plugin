@@ -52,6 +52,7 @@ export interface ViteDevServerOptions {
   trustProxy?: boolean;
   maxBodySize?: number;
   onError?: (err: Error, req: import('http').IncomingMessage, res: import('http').ServerResponse) => void | Promise<void>;
+  production?: boolean;
 }
 
 export class DevServerState {
