@@ -69,4 +69,9 @@ describe.skipIf(!fs.existsSync(distPublic))('subpath exports', () => {
     const mod = await import(pathToFileURL(path.join(distPublic, 'generators.js')).href);
     expect(typeof mod.generateCrudFiles).toBe('function');
   });
+
+  it('vitek-plugin/doctor exports buildDoctorReport', async () => {
+    const mod = await import(pathToFileURL(path.join(distPublic, 'doctor.js')).href);
+    expect(typeof mod.buildDoctorReport).toBe('function');
+  });
 });

@@ -45,6 +45,10 @@
     "./generators": {
       "import": "./dist/public/generators.js",
       "types": "./dist/public/generators.d.ts"
+    },
+    "./doctor": {
+      "import": "./dist/public/doctor.js",
+      "types": "./dist/public/doctor.d.ts"
     }
   },
   "files": [

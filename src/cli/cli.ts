@@ -26,6 +26,11 @@ async function run(): Promise<void> {
     await runGenerate(subCmd, rest);
     return;
   }
+  if (cmd === 'doctor') {
+    const { runDoctor } = await import('./doctor.js');
+    await runDoctor([subCmd, ...rest].filter((v): v is string => typeof v === 'string'));
+    return;
+  }
   const { main } = await import('./serve.js');
   await main();
 }

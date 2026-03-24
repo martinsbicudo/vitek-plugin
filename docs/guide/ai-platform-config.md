@@ -63,6 +63,17 @@ With `"observability": true`:
 - **Logs:** One JSON object per request start and completion (`event`: `http.request.start` | `http.request.complete`, plus `method`, `path`, `status`, `durationMs`, `requestId`, `route` when known).
 - **`vitek-serve`:** Reads `vitek.platform.json` from the current working directory (run the CLI from the project root).
 
+## AI and `vitek doctor`
+
+`vitek doctor --ai-analyze` uses the `ai` block:
+
+- `ai.enabled`: enables/disables AI analyze flow
+- `ai.mode`:
+  - `off`: skip AI analysis
+  - `local-only`: writes redacted payload to `.vitek/doctor/ai-input.redacted.json`
+  - `remote-redacted`: baseline acknowledges remote mode but does not auto-send network requests by default
+- `ai.redaction`: field/header redaction policy used before output
+
 ## Issue Dispatch (`features.issueDispatch`)
 
 With `"issueDispatch": true`, runtime error paths emit structured issue events through a dispatcher:

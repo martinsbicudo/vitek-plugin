@@ -80,7 +80,7 @@ Add internal event orchestration and recurring task execution.
 ## Phase 6 - Data Layer Generators (Item 8) - DONE
 Generate backend modules using prior guardrails, tests, and contracts.
 
-## Phase 7 - Doctor Score CLI (Item 10)
+## Phase 7 - Doctor Score CLI (Item 10) - DONE
 Aggregate signals from all previous phases and optionally send a redacted summary to AI. The doctor builds on event/issue streams from Phase 4+.
 
 No phase requires changing behavior in previous phases. Each one only adds capabilities.
@@ -486,6 +486,8 @@ export default async function handler(ctx) {
 ---
 
 ## Phase 7 - Doctor Score CLI (Item 10)
+
+**Shipped in plugin (baseline):** `vitek doctor` with deterministic scoring, terminal and JSON outputs, top action suggestions, and optional AI analysis mode honoring `ai.enabled` and `ai.mode` (`local-only` writes redacted payload, `remote-redacted` acknowledged).
 
 ## Scope
 - Add quality scanner and score report:
