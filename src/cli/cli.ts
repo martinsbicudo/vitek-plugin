@@ -21,6 +21,11 @@ async function run(): Promise<void> {
     await runSchedule(subCmd, rest);
     return;
   }
+  if (cmd === 'generate') {
+    const { runGenerate } = await import('./generate.js');
+    await runGenerate(subCmd, rest);
+    return;
+  }
   const { main } = await import('./serve.js');
   await main();
 }

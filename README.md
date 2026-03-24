@@ -119,6 +119,7 @@ Then open `http://localhost:5173/api-docs.html` for interactive API documentatio
 - [OpenAPI / Swagger + AsyncAPI](./docs/guide/openapi.md) — Auto-generate API docs (REST + WebSockets)
 - [Contract drift (CI)](./docs/guide/contract.md) — `vitek contract snapshot` / `check` for OpenAPI/AsyncAPI baselines
 - [Events and Scheduler](./docs/guide/events-scheduler.md) — Typed event bus and `vitek schedule run`
+- [Data Generators](./docs/guide/data-generators.md) — `vitek generate crud` scaffolding by adapter
 - [Plugin API](./docs/guide/plugin-api.md) — Extend Vitek with `afterTypesGenerated` and `beforeApiRequest` hooks
 - [Alias](./docs/guide/alias.md) — Use `resolve.alias` for stable import paths
 - [Introspection](./docs/guide/introspection.md) — Programmatic API: `getRoutes`, `getSockets`, `vitek-manifest.json`

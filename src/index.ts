@@ -100,3 +100,11 @@ export type {
   SchedulerLockProvider,
 } from './core/scheduler/index.js';
 
+export { generateCrudFiles } from './core/generators/index.js';
+export type {
+  DataAdapterName,
+  GeneratedFile,
+  CrudGeneratorInput,
+  DataAdapterGenerator,
+} from './core/generators/index.js';
+

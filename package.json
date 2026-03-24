@@ -41,6 +41,10 @@
     "./events": {
       "import": "./dist/public/events.js",
       "types": "./dist/public/events.d.ts"
+    },
+    "./generators": {
+      "import": "./dist/public/generators.js",
+      "types": "./dist/public/generators.d.ts"
     }
   },
   "files": [

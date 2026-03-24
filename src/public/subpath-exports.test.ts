@@ -64,4 +64,9 @@ describe.skipIf(!fs.existsSync(distPublic))('subpath exports', () => {
     expect(typeof mod.runScheduleOnce).toBe('function');
     expect(mod.InMemoryLockProvider).toBeDefined();
   });
+
+  it('vitek-plugin/generators exports generateCrudFiles', async () => {
+    const mod = await import(pathToFileURL(path.join(distPublic, 'generators.js')).href);
+    expect(typeof mod.generateCrudFiles).toBe('function');
+  });
 });

@@ -77,7 +77,7 @@ Add issue/recommendation event emission first, then reliable outbound integratio
 ## Phase 5 - Event Bus + Scheduler (API expansion) - DONE
 Add internal event orchestration and recurring task execution.
 
-## Phase 6 - Data Layer Generators (Item 8)
+## Phase 6 - Data Layer Generators (Item 8) - DONE
 Generate backend modules using prior guardrails, tests, and contracts.
 
 ## Phase 7 - Doctor Score CLI (Item 10)
@@ -428,6 +428,8 @@ export default defineSchedule({
 ---
 
 ## Phase 6 - Data Layer Generators (Item 8)
+
+**Shipped in plugin (baseline):** `vitek generate crud <Model> --adapter prisma|drizzle|sql --out <dir>` with adapter interface, Prisma CRUD scaffold (routes + validation + tests + contract test scaffold), and template scaffolds for Drizzle/SQL-first.
 
 ## Scope
 - Official generator pipelines for:
