@@ -479,6 +479,52 @@ describe('createRequestHandler', () => {
     expect(body.message).toContain('Something broke');
   });
 
+  it('dispatches issue event when handler throws generic error', async () => {
+    const dispatch = vi.fn();
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => {
+        throw new Error('Something broke');
+      }
+    );
+    const handler = createRequestHandler({
+      routes: [route],
+      middlewares: [],
+      issueDispatcher: { dispatch },
+      observability: true,
+    });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch.mock.calls[0][0]).toMatchObject({
+      severity: 'error',
+      source: 'runtime.http',
+      title: 'Unhandled API error',
+      message: 'Something broke',
+    });
+  });
+
+  it('does not fail request when issue dispatcher throws', async () => {
+    const dispatch = vi.fn().mockRejectedValue(new Error('dispatch down'));
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => {
+        throw new Error('Something broke');
+      }
+    );
+    const handler = createRequestHandler({
+      routes: [route],
+      middlewares: [],
+      issueDispatcher: { dispatch },
+    });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._statusCode).toBe(500);
+    expect(JSON.parse(res._body).error).toBe('Internal server error');
+  });
+
   it('omits message in 500 body when production is true', async () => {
     const route = createTestRoute(
       { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },

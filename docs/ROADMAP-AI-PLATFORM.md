@@ -4,7 +4,7 @@ Step-by-step implementation plan for items:
 - **2)** MCP write-safe tools
 - **3)** Contract testing and drift detection
 - **4)** Observability (OpenTelemetry + structured logging)
-- **API expansion)** Webhooks + Jobs/Queue + Event Bus + Scheduler
+- **API expansion)** Issue/Event Dispatch + Webhooks + Jobs/Queue + Event Bus + Scheduler
 - **8)** Data layer generators (Prisma/Drizzle/SQL-first)
 - **10)** Health score CLI (`vitek doctor`)
 
@@ -39,6 +39,7 @@ At the end of this roadmap, Vitek includes:
 - **Observability core** (`trace + logs + correlation IDs`).
 - **Contract engine** (`spec/runtime drift checks`).
 - **Write-safe MCP tools** (`dry-run`, diff preview, apply).
+- **Issue dispatch core** (`error/warning/suggestion events + outbound delivery`).
 - **Webhook runtime** (`inbound signature verification + outbound delivery`).
 - **Async processing** (`jobs/queue + retries + dead-letter`).
 - **Domain events** (`internal event bus`).
@@ -56,20 +57,22 @@ Cross-cutting module:
 
 ## 3) Delivery Sequence (Safe Order)
 
-## Phase 0 - Foundation (shared interfaces only)
+## Phase 0 - Foundation (shared interfaces only) - DONE
 Introduce only interfaces/config contracts used by later phases.
 
-## Phase 1 - Observability (Item 4)
+## Phase 1 - Observability (Item 4) - DONE
 Add instrumentation and structured logs first, because later phases use this telemetry.
 
-## Phase 2 - Contract Testing and Drift (Item 3)
+## Phase 2 - Contract Testing and Drift (Item 3) - DONE
 Build contract checks on top of existing OpenAPI/AsyncAPI and runtime metadata.
 
-## Phase 3 - MCP Write-Safe Tools (Item 2)
+## Phase 3 - MCP Write-Safe Tools (Item 2) - DONE
 Leverage contract + telemetry to make tool outputs safer and reviewable.
 
-## Phase 4 - Webhooks + Jobs/Queue (API expansion)
-Add reliable inbound/outbound integration and async execution.
+## Phase 4 - Issue/Event Dispatch + Webhooks + Jobs/Queue (API expansion)
+
+**Shipped in plugin (baseline):** `features.issueDispatch` enables non-blocking issue event emission from runtime error paths, with console dispatcher by default and optional outbound webhook dispatch (`VITEK_ISSUE_WEBHOOK_URL`) supporting retry/backoff and dead-letter logging.
+Add issue/recommendation event emission first, then reliable outbound integration and async execution.
 
 ## Phase 5 - Event Bus + Scheduler (API expansion)
 Add internal event orchestration and recurring task execution.
@@ -78,7 +81,7 @@ Add internal event orchestration and recurring task execution.
 Generate backend modules using prior guardrails, tests, and contracts.
 
 ## Phase 7 - Doctor Score CLI (Item 10)
-Aggregate signals from all previous phases and optionally send a redacted summary to AI.
+Aggregate signals from all previous phases and optionally send a redacted summary to AI. The doctor builds on event/issue streams from Phase 4+.
 
 No phase requires changing behavior in previous phases. Each one only adds capabilities.
 
@@ -86,7 +89,7 @@ No phase requires changing behavior in previous phases. Each one only adds capab
 
 ## 4) Phase-by-Phase Plan
 
-## Phase 0 - Foundation
+## Phase 0 - Foundation - DONE
 
 ## Scope
 - Add config schema for AI and platform features.
@@ -107,6 +110,7 @@ No phase requires changing behavior in previous phases. Each one only adds capab
     "observability": true,
     "contracts": true,
     "mcpWriteTools": false,
+    "issueDispatch": false,
     "dataGenerators": false,
     "doctor": true
   },
@@ -129,6 +133,8 @@ No phase requires changing behavior in previous phases. Each one only adds capab
 ---
 
 ## Phase 1 - Observability (Item 4)
+
+**Status: DONE (baseline shipped).**
 
 **Shipped in plugin (minimal):** With `features.observability: true` in `vitek.platform.json`, the runtime adds `X-Request-Id`, `context.requestId`, structured JSON HTTP logs (dev/preview/`vitek-serve`), and `requestId` on `beforeApiRequest`. OpenTelemetry spans and exporters remain future work.
 
@@ -178,6 +184,8 @@ export default async function handler(ctx) {
 
 ## Phase 2 - Contract Testing and Drift (Item 3)
 
+**Status: DONE (baseline shipped).**
+
 **Shipped in plugin (baseline):** `vitek contract snapshot` and `vitek contract check` compare generated OpenAPI/AsyncAPI to `.vitek/contract/*.json`; severities error/warning; [Contract drift](/guide/contract) documents GitHub Actions. Deeper runtime-vs-spec checks remain future work.
 
 ## Scope
@@ -224,6 +232,8 @@ Contract Drift Report
 ---
 
 ## Phase 3 - MCP Write-Safe Tools (Item 2)
+
+**Status: DONE (baseline shipped).**
 
 **Shipped in plugin (baseline):** `vitek mcp` now includes write-safe tools (`vitek_route_create`, `vitek_route_update`, `vitek_validation_suggest`, `vitek_test_generate`, `vitek_openapi_sync`) with dry-run default, unified diff/risk output, and explicit `apply: true` + `dryRun: false` gated by `features.mcpWriteTools`.
 
@@ -279,9 +289,13 @@ Contract Drift Report
 
 ---
 
-## Phase 4 - Webhooks + Jobs/Queue (API expansion)
+## Phase 4 - Issue/Event Dispatch + Webhooks + Jobs/Queue (API expansion)
 
 ## Scope
+- Issue/recommendation dispatch:
+  - emit runtime and analysis events (`error`, `warning`, `suggestion`)
+  - outbound webhook dispatch adapter with retries/backoff
+  - developer-owned sink integration (DB, Slack, another API, queue)
 - Inbound webhooks:
   - signature verification
   - replay protection
@@ -298,20 +312,25 @@ Contract Drift Report
 ## Why this phase comes before generators
 - Webhook and queue primitives are platform-level runtime features.
 - Generated code in later phases can rely on these primitives.
+- Event dispatch provides immediate operational value and feeds later `vitek doctor` scoring.
 
 ## Use cases
+- "When runtime detects issues, dispatch events to my own webhook receiver."
+- "Capture AI suggestions and route them to my own dashboard/DB."
 - "Receive Stripe webhook, verify signature, process once."
 - "Dispatch webhook to partner service with retry and dead-letter."
 - "Offload expensive route work to queue and return 202 quickly."
 
 ## Step-by-step
-1. Add `core/webhooks/` verification and event parsing modules.
-2. Add `core/jobs/` queue abstraction and execution contracts.
-3. Add adapters:
+1. Add `core/dispatch/` event contracts and dispatcher interface.
+2. Add outbound dispatch adapter (`adapters/dispatch/http-webhook`) with retries/backoff and redaction hooks.
+3. Add `core/webhooks/` verification and event parsing modules.
+4. Add `core/jobs/` queue abstraction and execution contracts.
+5. Add adapters:
    - `adapters/jobs/in-memory`
    - `adapters/jobs/redis`
-4. Add outbound delivery worker with retry policy.
-5. Add docs and one dedicated example (`examples/webhooks-jobs` in a future cycle).
+6. Add outbound delivery worker with retry policy.
+7. Add docs and one dedicated example (`examples/webhooks-jobs` in a future cycle).
 
 ## Example code (inbound webhook route)
 ```ts
@@ -335,6 +354,9 @@ export default async function handler(ctx) {
 ```
 
 ## Acceptance criteria
+- Event dispatch emits structured payload (`id`, `severity`, `source`, `route`, `requestId`, `suggestions`) with redaction support.
+- Dispatch failures never break primary request processing path.
+- Retry/backoff and dead-letter behavior are test-covered.
 - Signature verification test coverage for at least one provider.
 - Idempotency behavior verified in integration tests.
 - Queue adapter can be swapped without handler changes.
@@ -583,7 +605,7 @@ Allow teams to send selected project health data to AI for analysis and suggesti
 - Release A: Foundation + Observability (opt-in).
 - Release B: Contract checks (warning mode default).
 - Release C: MCP write-safe tools (dry-run default).
-- Release D: Webhooks + jobs/queue primitives.
+- Release D: Issue/event dispatch + Webhooks + jobs/queue primitives.
 - Release E: Event bus + scheduler.
 - Release F: Data generators (Prisma first).
 - Release G: Doctor score + optional AI analysis.
@@ -610,8 +632,8 @@ Allow teams to send selected project health data to AI for analysis and suggesti
 - Diff preview protocol.
 
 ## Milestone M4 (3 weeks)
-- Phase 4 webhooks + jobs/queue.
-- Inbound verification + outbound retry worker.
+- Phase 4 issue/event dispatch + webhooks + jobs/queue.
+- Outbound dispatch adapter + inbound verification + retry worker.
 
 ## Milestone M5 (2 weeks)
 - Phase 5 event bus + scheduler.

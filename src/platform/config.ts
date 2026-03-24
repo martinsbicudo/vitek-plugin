@@ -6,6 +6,7 @@ export interface FeatureFlags {
   observability: boolean;
   contracts: boolean;
   mcpWriteTools: boolean;
+  issueDispatch: boolean;
   dataGenerators: boolean;
   doctor: boolean;
 }
@@ -35,6 +36,7 @@ const featureFlagsSchema = z.object({
   observability: z.boolean().optional(),
   contracts: z.boolean().optional(),
   mcpWriteTools: z.boolean().optional(),
+  issueDispatch: z.boolean().optional(),
   dataGenerators: z.boolean().optional(),
   doctor: z.boolean().optional(),
 });
@@ -62,6 +64,7 @@ export const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
     observability: false,
     contracts: false,
     mcpWriteTools: false,
+    issueDispatch: false,
     dataGenerators: false,
     doctor: false,
   },
@@ -84,6 +87,7 @@ export function mergePlatformConfig(raw: unknown): PlatformConfig {
       observability: parsed.features?.observability ?? DEFAULT_PLATFORM_CONFIG.features.observability,
       contracts: parsed.features?.contracts ?? DEFAULT_PLATFORM_CONFIG.features.contracts,
       mcpWriteTools: parsed.features?.mcpWriteTools ?? DEFAULT_PLATFORM_CONFIG.features.mcpWriteTools,
+      issueDispatch: parsed.features?.issueDispatch ?? DEFAULT_PLATFORM_CONFIG.features.issueDispatch,
       dataGenerators: parsed.features?.dataGenerators ?? DEFAULT_PLATFORM_CONFIG.features.dataGenerators,
       doctor: parsed.features?.doctor ?? DEFAULT_PLATFORM_CONFIG.features.doctor,
     },

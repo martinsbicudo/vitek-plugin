@@ -4,6 +4,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from 'http';
+import { randomUUID } from 'crypto';
 import type { Connect } from 'vite';
 import { matchRoute } from '../routing/route-matcher.js';
 import { createContext, isVitekResponse, type VitekResponse } from '../context/create-context.js';
@@ -22,6 +23,7 @@ import {
 import { getEffectiveRequest } from './proxy.js';
 import { getOrCreateRequestId } from '../../platform/correlation.js';
 import type { RequestLogMeta } from './request-log-meta.js';
+import { emitIssueSafe, type IssueDispatcher, type IssueEvent } from '../dispatch/index.js';
 
 export type { RequestLogMeta } from './request-log-meta.js';
 
@@ -48,6 +50,7 @@ export interface RequestHandlerOptions {
   maxBodySize?: number;
   onError?: (err: Error, req: IncomingMessage, res: ServerResponse) => void | Promise<void>;
   production?: boolean;
+  issueDispatcher?: IssueDispatcher;
 }
 
 const noop = () => {};
@@ -91,6 +94,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
     maxBodySize,
     onError,
     production = false,
+    issueDispatcher,
   } = options;
   const observability = observabilityEnabled === true;
   const corsOpts: NormalizedCorsOptions | null = cors != null ? normalizeCorsOptions(cors) : null;
@@ -99,6 +103,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
   const logRequest = logger?.request ?? noop;
   const logWarn = logger?.warn ?? noop;
   const logError = logger?.error ?? noop;
+  const dispatchIssue = (event: IssueEvent) => emitIssueSafe(issueDispatcher, event, logError);
 
   return async (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => {
     if (!req.url) return next();
@@ -307,6 +312,21 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
       if (error instanceof HttpError) {
         const httpError = error as HttpError;
         logWarn(`HTTP Error ${httpError.statusCode}: ${httpError.message}`);
+        dispatchIssue({
+          id: randomUUID(),
+          timestamp: new Date().toISOString(),
+          severity: 'warning',
+          source: 'runtime.http',
+          title: `HTTP ${httpError.statusCode}`,
+          message: httpError.message,
+          requestId,
+          metadata: {
+            method: requestMethod,
+            path: requestPath,
+            statusCode: httpError.statusCode,
+            durationMs: duration,
+          },
+        });
         res.statusCode = httpError.statusCode;
         safeSetHeader(res, 'Content-Type', 'application/json');
         res.end(
@@ -328,6 +348,29 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         }
         const errorMessage = err.message;
         logError(`Error handling request: ${errorMessage}`);
+        dispatchIssue({
+          id: randomUUID(),
+          timestamp: new Date().toISOString(),
+          severity: 'error',
+          source: 'runtime.http',
+          title: 'Unhandled API error',
+          message: errorMessage,
+          requestId,
+          metadata: {
+            method: requestMethod,
+            path: requestPath,
+            statusCode: 500,
+            durationMs: duration,
+          },
+          suggestions: [
+            {
+              title: 'Review route handler and middleware error paths',
+            },
+            {
+              title: 'Add validation and explicit error mapping where possible',
+            },
+          ],
+        });
         res.statusCode = 500;
         safeSetHeader(res, 'Content-Type', 'application/json');
         const body = production

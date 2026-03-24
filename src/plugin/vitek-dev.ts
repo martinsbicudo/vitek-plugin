@@ -11,6 +11,8 @@ import { isProduction } from '../shared/utils.js';
 import type { Plugin } from 'vite';
 import type { PluginContext } from './context.js';
 import { loadPlatformConfig, isFeatureEnabled } from '../platform/config.js';
+import { createConsoleIssueDispatcher } from '../core/dispatch/index.js';
+import { createHttpWebhookIssueDispatcher } from '../adapters/dispatch/http-webhook.js';
 
 export function createDevPlugin(ctx: PluginContext): Plugin {
   return {
@@ -35,6 +37,23 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
         production,
         ...(observability ? { observabilityStructuredLogs: true } : {}),
       });
+      const issueDispatch = isFeatureEnabled(platformConfig, 'issueDispatch');
+      const issueWebhookUrl = process.env.VITEK_ISSUE_WEBHOOK_URL;
+      const issueWebhookAuth = process.env.VITEK_ISSUE_WEBHOOK_AUTH;
+      const issueWebhookRetries = Number(process.env.VITEK_ISSUE_WEBHOOK_RETRIES ?? 2);
+      const issueWebhookBackoffMs = Number(process.env.VITEK_ISSUE_WEBHOOK_BACKOFF_MS ?? 150);
+      const issueDispatcher = issueDispatch
+        ? issueWebhookUrl
+          ? createHttpWebhookIssueDispatcher({
+              url: issueWebhookUrl,
+              ...(issueWebhookAuth ? { headers: { Authorization: issueWebhookAuth } } : {}),
+              retries: Number.isFinite(issueWebhookRetries) ? issueWebhookRetries : 2,
+              backoffMs: Number.isFinite(issueWebhookBackoffMs) ? issueWebhookBackoffMs : 150,
+              onDeadLetter: (event, error) =>
+                logger.error('Issue webhook dispatch dead-letter', { eventId: event.id, error: error.message }),
+            })
+          : createConsoleIssueDispatcher()
+        : undefined;
       const socketsEnabled = ctx.options.sockets !== false;
       const socketBasePath = getSocketBasePath(
         ctx.options.apiBasePath,
@@ -67,6 +86,7 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
         onError: ctx.options.onError,
         production,
         observability,
+        ...(issueDispatcher ? { issueDispatcher } : {}),
       });
 
       ctx.cleanupFn = cleanup;

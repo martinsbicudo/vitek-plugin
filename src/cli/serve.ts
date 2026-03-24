@@ -19,6 +19,8 @@ import type { ApiClient, SocketEmitter, VitekApp } from '../core/shared/vitek-ap
 import { isProduction } from '../shared/utils.js';
 import { loadPlatformConfig, isFeatureEnabled } from '../platform/config.js';
 import { createConsoleStructuredRequestLogger } from '../adapters/node/console-structured-request-logger.js';
+import { createConsoleIssueDispatcher } from '../core/dispatch/index.js';
+import { createHttpWebhookIssueDispatcher } from '../adapters/dispatch/http-webhook.js';
 
 const VITEK_SERVE_CONFIG_FILENAME = 'vitek.config.mjs';
 
@@ -106,6 +108,23 @@ export async function main(): Promise<void> {
   const distDir = path.resolve(process.cwd(), dir);
   const platformConfig = loadPlatformConfig(process.cwd());
   const observability = isFeatureEnabled(platformConfig, 'observability');
+  const issueDispatch = isFeatureEnabled(platformConfig, 'issueDispatch');
+  const issueWebhookUrl = process.env.VITEK_ISSUE_WEBHOOK_URL;
+  const issueWebhookAuth = process.env.VITEK_ISSUE_WEBHOOK_AUTH;
+  const issueWebhookRetries = Number(process.env.VITEK_ISSUE_WEBHOOK_RETRIES ?? 2);
+  const issueWebhookBackoffMs = Number(process.env.VITEK_ISSUE_WEBHOOK_BACKOFF_MS ?? 150);
+  const issueDispatcher = issueDispatch
+    ? issueWebhookUrl
+      ? createHttpWebhookIssueDispatcher({
+          url: issueWebhookUrl,
+          ...(issueWebhookAuth ? { headers: { Authorization: issueWebhookAuth } } : {}),
+          retries: Number.isFinite(issueWebhookRetries) ? issueWebhookRetries : 2,
+          backoffMs: Number.isFinite(issueWebhookBackoffMs) ? issueWebhookBackoffMs : 150,
+          onDeadLetter: (event, error) =>
+            console.error('[vitek-serve] issue webhook dead-letter', { eventId: event.id, error: error.message }),
+        })
+      : createConsoleIssueDispatcher()
+    : undefined;
 
   if (!fs.existsSync(distDir) || !fs.statSync(distDir).isDirectory()) {
     console.error(`[vitek-serve] Directory not found or not a directory: ${distDir}`);
@@ -166,6 +185,7 @@ export async function main(): Promise<void> {
         production,
         observability,
         ...(observability ? { logger: createConsoleStructuredRequestLogger() } : {}),
+        ...(issueDispatcher ? { issueDispatcher } : {}),
       });
       app.use(apiHandler as (req: http.IncomingMessage, res: http.ServerResponse, next: () => void) => void);
     } catch (err) {

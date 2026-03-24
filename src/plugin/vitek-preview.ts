@@ -17,6 +17,8 @@ import type { PluginContext } from './context.js';
 import { isProduction } from '../shared/utils.js';
 import { loadPlatformConfig, isFeatureEnabled } from '../platform/config.js';
 import { createViteLogger } from '../adapters/vite/logger.js';
+import { createConsoleIssueDispatcher } from '../core/dispatch/index.js';
+import { createHttpWebhookIssueDispatcher } from '../adapters/dispatch/http-webhook.js';
 
 export function createPreviewPlugin(ctx: PluginContext): Plugin {
   return {
@@ -68,12 +70,29 @@ export function createPreviewPlugin(ctx: PluginContext): Plugin {
 
       const platformConfig = loadPlatformConfig(ctx.root);
       const observability = isFeatureEnabled(platformConfig, 'observability');
+      const issueDispatch = isFeatureEnabled(platformConfig, 'issueDispatch');
+      const issueWebhookUrl = process.env.VITEK_ISSUE_WEBHOOK_URL;
+      const issueWebhookAuth = process.env.VITEK_ISSUE_WEBHOOK_AUTH;
+      const issueWebhookRetries = Number(process.env.VITEK_ISSUE_WEBHOOK_RETRIES ?? 2);
+      const issueWebhookBackoffMs = Number(process.env.VITEK_ISSUE_WEBHOOK_BACKOFF_MS ?? 150);
       const production = isProduction({ mode: ctx.viteMode });
       const previewLogger = createViteLogger(server.config.logger, {
         ...ctx.options.logging,
         production,
         ...(observability ? { observabilityStructuredLogs: true } : {}),
       });
+      const issueDispatcher = issueDispatch
+        ? issueWebhookUrl
+          ? createHttpWebhookIssueDispatcher({
+              url: issueWebhookUrl,
+              ...(issueWebhookAuth ? { headers: { Authorization: issueWebhookAuth } } : {}),
+              retries: Number.isFinite(issueWebhookRetries) ? issueWebhookRetries : 2,
+              backoffMs: Number.isFinite(issueWebhookBackoffMs) ? issueWebhookBackoffMs : 150,
+              onDeadLetter: (event, error) =>
+                previewLogger.error('Issue webhook dispatch dead-letter', { eventId: event.id, error: error.message }),
+            })
+          : createConsoleIssueDispatcher()
+        : undefined;
 
       let apiHandler: ReturnType<typeof createRequestHandler> | null = null;
 
@@ -102,6 +121,7 @@ export function createPreviewPlugin(ctx: PluginContext): Plugin {
                 production,
                 observability,
                 logger: previewLogger,
+                ...(issueDispatcher ? { issueDispatcher } : {}),
               });
               server.config.logger.info('[vitek] API middleware registered for preview');
             }

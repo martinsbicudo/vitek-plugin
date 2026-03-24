@@ -17,6 +17,7 @@ describe('mergePlatformConfig', () => {
     });
     expect(config.features.contracts).toBe(true);
     expect(config.features.observability).toBe(false);
+    expect(config.features.issueDispatch).toBe(false);
     expect(config.ai.enabled).toBe(true);
     expect(config.ai.mode).toBe('remote-redacted');
     expect(config.ai.provider).toBe(DEFAULT_PLATFORM_CONFIG.ai.provider);
@@ -48,6 +49,7 @@ describe('loadPlatformConfig', () => {
       );
       const config = loadPlatformConfig(root);
       expect(config.features.observability).toBe(true);
+      expect(config.features.issueDispatch).toBe(false);
       expect(config.features.doctor).toBe(true);
       expect(config.ai.enabled).toBe(true);
       expect(config.ai.provider).toBe('anthropic');

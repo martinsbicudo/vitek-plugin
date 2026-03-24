@@ -21,6 +21,7 @@ your-project/
     "observability": false,
     "contracts": false,
     "mcpWriteTools": false,
+    "issueDispatch": false,
     "dataGenerators": false,
     "doctor": false
   },
@@ -44,6 +45,7 @@ your-project/
 | `features.observability` | `boolean` | When `true`: `X-Request-Id` on API responses, `context.requestId` in handlers, structured JSON request logs (dev/preview via Vite logger, `vitek-serve` via stdout), and `requestId` on `beforeApiRequest` |
 | `features.contracts` | `boolean` | Reserved for future contract integrations; use `vitek contract snapshot` / `check` today (see [Contract drift](/guide/contract)) |
 | `features.mcpWriteTools` | `boolean` | Enables MCP write-safe tools (`vitek_route_create`, `vitek_route_update`, `vitek_validation_suggest`, `vitek_test_generate`, `vitek_openapi_sync`) to allow `apply: true` + `dryRun: false` writes |
+| `features.issueDispatch` | `boolean` | Enables issue event dispatch from runtime error paths (non-blocking, structured event payload) |
 | `features.dataGenerators` | `boolean` | Enables data-layer generators when available |
 | `features.doctor` | `boolean` | Enables doctor scoring/report features when available |
 | `ai.enabled` | `boolean` | Turns AI analyzer flows on/off |
@@ -60,6 +62,19 @@ With `"observability": true`:
 - **Correlation:** Clients may send `X-Request-Id` (ASCII letters, digits, hyphens, max 128 chars). Invalid or missing values get a new UUID. The same id is echoed as `X-Request-Id` on the response and set on `context.requestId` for route handlers.
 - **Logs:** One JSON object per request start and completion (`event`: `http.request.start` | `http.request.complete`, plus `method`, `path`, `status`, `durationMs`, `requestId`, `route` when known).
 - **`vitek-serve`:** Reads `vitek.platform.json` from the current working directory (run the CLI from the project root).
+
+## Issue Dispatch (`features.issueDispatch`)
+
+With `"issueDispatch": true`, runtime error paths emit structured issue events through a dispatcher:
+
+- default dispatcher: console JSON
+- optional outbound webhook via env vars:
+  - `VITEK_ISSUE_WEBHOOK_URL`
+  - `VITEK_ISSUE_WEBHOOK_AUTH` (optional `Authorization` header)
+  - `VITEK_ISSUE_WEBHOOK_RETRIES` (default `2`)
+  - `VITEK_ISSUE_WEBHOOK_BACKOFF_MS` (default `150`)
+
+Dispatch is non-blocking for request handling. After retries are exhausted, the event goes to dead-letter handling (logged by runtime).
 
 ## Notes
 

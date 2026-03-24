@@ -22,6 +22,7 @@ export function createApiMiddleware(
     shared,
     production: options.production,
     observability: options.observability,
+    issueDispatcher: options.issueDispatcher,
   });
 }
 

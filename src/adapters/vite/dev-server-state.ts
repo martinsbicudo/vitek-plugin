@@ -15,6 +15,7 @@ import type { LoadedMiddleware } from '../../core/middleware/get-applicable-midd
 import type { BeforeApiRequestHook } from '../../core/server/request-handler.js';
 import type { AfterTypesGeneratedContext } from '../../plugin/plugin-api.js';
 import type { VitekLogger } from './logger.js';
+import type { IssueDispatcher } from '../../core/dispatch/types.js';
 
 function deduplicateRoutesByKey(routes: Route[]): Route[] {
   const seen = new Set<string>();
@@ -54,6 +55,7 @@ export interface ViteDevServerOptions {
   onError?: (err: Error, req: import('http').IncomingMessage, res: import('http').ServerResponse) => void | Promise<void>;
   production?: boolean;
   observability?: boolean;
+  issueDispatcher?: IssueDispatcher;
 }
 
 export class DevServerState {
