@@ -74,7 +74,7 @@ Leverage contract + telemetry to make tool outputs safer and reviewable.
 **Shipped in plugin (baseline):** `features.issueDispatch` enables non-blocking issue event emission from runtime error paths, with console dispatcher by default and optional outbound webhook dispatch (`VITEK_ISSUE_WEBHOOK_URL`) supporting retry/backoff and dead-letter logging.
 Add issue/recommendation event emission first, then reliable outbound integration and async execution.
 
-## Phase 5 - Event Bus + Scheduler (API expansion)
+## Phase 5 - Event Bus + Scheduler (API expansion) - DONE
 Add internal event orchestration and recurring task execution.
 
 ## Phase 6 - Data Layer Generators (Item 8)
@@ -364,6 +364,8 @@ export default async function handler(ctx) {
 ---
 
 ## Phase 5 - Event Bus + Scheduler (API expansion)
+
+**Shipped in plugin (baseline):** typed in-memory event bus (`createEventBus`), schedule definition helper (`defineSchedule`), single-run scheduler (`runScheduleOnce`) with in-memory locking, and CLI command `vitek schedule run`.
 
 ## Scope
 - Internal event bus:

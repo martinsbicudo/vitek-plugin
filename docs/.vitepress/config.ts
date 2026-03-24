@@ -48,6 +48,7 @@ export default defineConfig({
           { text: 'Plugin API', link: '/guide/plugin-api' },
           { text: 'Introspection API', link: '/guide/introspection' },
           { text: 'MCP - Project API', link: '/guide/mcp-project' },
+          { text: 'Events and Scheduler', link: '/guide/events-scheduler' },
           { text: 'AI Platform Config', link: '/guide/ai-platform-config' },
           { text: 'Configuration', link: '/guide/configuration' },
           { text: 'Security', link: '/guide/security' },

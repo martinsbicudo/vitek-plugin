@@ -52,4 +52,16 @@ describe.skipIf(!fs.existsSync(distPublic))('subpath exports', () => {
     expect(typeof mod.createMockRes).toBe('function');
     expect(typeof mod.runMiddlewareChain).toBe('function');
   });
+
+  it('vitek-plugin/events exports createEventBus', async () => {
+    const mod = await import(pathToFileURL(path.join(distPublic, 'events.js')).href);
+    expect(typeof mod.createEventBus).toBe('function');
+  });
+
+  it('vitek-plugin/scheduler exports scheduler helpers', async () => {
+    const mod = await import(pathToFileURL(path.join(distPublic, 'scheduler.js')).href);
+    expect(typeof mod.defineSchedule).toBe('function');
+    expect(typeof mod.runScheduleOnce).toBe('function');
+    expect(mod.InMemoryLockProvider).toBeDefined();
+  });
 });

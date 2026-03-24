@@ -88,3 +88,15 @@ export {
 } from './testing/testing.js';
 export type { MockServerResponse } from './testing/testing.js';
 
+export { createEventBus } from './core/events/index.js';
+export type { EventMap, EventHandler, EventBus } from './core/events/index.js';
+
+export { defineSchedule, runScheduleOnce, InMemoryLockProvider } from './core/scheduler/index.js';
+export type {
+  ScheduleTask,
+  ScheduleDefinition,
+  TaskRunResult,
+  ScheduleRunResult,
+  SchedulerLockProvider,
+} from './core/scheduler/index.js';
+

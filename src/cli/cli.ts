@@ -16,6 +16,11 @@ async function run(): Promise<void> {
     await runContract(subCmd, rest);
     return;
   }
+  if (cmd === 'schedule') {
+    const { runSchedule } = await import('./schedule.js');
+    await runSchedule(subCmd, rest);
+    return;
+  }
   const { main } = await import('./serve.js');
   await main();
 }
