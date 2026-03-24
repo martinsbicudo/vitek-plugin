@@ -21,6 +21,7 @@ export function createApiMiddleware(
     logger: options.logger,
     shared,
     production: options.production,
+    observability: options.observability,
   });
 }
 

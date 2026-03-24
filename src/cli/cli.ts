@@ -1,10 +1,4 @@
-/**
- * Main CLI entry: vitek [command]
- * Commands: init, mcp, serve (default)
- * Usage: vitek init [--force] | vitek mcp | vitek [serve] [options]
- */
-
-const [,, cmd] = process.argv;
+const [,, cmd, subCmd, ...rest] = process.argv;
 
 async function run(): Promise<void> {
   if (cmd === 'init') {
@@ -15,6 +9,11 @@ async function run(): Promise<void> {
   if (cmd === 'mcp') {
     const { runMcpProject } = await import('./mcp-project.js');
     await runMcpProject();
+    return;
+  }
+  if (cmd === 'contract') {
+    const { runContract } = await import('./contract.js');
+    await runContract(subCmd, rest);
     return;
   }
   const { main } = await import('./serve.js');

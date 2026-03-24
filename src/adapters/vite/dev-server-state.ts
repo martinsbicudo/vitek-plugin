@@ -53,6 +53,7 @@ export interface ViteDevServerOptions {
   maxBodySize?: number;
   onError?: (err: Error, req: import('http').IncomingMessage, res: import('http').ServerResponse) => void | Promise<void>;
   production?: boolean;
+  observability?: boolean;
 }
 
 export class DevServerState {

@@ -10,6 +10,7 @@ import { API_BASE_PATH, getSocketBasePath } from '../shared/constants.js';
 import { isProduction } from '../shared/utils.js';
 import type { Plugin } from 'vite';
 import type { PluginContext } from './context.js';
+import { loadPlatformConfig, isFeatureEnabled } from '../platform/config.js';
 
 export function createDevPlugin(ctx: PluginContext): Plugin {
   return {
@@ -27,9 +28,12 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
       }
 
       const production = isProduction({ mode: ctx.viteMode });
+      const platformConfig = loadPlatformConfig(ctx.root);
+      const observability = isFeatureEnabled(platformConfig, 'observability');
       const logger = createViteLogger(server.config.logger, {
         ...ctx.options.logging,
         production,
+        ...(observability ? { observabilityStructuredLogs: true } : {}),
       });
       const socketsEnabled = ctx.options.sockets !== false;
       const socketBasePath = getSocketBasePath(
@@ -62,6 +66,7 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
         maxBodySize: ctx.options.maxBodySize,
         onError: ctx.options.onError,
         production,
+        observability,
       });
 
       ctx.cleanupFn = cleanup;

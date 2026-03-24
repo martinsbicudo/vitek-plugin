@@ -20,36 +20,33 @@ import {
   type NormalizedCorsOptions,
 } from './cors.js';
 import { getEffectiveRequest } from './proxy.js';
+import { getOrCreateRequestId } from '../../platform/correlation.js';
+import type { RequestLogMeta } from './request-log-meta.js';
 
-/** Callback for beforeApiRequest hook. Call next() to continue, or send response and return without next() to short-circuit. */
+export type { RequestLogMeta } from './request-log-meta.js';
+
 export type BeforeApiRequestHook = (
-  ctx: { req: IncomingMessage; res: ServerResponse; path: string; method: string },
+  ctx: { req: IncomingMessage; res: ServerResponse; path: string; method: string; requestId?: string },
   next: () => void
 ) => void | Promise<void>;
 
 export interface RequestHandlerOptions {
   routes: Route[];
   middlewares: LoadedMiddleware[];
-  /** Hooks called before each API request. Call next() to continue. */
   beforeApiRequest?: BeforeApiRequestHook[];
-  /** Enable CORS. true or CorsOptions. When set, OPTIONS preflight and CORS headers on responses are handled. */
   cors?: boolean | import('./cors.js').CorsOptions;
-  /** When true, trust X-Forwarded-* headers and set context.clientIp / effective url. */
   trustProxy?: boolean;
+  observability?: boolean;
   logger?: {
     routeMatched?(pattern: string, method: string): void;
-    requestStart?(method: string, path: string): void;
-    request?(method: string, path: string, statusCode: number, duration?: number): void;
+    requestStart?(method: string, path: string, meta?: RequestLogMeta): void;
+    request?(method: string, path: string, statusCode: number, duration?: number, meta?: RequestLogMeta): void;
     warn?(message: string, data?: Record<string, unknown>): void;
     error?(message: string, data?: Record<string, unknown>): void;
   };
-  /** When provided, context.sockets is set so route handlers can emit to WebSocket clients. */
   shared?: { sockets: SocketEmitter };
-  /** Max request body size in bytes. When exceeded, responds with 413 Payload Too Large. Omit for no limit. */
   maxBodySize?: number;
-  /** Called when a non-HttpError is thrown. May send a custom response; if res is not ended, default 500 JSON is sent. */
   onError?: (err: Error, req: IncomingMessage, res: ServerResponse) => void | Promise<void>;
-  /** When true, 500 responses omit internal error message in the JSON body (production). */
   production?: boolean;
 }
 
@@ -82,7 +79,20 @@ function applyCorsHeaders(res: ServerResponse, corsHeaders: Record<string, strin
 }
 
 export function createRequestHandler(options: RequestHandlerOptions): (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => Promise<void> {
-  const { routes, middlewares, beforeApiRequest = [], cors, trustProxy = false, logger, shared, maxBodySize, onError, production = false } = options;
+  const {
+    routes,
+    middlewares,
+    beforeApiRequest = [],
+    cors,
+    trustProxy = false,
+    observability: observabilityEnabled = false,
+    logger,
+    shared,
+    maxBodySize,
+    onError,
+    production = false,
+  } = options;
+  const observability = observabilityEnabled === true;
   const corsOpts: NormalizedCorsOptions | null = cors != null ? normalizeCorsOptions(cors) : null;
   const logRouteMatched = logger?.routeMatched ?? noop;
   const logRequestStart = logger?.requestStart ?? noop;
@@ -96,6 +106,15 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
     if (pathname !== API_BASE_PATH && !pathname.startsWith(API_BASE_PATH + '/')) {
       return next();
     }
+
+    let requestId: string | undefined;
+    if (observability) {
+      requestId = getOrCreateRequestId(req.headers);
+      safeSetHeader(res, 'X-Request-Id', requestId);
+    }
+
+    const obsMeta = (route?: string): RequestLogMeta | undefined =>
+      observability && requestId != null ? { requestId, ...(route != null ? { route } : {}) } : undefined;
 
     const startTime = Date.now();
     const requestMethod = req.method?.toLowerCase() || 'get';
@@ -128,12 +147,12 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
         safeSetHeader(res, 'Content-Type', 'application/json');
         if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
         res.end(JSON.stringify({ error: 'Route not found' }));
-        logRequest(requestMethod, requestPath, 404, duration);
+        logRequest(requestMethod, requestPath, 404, duration, obsMeta());
         return;
       }
 
       logRouteMatched(match.route.pattern, method);
-      logRequestStart(requestMethod, requestPath);
+      logRequestStart(requestMethod, requestPath, obsMeta(match.route.pattern));
 
       const query: Record<string, string | string[]> = {};
       url.searchParams.forEach((value, key) => {
@@ -185,7 +204,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
             safeSetHeader(res, 'Content-Type', 'application/json');
             if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
             res.end(JSON.stringify({ error: 'Payload Too Large' }));
-            logRequest(requestMethod, requestPath, 413, duration);
+            logRequest(requestMethod, requestPath, 413, duration, obsMeta());
             return PAYLOAD_TOO_LARGE_SENTINEL;
           }
           throw err;
@@ -199,6 +218,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
           method,
           headers: (req.headers || {}) as Record<string, string>,
           body,
+          ...(requestId != null ? { requestId } : {}),
         },
         match.params,
         query
@@ -230,26 +250,26 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
           res.statusCode = statusCode;
           if (response.body === undefined) {
             res.end();
-            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
+            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime, obsMeta(match.route.pattern));
           } else if (isReadableStream(response.body)) {
             const stream = response.body as NodeJS.ReadableStream;
             res.once('finish', () =>
-              logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime)
+              logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime, obsMeta(match.route.pattern))
             );
             stream.pipe(res as NodeJS.WritableStream);
           } else if (typeof response.body === 'string') {
             res.end(response.body);
-            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
+            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime, obsMeta(match.route.pattern));
           } else {
             res.end(JSON.stringify(response.body));
-            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime);
+            logRequest(requestMethod, requestPath, statusCode, Date.now() - startTime, obsMeta(match.route.pattern));
           }
         } else {
           if (corsOpts) applyCorsHeaders(res, getCorsHeaders(req, corsOpts));
           safeSetHeader(res, 'Content-Type', 'application/json');
           res.statusCode = 200;
           res.end(JSON.stringify(result));
-          logRequest(requestMethod, requestPath, 200, Date.now() - startTime);
+          logRequest(requestMethod, requestPath, 200, Date.now() - startTime, obsMeta(match.route.pattern));
         }
       };
 
@@ -261,7 +281,18 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
           await new Promise<void>((resolve, reject) => {
             let done = false;
             const next = () => { if (!done) { done = true; resolve(); } };
-            Promise.resolve(hook({ req, res, path: routePath, method }, next))
+            Promise.resolve(
+              hook(
+                {
+                  req,
+                  res,
+                  path: routePath,
+                  method,
+                  ...(requestId != null ? { requestId } : {}),
+                },
+                next
+              )
+            )
               .then(() => { if (!done && res.writableEnded) { done = true; resolve(); } })
               .catch(reject);
           });
@@ -285,13 +316,13 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
             code: httpError.code,
           })
         );
-        logRequest(requestMethod, requestPath, httpError.statusCode, duration);
+        logRequest(requestMethod, requestPath, httpError.statusCode, duration, obsMeta());
       } else {
         const err = error instanceof Error ? error : new Error(String(error));
         if (onError) {
           await Promise.resolve(onError(err, req, res));
           if (res.writableEnded) {
-            logRequest(requestMethod, requestPath, res.statusCode, duration);
+            logRequest(requestMethod, requestPath, res.statusCode, duration, obsMeta());
             return;
           }
         }
@@ -303,7 +334,7 @@ export function createRequestHandler(options: RequestHandlerOptions): (req: Inco
           ? { error: 'Internal server error' }
           : { error: 'Internal server error', message: errorMessage };
         res.end(JSON.stringify(body));
-        logRequest(requestMethod, requestPath, 500, duration);
+        logRequest(requestMethod, requestPath, 500, duration, obsMeta());
       }
     }
   };

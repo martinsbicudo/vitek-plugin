@@ -4,6 +4,7 @@
  */
 
 import type { Logger } from 'vite';
+import type { RequestLogMeta } from '../../core/server/request-log-meta.js';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -12,6 +13,7 @@ export interface LoggingOptions {
   enableRequestLogging?: boolean;
   enableRouteLogging?: boolean;
   production?: boolean;
+  observabilityStructuredLogs?: boolean;
 }
 
 const RESET = '\x1b[0m';
@@ -77,10 +79,9 @@ export interface VitekLogger {
   middlewareLoaded(count: number): void;
   typesGenerated(outputPath: string): void;
   servicesGenerated(outputPath: string): void;
-  /** Log when a request is received (endpoint called). Only when enableRequestLogging. */
-  requestStart(method: string, path: string): void;
-  request(method: string, path: string, statusCode: number, duration?: number): void;
-  response(method: string, path: string, statusCode: number, duration?: number): void;
+  requestStart(method: string, path: string, meta?: RequestLogMeta): void;
+  request(method: string, path: string, statusCode: number, duration?: number, meta?: RequestLogMeta): void;
+  response(method: string, path: string, statusCode: number, duration?: number, meta?: RequestLogMeta): void;
   /** Socket events (only logged when enableRequestLogging is true) */
   socketConnected(path: string, pattern?: string): void;
   socketDisconnected(path: string, pattern?: string): void;
@@ -100,6 +101,7 @@ export function createViteLogger(viteLogger: Logger, options?: LoggingOptions): 
   }
   const enableRequestLogging = options?.enableRequestLogging || false;
   const enableRouteLogging = options?.enableRouteLogging !== false;
+  const observabilityStructuredLogs = options?.observabilityStructuredLogs === true;
   
   const formatData = (data?: Record<string, any>): string => {
     if (!data || Object.keys(data).length === 0) {
@@ -216,7 +218,20 @@ export function createViteLogger(viteLogger: Logger, options?: LoggingOptions): 
       }
     },
     
-    requestStart(method: string, path: string) {
+    requestStart(method: string, path: string, meta?: RequestLogMeta) {
+      if (observabilityStructuredLogs && shouldLog('info', logLevel)) {
+        viteLogger.info(
+          JSON.stringify({
+            event: 'http.request.start',
+            method,
+            path,
+            ...(meta?.requestId != null ? { requestId: meta.requestId } : {}),
+            ...(meta?.route != null ? { route: meta.route } : {}),
+          }),
+          { timestamp: true }
+        );
+        return;
+      }
       if (enableRequestLogging && shouldLog('info', logLevel)) {
         const m = method.toUpperCase();
         viteLogger.info(
@@ -226,7 +241,22 @@ export function createViteLogger(viteLogger: Logger, options?: LoggingOptions): 
       }
     },
 
-    request(method: string, path: string, statusCode: number, duration?: number) {
+    request(method: string, path: string, statusCode: number, duration?: number, meta?: RequestLogMeta) {
+      if (observabilityStructuredLogs && shouldLog('info', logLevel)) {
+        viteLogger.info(
+          JSON.stringify({
+            event: 'http.request.complete',
+            method,
+            path,
+            status: statusCode,
+            ...(duration !== undefined ? { durationMs: duration } : {}),
+            ...(meta?.requestId != null ? { requestId: meta.requestId } : {}),
+            ...(meta?.route != null ? { route: meta.route } : {}),
+          }),
+          { timestamp: true }
+        );
+        return;
+      }
       if (enableRequestLogging && shouldLog('info', logLevel)) {
         const durationStr = duration !== undefined ? ` (${duration}ms)` : '';
         const statusColor = statusCode >= 500 ? '\x1b[31m' : statusCode >= 400 ? '\x1b[33m' : '\x1b[32m';
@@ -237,10 +267,9 @@ export function createViteLogger(viteLogger: Logger, options?: LoggingOptions): 
         );
       }
     },
-    
-    response(method: string, path: string, statusCode: number, duration?: number) {
-      // Alias for request (for consistency)
-      this.request(method, path, statusCode, duration);
+
+    response(method: string, path: string, statusCode: number, duration?: number, meta?: RequestLogMeta) {
+      this.request(method, path, statusCode, duration, meta);
     },
 
     socketConnected(path: string, pattern?: string) {
@@ -277,6 +306,7 @@ export function createViteLogger(viteLogger: Logger, options?: LoggingOptions): 
         enableRequestLogging,
         enableRouteLogging,
         production: options?.production,
+        observabilityStructuredLogs,
       };
     },
   };

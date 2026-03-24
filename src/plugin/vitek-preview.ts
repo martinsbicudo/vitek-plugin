@@ -15,6 +15,8 @@ import type { ApiClient, SocketEmitter, VitekApp } from '../core/shared/vitek-ap
 import type { RequestHandlerOptions } from '../core/server/request-handler.js';
 import type { PluginContext } from './context.js';
 import { isProduction } from '../shared/utils.js';
+import { loadPlatformConfig, isFeatureEnabled } from '../platform/config.js';
+import { createViteLogger } from '../adapters/vite/logger.js';
 
 export function createPreviewPlugin(ctx: PluginContext): Plugin {
   return {
@@ -64,6 +66,15 @@ export function createPreviewPlugin(ctx: PluginContext): Plugin {
         middlewares: RequestHandlerOptions['middlewares'];
       }>;
 
+      const platformConfig = loadPlatformConfig(ctx.root);
+      const observability = isFeatureEnabled(platformConfig, 'observability');
+      const production = isProduction({ mode: ctx.viteMode });
+      const previewLogger = createViteLogger(server.config.logger, {
+        ...ctx.options.logging,
+        production,
+        ...(observability ? { observabilityStructuredLogs: true } : {}),
+      });
+
       let apiHandler: ReturnType<typeof createRequestHandler> | null = null;
 
       const apiMiddleware = (req: import('http').IncomingMessage, res: import('http').ServerResponse, next: () => void) => {
@@ -88,7 +99,9 @@ export function createPreviewPlugin(ctx: PluginContext): Plugin {
                 maxBodySize: ctx.options.maxBodySize,
                 onError: ctx.options.onError,
                 shared,
-                production: isProduction({ mode: ctx.viteMode }),
+                production,
+                observability,
+                logger: previewLogger,
               });
               server.config.logger.info('[vitek] API middleware registered for preview');
             }

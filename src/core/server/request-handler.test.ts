@@ -128,6 +128,60 @@ describe('createRequestHandler', () => {
     expect(JSON.parse(res._body)).toEqual({ error: 'Route not found' });
   });
 
+  it('with observability sets X-Request-Id and exposes context.requestId', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      (ctx: { requestId?: string }) => ({ rid: ctx.requestId })
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [], observability: true });
+    const req = mockRequest({
+      url: `${API_BASE_PATH}/health`,
+      headers: { 'x-request-id': 'incoming-1', host: 'localhost' },
+    });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(res._headers['X-Request-Id'] ?? res._headers['x-request-id']).toBe('incoming-1');
+    expect(JSON.parse(res._body).rid).toBe('incoming-1');
+  });
+
+  it('with observability replaces invalid X-Request-Id', async () => {
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      (ctx: { requestId?: string }) => ({ rid: ctx.requestId })
+    );
+    const handler = createRequestHandler({ routes: [route], middlewares: [], observability: true });
+    const req = mockRequest({
+      url: `${API_BASE_PATH}/health`,
+      headers: { 'x-request-id': 'bad id', host: 'localhost' },
+    });
+    const res = mockResponse();
+    await handler(req, res, next());
+    const rid = res._headers['X-Request-Id'] ?? res._headers['x-request-id'];
+    expect(rid).toBeDefined();
+    expect(rid).not.toBe('bad id');
+    expect(JSON.parse(res._body).rid).toBe(rid);
+  });
+
+  it('with observability passes RequestLogMeta to logger.request', async () => {
+    const request = vi.fn();
+    const route = createTestRoute(
+      { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },
+      () => ({ ok: 1 })
+    );
+    const handler = createRequestHandler({
+      routes: [route],
+      middlewares: [],
+      observability: true,
+      logger: { request },
+    });
+    const req = mockRequest({ url: `${API_BASE_PATH}/health` });
+    const res = mockResponse();
+    await handler(req, res, next());
+    expect(request).toHaveBeenCalled();
+    const last = request.mock.calls[request.mock.calls.length - 1];
+    expect(last[4]).toMatchObject({ requestId: expect.any(String), route: 'health' });
+  });
+
   it('returns 200 with JSON body when handler returns plain object', async () => {
     const route = createTestRoute(
       { method: 'get', pattern: 'health', params: [], file: '/api/health.get.ts' },

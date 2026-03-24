@@ -177,6 +177,8 @@ describe('createViteLogger', () => {
         level: 'debug',
         enableRequestLogging: true,
         enableRouteLogging: false,
+        production: undefined,
+        observabilityStructuredLogs: false,
       });
     });
   });

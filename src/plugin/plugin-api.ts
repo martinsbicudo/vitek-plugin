@@ -27,16 +27,12 @@ export interface AfterTypesGeneratedContext {
  * Context passed to beforeApiRequest hook
  */
 export interface BeforeApiRequestContext {
-  /** Incoming HTTP request */
   req: IncomingMessage;
-  /** Response object (use to short-circuit and send custom response) */
   res: ServerResponse;
-  /** Path relative to API base (e.g. /health, /users/123) */
   path: string;
-  /** HTTP method (lowercase) */
   method: string;
-  /** Call to continue to the route handler. Do not call if you send a response. */
   next: () => void;
+  requestId?: string;
 }
 
 /**

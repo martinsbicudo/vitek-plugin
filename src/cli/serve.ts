@@ -17,6 +17,8 @@ import { getApiBundleFilename } from '../build/build-api-bundle.js';
 import { getSocketsBundleFilename } from '../build/build-sockets-bundle.js';
 import type { ApiClient, SocketEmitter, VitekApp } from '../core/shared/vitek-app.js';
 import { isProduction } from '../shared/utils.js';
+import { loadPlatformConfig, isFeatureEnabled } from '../platform/config.js';
+import { createConsoleStructuredRequestLogger } from '../adapters/node/console-structured-request-logger.js';
 
 const VITEK_SERVE_CONFIG_FILENAME = 'vitek.config.mjs';
 
@@ -102,6 +104,8 @@ export async function main(): Promise<void> {
   const { dir, port, host, cors, trustProxy, mode: modeArg } = parseArgs();
   const production = isProduction({ mode: modeArg, nodeEnv: process.env.NODE_ENV });
   const distDir = path.resolve(process.cwd(), dir);
+  const platformConfig = loadPlatformConfig(process.cwd());
+  const observability = isFeatureEnabled(platformConfig, 'observability');
 
   if (!fs.existsSync(distDir) || !fs.statSync(distDir).isDirectory()) {
     console.error(`[vitek-serve] Directory not found or not a directory: ${distDir}`);
@@ -160,6 +164,8 @@ export async function main(): Promise<void> {
         onError,
         shared,
         production,
+        observability,
+        ...(observability ? { logger: createConsoleStructuredRequestLogger() } : {}),
       });
       app.use(apiHandler as (req: http.IncomingMessage, res: http.ServerResponse, next: () => void) => void);
     } catch (err) {

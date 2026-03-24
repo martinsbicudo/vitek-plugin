@@ -13,10 +13,9 @@ export interface VitekContext {
   params: Record<string, string>;
   headers: Record<string, string>;
   body?: any;
-  /** When trustProxy is true, client IP from X-Forwarded-For or socket.remoteAddress. */
   clientIp?: string;
-  /** When the app runs with shared context (dev, preview, serve), use to broadcast to WebSocket clients. */
   sockets?: SocketEmitter;
+  requestId?: string;
 }
 
 export interface VitekRequest {
@@ -24,6 +23,7 @@ export interface VitekRequest {
   method: string;
   headers: Record<string, string>;
   body?: any;
+  requestId?: string;
 }
 
 /**
@@ -64,7 +64,7 @@ export function createContext(
 ): VitekContext {
   const url = new URL(request.url, 'http://localhost');
   
-  return {
+  const ctx: VitekContext = {
     url: request.url,
     method: request.method.toLowerCase(),
     path: url.pathname,
@@ -73,5 +73,7 @@ export function createContext(
     headers: request.headers,
     body: request.body,
   };
+  if (request.requestId != null) ctx.requestId = request.requestId;
+  return ctx;
 }
 
