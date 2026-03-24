@@ -43,7 +43,7 @@ your-project/
 | --- | --- | --- |
 | `features.observability` | `boolean` | When `true`: `X-Request-Id` on API responses, `context.requestId` in handlers, structured JSON request logs (dev/preview via Vite logger, `vitek-serve` via stdout), and `requestId` on `beforeApiRequest` |
 | `features.contracts` | `boolean` | Reserved for future contract integrations; use `vitek contract snapshot` / `check` today (see [Contract drift](/guide/contract)) |
-| `features.mcpWriteTools` | `boolean` | Enables MCP write-safe tools when available |
+| `features.mcpWriteTools` | `boolean` | Enables MCP write-safe tools (`vitek_route_create`, `vitek_route_update`, `vitek_validation_suggest`, `vitek_test_generate`, `vitek_openapi_sync`) to allow `apply: true` + `dryRun: false` writes |
 | `features.dataGenerators` | `boolean` | Enables data-layer generators when available |
 | `features.doctor` | `boolean` | Enables doctor scoring/report features when available |
 | `ai.enabled` | `boolean` | Turns AI analyzer flows on/off |

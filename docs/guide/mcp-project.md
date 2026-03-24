@@ -53,6 +53,28 @@ The AI can read these resources to discover your API surface.
 - **vitek_api_call** – Calls a local API endpoint. Parameters: `method`, `path` (relative to apiBasePath), `body` (optional), `headers` (optional).  
   **Requirement:** the API must be running (e.g. `pnpm dev` or `pnpm start`). The base URL is the one set in `baseUrl` in the config (or `http://localhost:5173`).
 
+## Write-safe tools (opt-in)
+
+`vitek mcp` also exposes write-safe tools for route iteration:
+
+- `vitek_route_create`
+- `vitek_route_update`
+- `vitek_validation_suggest`
+- `vitek_test_generate`
+- `vitek_openapi_sync`
+
+Safety model:
+
+- `dryRun` defaults to `true`
+- write is blocked unless both `apply: true` and `dryRun: false`
+- write is blocked unless `features.mcpWriteTools` is `true` in `vitek.platform.json`
+
+Each tool returns:
+
+- `diff` (unified preview)
+- `risk` notes
+- `next` guidance for confirmation/apply flow
+
 ## Cursor
 
 1. In a Vitek project, create or edit `.cursor/mcp.json` (or Settings → MCP).

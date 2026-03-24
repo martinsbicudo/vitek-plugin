@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type LastServer = {
   resources: Array<{ name: string; uri: string; handler: () => Promise<{ contents: Array<{ uri: string; text: string }> }> }>;
-  tools: Array<{ name: string; handler: (input: { method: 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options'; path: string; body?: unknown; headers?: Record<string, string> }) => Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }> }>;
+  tools: Array<{ name: string; handler: (input: Record<string, unknown>) => Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }> }>;
   connected: boolean;
 } | null;
 
@@ -18,7 +18,7 @@ async function loadSubject() {
 
   class MockMcpServer {
     resources: Array<{ name: string; uri: string; handler: () => Promise<{ contents: Array<{ uri: string; text: string }> }> }> = [];
-    tools: Array<{ name: string; handler: (input: { method: 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options'; path: string; body?: unknown; headers?: Record<string, string> }) => Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }> }> = [];
+    tools: Array<{ name: string; handler: (input: Record<string, unknown>) => Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }> }> = [];
     connected = false;
 
     constructor() {
@@ -29,7 +29,7 @@ async function loadSubject() {
       this.resources.push({ name, uri, handler });
     }
 
-    registerTool(name: string, _meta: unknown, handler: (input: { method: 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options'; path: string; body?: unknown; headers?: Record<string, string> }) => Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }>) {
+    registerTool(name: string, _meta: unknown, handler: (input: Record<string, unknown>) => Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }>) {
       this.tools.push({ name, handler });
     }
 
@@ -76,7 +76,7 @@ describe('runMcpProject', () => {
     vi.restoreAllMocks();
   });
 
-  it('registers resources and tool, then connects transport', async () => {
+  it('registers resources and tools, then connects transport', async () => {
     const runMcpProject = await loadSubject();
     await runMcpProject();
     expect(lastServer).not.toBeNull();
@@ -87,7 +87,14 @@ describe('runMcpProject', () => {
       'vitek-api://openapi',
       'vitek-api://asyncapi',
     ]);
-    expect(lastServer?.tools.map((t) => t.name)).toEqual(['vitek_api_call']);
+    expect(lastServer?.tools.map((t) => t.name)).toEqual([
+      'vitek_api_call',
+      'vitek_route_create',
+      'vitek_route_update',
+      'vitek_validation_suggest',
+      'vitek_test_generate',
+      'vitek_openapi_sync',
+    ]);
     expect(lastServer?.connected).toBe(true);
   });
 

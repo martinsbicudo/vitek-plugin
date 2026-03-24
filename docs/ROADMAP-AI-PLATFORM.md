@@ -225,6 +225,8 @@ Contract Drift Report
 
 ## Phase 3 - MCP Write-Safe Tools (Item 2)
 
+**Shipped in plugin (baseline):** `vitek mcp` now includes write-safe tools (`vitek_route_create`, `vitek_route_update`, `vitek_validation_suggest`, `vitek_test_generate`, `vitek_openapi_sync`) with dry-run default, unified diff/risk output, and explicit `apply: true` + `dryRun: false` gated by `features.mcpWriteTools`.
+
 ## Scope
 - Extend MCP from read-only to write-safe tools.
 - Require dry-run and diff preview by default.

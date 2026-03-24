@@ -4,6 +4,7 @@ import { generateOpenApiSpec } from '../core/openapi/generate.js';
 import { generateAsyncApiSpec } from '../core/asyncapi/generate.js';
 import type { RouteForDocs } from '../core/openapi/types.js';
 import { loadMcpConfig } from './mcp-project-config.js';
+import { registerMcpWriteTools } from './mcp-project-write-tools.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
@@ -138,6 +139,8 @@ export async function runMcpProject(): Promise<void> {
       }
     }
   );
+
+  registerMcpWriteTools(server, root, config);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
