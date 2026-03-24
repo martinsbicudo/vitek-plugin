@@ -47,4 +47,11 @@ describe('vitek-plugin build outputs (socket-only)', () => {
     expect(mod.sockets).toBeDefined();
     expect(Array.isArray(mod.sockets)).toBe(true);
   });
+
+  it('socket bundle lists root and chat patterns', async () => {
+    const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-sockets.mjs')).href);
+    const patterns = mod.sockets.map((s) => s.pattern);
+    expect(patterns).toEqual(expect.arrayContaining(['', 'chat']));
+    expect(mod.sockets.length).toBeGreaterThanOrEqual(2);
+  });
 });

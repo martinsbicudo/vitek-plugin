@@ -36,6 +36,28 @@ describe('vitek-plugin build outputs (mcp-project)', () => {
     expect(health).toBeDefined();
   });
 
+  it('health handler returns mcp-project payload', async () => {
+    const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-api.mjs')).href);
+    const route = mod.routes.find((r) => r.pattern === 'health' && r.method === 'get');
+    expect(route).toBeDefined();
+    const handler = typeof route.handler === 'function' ? route.handler : route.handler.default;
+    const result = await handler({
+      params: {},
+      query: {},
+      headers: {},
+      url: '',
+      method: 'get',
+      path: '/api/health',
+    });
+    expect(result).toEqual({ status: 'ok', feature: 'mcp-project' });
+  });
+
+  it('socket bundle exposes notify pattern', async () => {
+    const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-sockets.mjs')).href);
+    const notify = mod.sockets.find((s) => s.pattern === 'notify');
+    expect(notify).toBeDefined();
+  });
+
   it('vitek mcp command starts', async () => {
     const cliPath = path.join(ROOT, 'node_modules', 'vitek-plugin', 'dist', 'cli', 'cli.js');
     expect(fs.existsSync(cliPath)).toBe(true);

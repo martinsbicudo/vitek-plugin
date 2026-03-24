@@ -52,6 +52,7 @@ export default defineConfig({
           { text: 'Data Generators', link: '/guide/data-generators' },
           { text: 'Doctor Score CLI', link: '/guide/doctor' },
           { text: 'AI Platform Config', link: '/guide/ai-platform-config' },
+          { text: 'Observability', link: '/guide/observability' },
           { text: 'Configuration', link: '/guide/configuration' },
           { text: 'Security', link: '/guide/security' },
           { text: 'Production server', link: '/guide/production-server' },

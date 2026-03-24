@@ -114,6 +114,7 @@ To run **beforeApiRequest** or **onError** hooks in production, add a config fil
 | `onServerStart`      | `(ctx: { api, sockets?, server }) => void`             | Called once before the server listens. See [Lifecycle hooks](#lifecycle-hooks-onserverstart--onservershutdown). |
 | `onServerShutdown`   | `() => void \| Promise<void>`                          | Called on SIGTERM/SIGINT before the server closes. |
 | `maxBodySize`        | `number`                                               | Max request body size in bytes (413 when exceeded). See [Security](/guide/security#request-body-limit). |
+| `issueDispatcher`    | `IssueDispatcher`                                      | When `features.issueDispatch` is true in `vitek.platform.json`, replaces the default console / webhook sink. Same type as `vitek({ issueDispatcher })` in dev. |
 
 Example `vitek.config.mjs` in your project root, and ensure it is **copied to `dist/`** during build (e.g. via Vite’s `publicDir` or a copy step):
 

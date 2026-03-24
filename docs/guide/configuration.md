@@ -45,6 +45,7 @@ export default defineConfig({
 | `cors`                         | `boolean \| CorsOptions`                 | `undefined` | Enable CORS for the API. `true` for permissive defaults (`*` origin, common methods). Use a `CorsOptions` object to restrict origin, methods, or headers. Applied in dev, preview, and when using `vitek-serve --cors`. |
 | `trustProxy`                   | `boolean`                                | `false`     | When `true`, the API trusts `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-For` from the reverse proxy. Use when running behind nginx, Caddy, or similar. Context gets the effective URL and `clientIp`. In production with vitek-serve, use `vitek-serve --trust-proxy`. |
 | `onError`                      | `(err, req, res) => void \| Promise<void>` | `undefined` | Custom error handler when a non-HttpError is thrown. You can send a custom response; if you do not call `res.end()`, the default 500 JSON is sent. See [Error handling](/guide/error-handling#custom-error-handler-onerror). In production, export from `dist/vitek.config.mjs`. |
+| `issueDispatcher`              | `IssueDispatcher`                        | `undefined` | When `features.issueDispatch` is true in `vitek.platform.json`, replaces the default console / webhook issue sink. See [AI Platform Config](/guide/ai-platform-config#issue-dispatch-featuresissuedispatch) and [examples/issue-dispatch](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/issue-dispatch). |
 | `maxBodySize`                  | `number`                                 | (default)   | Max request body size in bytes. Requests exceeding this return 413. In production, export from `dist/vitek.config.mjs` or use CLI. See [Security](/guide/security#request-body-limit). |
 
 ## CORS example
@@ -52,14 +53,18 @@ export default defineConfig({
 To allow cross-origin requests from a specific frontend:
 
 ```typescript
-vitek({
-  cors: {
-    origin: 'https://myapp.example.com',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  },
-})
+import type { CorsOptions } from "vitek-plugin/plugin";
+
+const cors: CorsOptions = {
+  origin: "https://myapp.example.com",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+vitek({ cors });
 ```
+
+You can also use `import type { CorsOptions } from "vitek-plugin"`.
 
 With `cors: true`, the API sends `Access-Control-Allow-Origin: *` and allows common methods and headers.
 

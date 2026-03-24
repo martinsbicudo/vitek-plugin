@@ -82,16 +82,18 @@ export function createPreviewPlugin(ctx: PluginContext): Plugin {
         ...(observability ? { observabilityStructuredLogs: true } : {}),
       });
       const issueDispatcher = issueDispatch
-        ? issueWebhookUrl
-          ? createHttpWebhookIssueDispatcher({
-              url: issueWebhookUrl,
-              ...(issueWebhookAuth ? { headers: { Authorization: issueWebhookAuth } } : {}),
-              retries: Number.isFinite(issueWebhookRetries) ? issueWebhookRetries : 2,
-              backoffMs: Number.isFinite(issueWebhookBackoffMs) ? issueWebhookBackoffMs : 150,
-              onDeadLetter: (event, error) =>
-                previewLogger.error('Issue webhook dispatch dead-letter', { eventId: event.id, error: error.message }),
-            })
-          : createConsoleIssueDispatcher()
+        ? ctx.options.issueDispatcher
+          ? ctx.options.issueDispatcher
+          : issueWebhookUrl
+            ? createHttpWebhookIssueDispatcher({
+                url: issueWebhookUrl,
+                ...(issueWebhookAuth ? { headers: { Authorization: issueWebhookAuth } } : {}),
+                retries: Number.isFinite(issueWebhookRetries) ? issueWebhookRetries : 2,
+                backoffMs: Number.isFinite(issueWebhookBackoffMs) ? issueWebhookBackoffMs : 150,
+                onDeadLetter: (event, error) =>
+                  previewLogger.error('Issue webhook dispatch dead-letter', { eventId: event.id, error: error.message }),
+              })
+            : createConsoleIssueDispatcher()
         : undefined;
 
       let apiHandler: ReturnType<typeof createRequestHandler> | null = null;

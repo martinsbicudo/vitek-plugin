@@ -1,6 +1,8 @@
 # Examples
 
-This repository includes multiple complete examples demonstrating different use cases of the Vitek plugin. Each example is self-contained and can be run independently. See [examples/README.md](https://github.com/martinsbicudo/vitek-plugin/blob/main/examples/README.md) for the full list, including socket-only, import-external, and prisma.
+This repository includes multiple complete examples demonstrating different use cases of the Vitek plugin. Each example is self-contained and can be run independently. See [examples/README.md](https://github.com/martinsbicudo/vitek-plugin/blob/main/examples/README.md) for the **full list and comparison table**, including **platform-doctor**, **platform-events**, **platform-generate**, **platform-schedule**, **issue-dispatch**, **observability**, **minimal-ts** (contract drift in CI), **mcp-project**, socket-only, import-external, prisma, **vite6-minimal**, and the rest.
+
+From the repository root, **`pnpm run examples:test`** runs every example’s Vitest suite (with per-example install so `file:../..` stays in sync). Use **`pnpm run examples:build-and-test`** for a full build + test cycle on all examples.
 
 ## basic-js
 
@@ -74,7 +76,83 @@ Example with OpenAPI and AsyncAPI generation enabled. Single docs page with REST
 
 ---
 
+## observability
+
+**Platform observability and `withSpan`**
+
+Minimal TypeScript app with `vitek.platform.json` (`observability`, `issueDispatch`), structured request logs, `X-Request-Id` / `context.requestId`, and a route using `withSpan` from `vitek-plugin/observability`.
+
+**Key features:** `vitek.platform.json`, request correlation, stub span API for future tracing.
+
+**When to use:** Learning how platform flags affect the dev server and production (`vitek-serve`); copy patterns into your app.
+
+**Tech stack:** TypeScript, Vite. See [Observability](/guide/observability) and [AI Platform Config](/guide/ai-platform-config).
+
+---
+
+## issue-dispatch
+
+**Custom issue dispatcher**
+
+`vitek.platform.json` enables `issueDispatch`; `vite.config.ts` passes `issueDispatcher` to buffer `IssueEvent` payloads. Demo routes trigger HTTP warnings and uncaught errors (with runtime **suggestions**), and `GET /api/issues` returns the buffered list.
+
+**Tech stack:** TypeScript, Vite. See [AI Platform Config](/guide/ai-platform-config) and [examples/issue-dispatch](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/issue-dispatch).
+
+---
+
+## platform-doctor
+
+**`vitek doctor`**
+
+`vitek.platform.json` with `features.doctor`; tests run `vitek doctor --json` and validate the report shape.
+
+**Tech stack:** TypeScript, Vite. [Doctor](/guide/doctor.md).
+
+---
+
+## platform-events
+
+**`createEventBus`**
+
+Typed in-process event bus (`vitek-plugin/events`) with routes to emit audit events and list recent entries.
+
+**Tech stack:** TypeScript, Vite. [Events and Scheduler](/guide/events-scheduler.md).
+
+---
+
+## platform-generate
+
+**`vitek generate crud`**
+
+`features.dataGenerators: true`; build runs `vitek generate crud GenItem --adapter prisma --out src/api/genitems` (output gitignored, recreated on each build).
+
+**Tech stack:** TypeScript, Vite. [Data Generators](/guide/data-generators.md).
+
+---
+
+## platform-schedule
+
+**`vitek schedule run`**
+
+`vitek.schedule.mjs` exports `defineSchedule({ tasks })`; tests invoke `vitek schedule run --json`.
+
+**Tech stack:** TypeScript, Vite. [Events and Scheduler](/guide/events-scheduler.md).
+
+---
+
+## minimal-ts (contract in CI)
+
+**Smallest TypeScript API with contract drift check**
+
+Single health route plus a committed `.vitek/contract/openapi.snapshot.json`. Tests run `vitek contract check` after build.
+
+**When to use:** Reference for wiring [Contract drift](/guide/contract) in a tiny project.
+
+---
+
 ## Comparison Table
+
+The table below is a short subset. For **import-external**, **validation-only**, **rate-limit**, **cors**, **alias**, **build-api-false**, **issue-dispatch**, platform examples, and more, see the [examples README](https://github.com/martinsbicudo/vitek-plugin/blob/main/examples/README.md#-comparison-table).
 
 | Feature            | socket-only | basic-js   | js-react   | typescript-react | docker      | api-docs     |
 | ------------------ | ----------- | ---------- | ---------- | ---------------- | ----------- | ------------ |
@@ -133,12 +211,17 @@ Example with OpenAPI and AsyncAPI generation enabled. Single docs page with REST
 
 ## Links to Example READMEs
 
-- [socket-only](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/socket-only) - WebSocket-only example, API ↔ socket integration
-- [basic-js](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/basic-js) - Detailed basic-js documentation
-- [js-react](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/js-react) - Detailed js-react documentation
-- [typescript-react](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/typescript-react) - Detailed typescript-react documentation
-- [docker](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/docker) - TypeScript + React with Docker and docker-compose (pnpm)
-- [api-docs](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/api-docs) - API docs (REST + WebSockets)
+- [examples/README.md](https://github.com/martinsbicudo/vitek-plugin/blob/main/examples/README.md) — index of all examples and scripts
+- [socket-only](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/socket-only) — WebSocket-only example
+- [basic-js](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/basic-js) — JavaScript, no framework
+- [js-react](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/js-react) — React + JavaScript
+- [typescript-react](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/typescript-react) — full TypeScript + React reference
+- [docker](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/docker) — Docker and docker-compose (pnpm)
+- [api-docs](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/api-docs) — OpenAPI + AsyncAPI docs
+- [import-external](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/import-external) — shared libs outside `api/`
+- [prisma](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/prisma) — Prisma + SQLite
+- [minimal-ts](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/minimal-ts) — contract check in CI
+- [mcp-project](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/mcp-project) — `vitek mcp` + platform config
 
 ---
 

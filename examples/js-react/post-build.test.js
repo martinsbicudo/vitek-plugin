@@ -48,4 +48,22 @@ describe('vitek-plugin build outputs (js-react)', () => {
     expect(mod.routes).toBeDefined();
     expect(Array.isArray(mod.routes)).toBe(true);
   });
+
+  it('health handler returns ok payload from bundle', async () => {
+    const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-api.mjs')).href);
+    const route = mod.routes.find((r) => r.pattern === 'health' && r.method === 'get');
+    expect(route).toBeDefined();
+    const handler = typeof route.handler === 'function' ? route.handler : route.handler.default;
+    const result = await handler({
+      params: {},
+      query: {},
+      headers: {},
+      url: '',
+      method: 'get',
+      path: '/api/health',
+    });
+    expect(result.status).toBe('ok');
+    expect(typeof result.timestamp).toBe('string');
+    expect(typeof result.uptime).toBe('number');
+  });
 });

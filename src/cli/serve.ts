@@ -21,6 +21,7 @@ import { loadPlatformConfig, isFeatureEnabled } from '../platform/config.js';
 import { createConsoleStructuredRequestLogger } from '../adapters/node/console-structured-request-logger.js';
 import { createConsoleIssueDispatcher } from '../core/dispatch/index.js';
 import { createHttpWebhookIssueDispatcher } from '../adapters/dispatch/http-webhook.js';
+import type { IssueDispatcher } from '../core/dispatch/types.js';
 
 const VITEK_SERVE_CONFIG_FILENAME = 'vitek.config.mjs';
 
@@ -41,6 +42,7 @@ export interface ProductionConfig {
   onServerStart?: OnServerStartHook;
   onServerShutdown?: OnServerShutdownHook;
   maxBodySize?: number;
+  issueDispatcher?: IssueDispatcher;
 }
 
 /** Load beforeApiRequest, onError, onServerStart, onServerShutdown from dist/vitek.config.mjs if present. Throws if file exists but import fails. */
@@ -54,6 +56,7 @@ export async function loadProductionConfig(distDir: string): Promise<ProductionC
     onServerStart?: OnServerStartHook;
     onServerShutdown?: OnServerShutdownHook;
     maxBodySize?: number;
+    issueDispatcher?: IssueDispatcher;
   };
   const result: ProductionConfig = {};
   if (configMod.beforeApiRequest) {
@@ -63,6 +66,7 @@ export async function loadProductionConfig(distDir: string): Promise<ProductionC
   if (configMod.onServerStart) result.onServerStart = configMod.onServerStart;
   if (configMod.onServerShutdown) result.onServerShutdown = configMod.onServerShutdown;
   if (configMod.maxBodySize != null) result.maxBodySize = configMod.maxBodySize;
+  if (configMod.issueDispatcher) result.issueDispatcher = configMod.issueDispatcher;
   return result;
 }
 
@@ -113,18 +117,6 @@ export async function main(): Promise<void> {
   const issueWebhookAuth = process.env.VITEK_ISSUE_WEBHOOK_AUTH;
   const issueWebhookRetries = Number(process.env.VITEK_ISSUE_WEBHOOK_RETRIES ?? 2);
   const issueWebhookBackoffMs = Number(process.env.VITEK_ISSUE_WEBHOOK_BACKOFF_MS ?? 150);
-  const issueDispatcher = issueDispatch
-    ? issueWebhookUrl
-      ? createHttpWebhookIssueDispatcher({
-          url: issueWebhookUrl,
-          ...(issueWebhookAuth ? { headers: { Authorization: issueWebhookAuth } } : {}),
-          retries: Number.isFinite(issueWebhookRetries) ? issueWebhookRetries : 2,
-          backoffMs: Number.isFinite(issueWebhookBackoffMs) ? issueWebhookBackoffMs : 150,
-          onDeadLetter: (event, error) =>
-            console.error('[vitek-serve] issue webhook dead-letter', { eventId: event.id, error: error.message }),
-        })
-      : createConsoleIssueDispatcher()
-    : undefined;
 
   if (!fs.existsSync(distDir) || !fs.statSync(distDir).isDirectory()) {
     console.error(`[vitek-serve] Directory not found or not a directory: ${distDir}`);
@@ -168,6 +160,21 @@ export async function main(): Promise<void> {
     console.warn('[vitek-serve] Failed to load vitek.config.mjs; continuing without production hooks:', err instanceof Error ? err.message : String(err));
   }
   const { beforeApiRequest, onError, onServerStart, onServerShutdown, maxBodySize } = productionConfig;
+
+  const issueDispatcher = issueDispatch
+    ? productionConfig.issueDispatcher
+      ? productionConfig.issueDispatcher
+      : issueWebhookUrl
+        ? createHttpWebhookIssueDispatcher({
+            url: issueWebhookUrl,
+            ...(issueWebhookAuth ? { headers: { Authorization: issueWebhookAuth } } : {}),
+            retries: Number.isFinite(issueWebhookRetries) ? issueWebhookRetries : 2,
+            backoffMs: Number.isFinite(issueWebhookBackoffMs) ? issueWebhookBackoffMs : 150,
+            onDeadLetter: (event, error) =>
+              console.error('[vitek-serve] issue webhook dead-letter', { eventId: event.id, error: error.message }),
+          })
+        : createConsoleIssueDispatcher()
+    : undefined;
 
   if (fs.existsSync(bundlePath)) {
     try {

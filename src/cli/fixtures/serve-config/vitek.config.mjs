@@ -20,3 +20,7 @@ export function onServerShutdown() {
     globalThis.__vitekOnServerShutdownCalled = true;
   }
 }
+
+export const issueDispatcher = {
+  dispatch() {},
+};

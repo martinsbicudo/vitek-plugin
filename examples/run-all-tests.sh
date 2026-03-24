@@ -6,7 +6,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-EXAMPLES=(basic-js js-react typescript-react import-external socket-only api-docs prisma docker rate-limit validation-only error-handling cors minimal-ts build-api-false alias vite6-minimal mcp-project)
+EXAMPLES=(basic-js js-react typescript-react import-external socket-only api-docs prisma docker rate-limit validation-only error-handling cors minimal-ts observability issue-dispatch platform-doctor platform-events platform-generate platform-schedule build-api-false alias vite6-minimal mcp-project)
 PASSED=0
 FAILED=0
 FAILED_NAMES=()
@@ -24,7 +24,20 @@ for name in "${EXAMPLES[@]}"; do
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  Testing: $name"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  ([ ! -d "$SCRIPT_DIR/$name/dist" ] && pnpm i --dir "$SCRIPT_DIR/$name" --ignore-workspace --no-frozen-lockfile && [ -d "$SCRIPT_DIR/$name/node_modules" ] && pnpm run --dir "$SCRIPT_DIR/$name" build) || true
+  if ! pnpm i --dir "$SCRIPT_DIR/$name" --ignore-workspace --no-frozen-lockfile; then
+    echo "❌ $name: pnpm i FAILED"
+    FAILED=$((FAILED + 1))
+    FAILED_NAMES+=("$name")
+    continue
+  fi
+  if [ ! -d "$SCRIPT_DIR/$name/dist" ]; then
+    if ! pnpm run --dir "$SCRIPT_DIR/$name" build; then
+      echo "❌ $name: build FAILED"
+      FAILED=$((FAILED + 1))
+      FAILED_NAMES+=("$name")
+      continue
+    fi
+  fi
   if pnpm run --dir "$SCRIPT_DIR/$name" test; then
     echo "✅ $name: OK"
     PASSED=$((PASSED + 1))

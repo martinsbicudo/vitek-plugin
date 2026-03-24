@@ -1,0 +1,17 @@
+{
+  "features": {
+    "doctor": true,
+    "observability": false,
+    "issueDispatch": false
+  },
+  "ai": {
+    "enabled": false,
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "mode": "off",
+    "redaction": {
+      "stripHeaders": ["authorization"],
+      "stripFields": ["password"]
+    }
+  }
+}

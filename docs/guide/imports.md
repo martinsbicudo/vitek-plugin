@@ -13,15 +13,46 @@ import { getManifest, getRoutes } from 'vitek-plugin/introspection'
 import { createMockContext, runMiddlewareChain } from 'vitek-plugin/testing'
 ```
 
-Types like `VitekContext`, `RouteHandler`, and `Middleware` remain in the main package:
+**Vite config** can import option types from the plugin entry (same types are on the main package):
 
 ```ts
-import type { VitekContext } from 'vitek-plugin'
+import type { VitekOptions, CorsOptions } from 'vitek-plugin/plugin'
 ```
 
-The barrel `vitek-plugin` continues to export everything for compatibility.
+Types for handlers, middleware, plugins, and introspection usually come from the main package:
 
-**API route bundles** (`dist/vitek-api.mjs`) should keep importing from `vitek-plugin` (barrel) for helpers such as `ok` or `validateBody`, so the runtime does not depend on extra package resolution. Config and tests can use subpaths freely; several examples assert subpath imports in post-build Vitest suites.
+```ts
+import type {
+  VitekContext,
+  VitekRequest,
+  VitekResponse,
+  RouteHandler,
+  Middleware,
+  Route,
+  RouteMatch,
+  ParsedRoute,
+  ParsedSocket,
+  RouteSchema,
+  VitekSocketContext,
+  VitekPlugin,
+  AfterTypesGeneratedContext,
+  BeforeApiRequestContext,
+  VitekManifest,
+  OpenApiOptions,
+  OpenApiInfo,
+  OpenApiServer,
+  AsyncApiOptions,
+  AsyncApiInfo,
+} from 'vitek-plugin'
+```
+
+`CorsOptions` and `RouteSchema` are also available from `vitek-plugin` (and `CorsOptions` from `vitek-plugin/plugin`).
+
+The barrel `vitek-plugin` remains the compatibility entry for route bundles and apps that prefer a single import.
+
+**API route bundles** (`dist/vitek-api.mjs`) should keep importing from `vitek-plugin` (barrel) for helpers such as `ok` or `validateBody`, so the runtime does not depend on extra package resolution. Config and tests can use subpaths freely; example **post-build** Vitest suites resolve subpaths and, where relevant, assert **behavior** (handler return values, OpenAPI paths, rate-limit 429, validation 422, and similar)—not only that `dist/` exists.
+
+From the repository root, **`pnpm run examples:test`** runs `examples/run-all-tests.sh`, which runs **`pnpm i --ignore-workspace`** in each example before tests so a `file:../..` dependency picks up the current plugin `dist`. For a full **build + install + test** pass per example, use **`pnpm run examples:build-and-test`**.
 
 ---
 

@@ -72,5 +72,6 @@ Use `pnpm exec` or `yarn` as needed. Ensure `vitek-plugin` is a dependency so `v
 
 ## Notes
 
+- The [minimal-ts example](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/minimal-ts) commits `openapi.snapshot.json` and runs `vitek contract check` in its test script.
 - Drift compares **generated** specs (patterns, types from route files, JSDoc), not live HTTP traffic.
 - `features.contracts` in `vitek.platform.json` is reserved for future tooling; the CLI is always available.

@@ -43,16 +43,18 @@ export function createDevPlugin(ctx: PluginContext): Plugin {
       const issueWebhookRetries = Number(process.env.VITEK_ISSUE_WEBHOOK_RETRIES ?? 2);
       const issueWebhookBackoffMs = Number(process.env.VITEK_ISSUE_WEBHOOK_BACKOFF_MS ?? 150);
       const issueDispatcher = issueDispatch
-        ? issueWebhookUrl
-          ? createHttpWebhookIssueDispatcher({
-              url: issueWebhookUrl,
-              ...(issueWebhookAuth ? { headers: { Authorization: issueWebhookAuth } } : {}),
-              retries: Number.isFinite(issueWebhookRetries) ? issueWebhookRetries : 2,
-              backoffMs: Number.isFinite(issueWebhookBackoffMs) ? issueWebhookBackoffMs : 150,
-              onDeadLetter: (event, error) =>
-                logger.error('Issue webhook dispatch dead-letter', { eventId: event.id, error: error.message }),
-            })
-          : createConsoleIssueDispatcher()
+        ? ctx.options.issueDispatcher
+          ? ctx.options.issueDispatcher
+          : issueWebhookUrl
+            ? createHttpWebhookIssueDispatcher({
+                url: issueWebhookUrl,
+                ...(issueWebhookAuth ? { headers: { Authorization: issueWebhookAuth } } : {}),
+                retries: Number.isFinite(issueWebhookRetries) ? issueWebhookRetries : 2,
+                backoffMs: Number.isFinite(issueWebhookBackoffMs) ? issueWebhookBackoffMs : 150,
+                onDeadLetter: (event, error) =>
+                  logger.error('Issue webhook dispatch dead-letter', { eventId: event.id, error: error.message }),
+              })
+            : createConsoleIssueDispatcher()
         : undefined;
       const socketsEnabled = ctx.options.sockets !== false;
       const socketBasePath = getSocketBasePath(

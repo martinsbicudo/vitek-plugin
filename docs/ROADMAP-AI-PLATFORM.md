@@ -160,9 +160,12 @@ No phase requires changing behavior in previous phases. Each one only adds capab
 4. Add exporter config:
    - console/json exporter
    - OTLP exporter (optional)
-5. Add docs and one example (`examples/observability` in future cycle).
+5. Add docs and one example — **done:** [Observability guide](/guide/observability) and `examples/observability`.
 
 ## Example code (route-level instrumentation)
+
+`withSpan` is exported from `vitek-plugin/observability`; the span is a **no-op stub** until OpenTelemetry (or another backend) is wired. Call sites stay stable.
+
 ```ts
 import { withSpan } from 'vitek-plugin/observability';
 
@@ -176,8 +179,8 @@ export default async function handler(ctx) {
 ```
 
 ## Acceptance criteria
-- Trace IDs appear in logs.
-- Optional exporter works with zero impact when disabled.
+- Request IDs appear in logs when `features.observability` is on.
+- `withSpan` runs handlers with zero overhead beyond a Promise wrapper; attributes are stubs until a tracer is added.
 - No regression on existing examples.
 
 ---

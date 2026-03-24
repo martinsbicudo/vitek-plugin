@@ -24,6 +24,7 @@ export function createMockContext(overrides?: Partial<VitekContext>): VitekConte
     body: overrides?.body,
     clientIp: overrides?.clientIp,
     sockets: overrides?.sockets,
+    requestId: overrides?.requestId,
   };
 }
 
@@ -33,6 +34,7 @@ export function createMockReq(overrides?: Partial<VitekRequest>): VitekRequest {
     method: overrides?.method ?? 'GET',
     headers: { ...overrides?.headers },
     body: overrides?.body,
+    requestId: overrides?.requestId,
   };
 }
 

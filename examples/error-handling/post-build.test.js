@@ -33,4 +33,12 @@ describe('error-handling example', () => {
       expect(e.message).toBe('Intentional failure');
     }
   });
+
+  it('vite.config defines onError with 503 JSON contract', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'vite.config.js'), 'utf8');
+    expect(src).toContain('onError');
+    expect(src).toContain('503');
+    expect(src).toContain('Service Unavailable');
+    expect(src).toContain('err.message');
+  });
 });

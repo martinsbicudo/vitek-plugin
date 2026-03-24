@@ -49,6 +49,18 @@
     "./doctor": {
       "import": "./dist/public/doctor.js",
       "types": "./dist/public/doctor.d.ts"
+    },
+    "./dispatch": {
+      "import": "./dist/public/dispatch.js",
+      "types": "./dist/public/dispatch.d.ts"
+    },
+    "./platform": {
+      "import": "./dist/public/platform.js",
+      "types": "./dist/public/platform.d.ts"
+    },
+    "./observability": {
+      "import": "./dist/public/observability.js",
+      "types": "./dist/public/observability.d.ts"
     }
   },
   "files": [

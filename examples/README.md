@@ -333,15 +333,21 @@ pnpm build
 ### Use `mcp-project` if:
 
 - You want to expose routes/sockets/openapi/asyncapi via `vitek mcp`
-- You need a minimal setup with `vitek.mcp.json`
-- You want a smoke test that validates MCP startup in CI
+- You need a minimal setup with `vitek.platform.json` (and optionally `vitek.mcp.json` for MCP client settings)
+- You want post-build checks and a smoke test that validates MCP startup in CI
 
 ### Additional examples
 
 - **[validation-only](./validation-only/)** — `validateBody` and 422 on invalid body
 - **[error-handling](./error-handling/)** — custom `onError` and route that throws
 - **[cors](./cors/)** — CORS with restricted origin, methods, headers
-- **[minimal-ts](./minimal-ts/)** — minimal TypeScript, one GET route, no React
+- **[minimal-ts](./minimal-ts/)** — minimal TypeScript, one GET route, no React; contract drift check in tests
+- **[observability](./observability/)** — `vitek.platform.json` (observability + issue dispatch), `withSpan`, `requestId` on health
+- **[issue-dispatch](./issue-dispatch/)** — custom `issueDispatcher` in Vite config; buffer and list `IssueEvent` + suggestions over HTTP
+- **[platform-doctor](./platform-doctor/)** — `features.doctor` + `vitek doctor --json` in tests
+- **[platform-events](./platform-events/)** — `createEventBus` with HTTP emit/list audit trail
+- **[platform-generate](./platform-generate/)** — `features.dataGenerators` + `vitek generate crud` during build
+- **[platform-schedule](./platform-schedule/)** — `vitek.schedule.mjs` + `vitek schedule run`
 - **[build-api-false](./build-api-false/)** — API only in dev, no bundle in `dist/`
 - **[alias](./alias/)** — `alias: { '@lib': 'src/lib' }` in routes
 - **[mcp-project](./mcp-project/)** — MCP resources via `vitek mcp`
@@ -372,7 +378,11 @@ example-name/
 
 ### Post-build checks and package exports
 
-Examples that ship `post-build.test.ts` / `post-build.test.js` validate the build output and, in several cases, **dynamic imports** of `vitek-plugin` subpaths (`/response`, `/plugin`, `/validation`, `/introspection`, `/errors`, `/testing`) so CI stays aligned with `package.json` `exports`. Use `vitek-plugin/plugin` in `vite.config.*`; keep shared helpers in route files on the main `vitek-plugin` entry when they are bundled into `vitek-api.mjs`.
+Examples that ship `post-build.test.ts` / `post-build.test.js` validate the build output and, in several cases, **dynamic imports** of `vitek-plugin` subpaths (`/response`, `/plugin`, `/validation`, `/introspection`, `/errors`, `/testing`, `/events`, `/scheduler`, `/generators`, `/doctor`, `/dispatch`, `/platform`, `/observability`) so CI stays aligned with `package.json` `exports`. Many suites also assert **runtime behavior** (e.g. handler payloads from `vitek-api.mjs`, validation success/failure, rate-limit 429, OpenAPI path keys, socket patterns).
+
+The **minimal-ts** example imports those subpaths and runs **`vitek contract check`** against a committed `.vitek/contract/openapi.snapshot.json`. Use `vitek-plugin/plugin` in `vite.config.*`; keep shared helpers in route files on the main `vitek-plugin` entry when they are bundled into `vitek-api.mjs`.
+
+**Run all example tests from the repo root:** `pnpm run examples:test` (runs `examples/run-all-tests.sh`, which installs each example with **`pnpm i --ignore-workspace`** so `file:../..` reflects the current plugin build, then runs Vitest; builds first only when `dist/` is missing). For install + build + test on every example, use **`pnpm run examples:build-and-test`**.
 
 ---
 
@@ -405,12 +415,20 @@ In the examples we use `vitek-serve`; you must run `pnpm build` at the plugin ro
 - [typescript-react README](./typescript-react/README.md) - Detailed typescript-react documentation
 - [docker README](./docker/README.md) - TypeScript + React with Docker and docker-compose (pnpm)
 - [api-docs README](./api-docs/README.md) - API docs (REST + WebSockets)
+- [import-external README](./import-external/README.md) - Shared libs and project imports
 - [prisma README](./prisma/README.md) - Prisma ORM + SQLite
 - [rate-limit README](./rate-limit/README.md) - In-memory rate limiting via plugin
 - [validation-only README](./validation-only/README.md) - validateBody and 422
 - [error-handling README](./error-handling/README.md) - onError and thrown errors
 - [cors README](./cors/README.md) - CORS options
 - [minimal-ts README](./minimal-ts/README.md) - Minimal TypeScript
+- [vite6-minimal README](./vite6-minimal/README.md) - Vite 6 minimal setup
+- [observability README](./observability/README.md) - Platform observability and withSpan
+- [issue-dispatch README](./issue-dispatch/README.md) - Custom issue dispatcher and issues API
+- [platform-doctor README](./platform-doctor/README.md) - Doctor CLI sample
+- [platform-events README](./platform-events/README.md) - Typed event bus
+- [platform-generate README](./platform-generate/README.md) - CRUD code generation
+- [platform-schedule README](./platform-schedule/README.md) - Cron-style schedule file
 - [build-api-false README](./build-api-false/README.md) - buildApi: false
 - [alias README](./alias/README.md) - alias option
 - [mcp-project README](./mcp-project/README.md) - MCP project server example

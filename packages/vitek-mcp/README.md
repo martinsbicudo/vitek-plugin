@@ -12,7 +12,7 @@ MCP server for [Vitek](https://github.com/martinsbicudo/vitek-plugin). Exposes V
 - `vitek://docs/validation` – `validateBody`, `validateQuery`, `ValidationRule`
 - `vitek://docs/errors` – HTTP error classes, `onError`
 - `vitek://docs/plugin-api` – `VitekPlugin`, `afterTypesGenerated`, `beforeApiRequest`
-- `vitek://docs/configuration` – `VitekOptions` reference
+- `vitek://docs/configuration` – `VitekOptions` reference (includes `cors` / `CorsOptions`); see also the [Imports](https://martinsbicudo.github.io/vitek-plugin/guide/imports.html) guide on the docs site
 - `vitek://docs/introspection` – `getManifest`, `getRoutes`, `getSockets`, `writeManifest`
 
 ## Tools

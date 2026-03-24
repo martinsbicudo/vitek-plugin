@@ -31,4 +31,22 @@ describe('validation-only example', () => {
       expect(e.statusCode).toBe(422);
     }
   });
+
+  it('echo route returns echoed body when valid', async () => {
+    const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-api.mjs')).href);
+    const route = mod.routes.find((r) => r.pattern === 'echo' && r.method === 'post');
+    expect(route).toBeDefined();
+    const handler = typeof route.handler === 'function' ? route.handler : route.handler.default;
+    const body = { name: 'vitek', count: 2 };
+    const result = await handler({
+      body,
+      params: {},
+      query: {},
+      headers: {},
+      url: '',
+      method: 'post',
+      path: '/api/echo',
+    });
+    expect(result).toEqual({ echoed: body });
+  });
 });

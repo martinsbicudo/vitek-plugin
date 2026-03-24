@@ -3,7 +3,7 @@
  */
 
 export { vitek } from './plugin.js';
-export type { VitekOptions } from './plugin.js';
+export type { VitekOptions, CorsOptions } from './plugin.js';
 
 export type {
   VitekContext,
@@ -19,6 +19,7 @@ export type {
 } from './core/routing/route-types.js';
 export type { ParsedRoute } from './core/routing/route-parser.js';
 export type { ParsedSocket } from './core/routing/socket-parser.js';
+export type { RouteSchema } from './core/types/schema.js';
 
 export type { VitekSocketContext } from './core/socket/socket-handler.js';
 
@@ -110,4 +111,25 @@ export type {
 
 export { buildDoctorReport } from './core/doctor/index.js';
 export type { DoctorDimensionResult, DoctorReport } from './core/doctor/index.js';
+
+export type {
+  IssueSeverity,
+  IssueSource,
+  IssueSuggestion,
+  IssueEvent,
+  IssueDispatcher,
+} from './core/dispatch/types.js';
+
+export type {
+  FeatureFlags,
+  RedactionPolicy,
+  AiProvider,
+  AiMode,
+  AiAnalyzerConfig,
+  PlatformConfig,
+} from './platform/config.js';
+export { DEFAULT_PLATFORM_CONFIG, isFeatureEnabled } from './platform/config.js';
+
+export { withSpan } from './core/observability/with-span.js';
+export type { Span } from './core/observability/with-span.js';
 

@@ -4,6 +4,7 @@ Minimal example focused on `vitek mcp` for exposing project API metadata to MCP 
 
 ## What this example covers
 
+- `vitek.platform.json` with `features.mcpWriteTools: true` (required for MCP apply writes)
 - `vitek-plugin/plugin` in `vite.config.js`
 - one HTTP route (`health.get.js`) and one socket route (`notify.socket.js`)
 - optional MCP config via `vitek.mcp.json`
@@ -45,14 +46,4 @@ To actually write files, calls must include:
 - `apply: true`
 - `dryRun: false`
 
-And the project must enable:
-
-```json
-{
-  "features": {
-    "mcpWriteTools": true
-  }
-}
-```
-
-in `vitek.platform.json`.
+This repo ships that file in this folder; adjust flags as needed for your fork.

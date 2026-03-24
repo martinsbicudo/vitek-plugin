@@ -22,7 +22,7 @@ Vitek is a Vite plugin that turns a folder of files into an HTTP API.
 
 **MCP:** Expose your project API to AI assistants (Cursor, Claude) with `vitek mcp` — [MCP - Project API](docs/guide/mcp-project.md).
 
-**Examples:** [examples/](./examples/) — `basic-js`, `js-react`, `typescript-react`, `import-external`, `socket-only`, `api-docs`, `prisma`, and `docker`.
+**Examples:** [examples/](./examples/) — includes `platform-doctor`, `platform-events`, `platform-generate`, `platform-schedule`, `issue-dispatch`, `observability`, `minimal-ts` (contract check), `mcp-project` (with `vitek.platform.json` for MCP writes), `typescript-react`, `api-docs`, `prisma`, `docker`, and more. See the examples README for the full list.
 
 ---
 
@@ -121,11 +121,13 @@ Then open `http://localhost:5173/api-docs.html` for interactive API documentatio
 - [Events and Scheduler](./docs/guide/events-scheduler.md) — Typed event bus and `vitek schedule run`
 - [Data Generators](./docs/guide/data-generators.md) — `vitek generate crud` scaffolding by adapter
 - [Doctor Score CLI](./docs/guide/doctor.md) — `vitek doctor` with deterministic scoring and optional AI analysis
+- [Observability](./docs/guide/observability.md) — request IDs, structured logs, and `withSpan` helper
 - [Plugin API](./docs/guide/plugin-api.md) — Extend Vitek with `afterTypesGenerated` and `beforeApiRequest` hooks
+- [Imports](./docs/guide/imports.md) — Subpath imports; types (`VitekContext`, `RouteSchema`, `CorsOptions`, `VitekOptions`, …)
 - [Alias](./docs/guide/alias.md) — Use `resolve.alias` for stable import paths
 - [Introspection](./docs/guide/introspection.md) — Programmatic API: `getRoutes`, `getSockets`, `vitek-manifest.json`
 - [Bundle size](./docs/guide/bundle-size.md) — Plugin and generated bundles (vitek-api.mjs); tree-shaking, heavy imports
-- [Examples](./examples/) — socket-only, basic-js, js-react, typescript-react, import-external, api-docs, prisma, docker
+- [Examples](./examples/) — full index in [examples/README.md](./examples/README.md) (contract and platform config are documented in guides; use `vitek contract` and `vitek.platform.json` in any example)
 - [GitHub](https://github.com/martinsbicudo/vitek-plugin)
 - [NPM](https://www.npmjs.com/package/vitek-plugin)
 - [License](LICENSE)

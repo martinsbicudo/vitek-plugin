@@ -1,4 +1,5 @@
 import type { OpenApiOptions } from '../core/openapi/generate.js';
+import type { IssueDispatcher } from '../core/dispatch/types.js';
 import type { VitekPlugin } from './plugin-api.js';
 import type { CorsOptions } from '../core/server/cors.js';
 
@@ -42,4 +43,6 @@ export interface VitekOptions {
   maxBodySize?: number;
   /** Custom error handler when a non-HttpError is thrown. Can send a custom response; if res is not ended, default 500 JSON is sent. */
   onError?: (err: Error, req: import('http').IncomingMessage, res: import('http').ServerResponse) => void | Promise<void>;
+  /** When `features.issueDispatch` is true in `vitek.platform.json`, replaces the default console/webhook dispatcher. */
+  issueDispatcher?: IssueDispatcher;
 }

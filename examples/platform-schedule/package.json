@@ -1,0 +1,19 @@
+{
+  "name": "vitek-platform-schedule-example",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "start": "vitek-serve",
+    "test": "vitest run",
+    "schedule:run": "vitek schedule run --json"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vite": "^7.0.0",
+    "vitest": "^4.0.0",
+    "vitek-plugin": "file:../.."
+  }
+}

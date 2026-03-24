@@ -127,8 +127,12 @@ import type {
   VitekPlugin,
   AfterTypesGeneratedContext,
   BeforeApiRequestContext,
+  RouteSchema,
+  ParsedSocket,
 } from "vitek-plugin";
 ```
+
+`RouteSchema` matches the `schema` array in `AfterTypesGeneratedContext`; `ParsedSocket` matches entries in `sockets`.
 
 ---
 

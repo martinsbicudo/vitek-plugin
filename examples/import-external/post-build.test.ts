@@ -42,4 +42,21 @@ describe('vitek-plugin build outputs (import-external)', () => {
     expect(mod.routes).toBeDefined();
     expect(Array.isArray(mod.routes)).toBe(true);
   });
+
+  it('version handler resolves bundled lib import', async () => {
+    const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-api.mjs')).href);
+    const route = mod.routes.find((r) => r.pattern === 'version' && r.method === 'get');
+    expect(route).toBeDefined();
+    const handler = typeof route.handler === 'function' ? route.handler : route.handler.default;
+    const result = await handler({
+      params: {},
+      query: {},
+      headers: {},
+      url: '',
+      method: 'get',
+      path: '/api/version',
+    });
+    expect(result.version).toBe('1.0.0-import-external');
+    expect(result.from).toBe('lib/greeting');
+  });
 });

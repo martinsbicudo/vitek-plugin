@@ -1,0 +1,19 @@
+{
+  "name": "vitek-platform-generate-example",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "codegen:crud": "vitek generate crud GenItem --adapter prisma --out src/api/genitems",
+    "dev": "vite",
+    "build": "pnpm run codegen:crud && tsc && vite build",
+    "preview": "vite preview",
+    "start": "vitek-serve",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vite": "^7.0.0",
+    "vitest": "^4.0.0",
+    "vitek-plugin": "file:../.."
+  }
+}

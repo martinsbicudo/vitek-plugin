@@ -7,8 +7,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
 
 describe('build-api-false example', () => {
-  it('dist exists', () => {
+  it('dist exists with frontend output', () => {
     expect(fs.existsSync(path.join(ROOT, 'dist'))).toBe(true);
+    expect(fs.existsSync(path.join(ROOT, 'dist', 'index.html'))).toBe(true);
   });
 
   it('vitek-api.mjs is not produced', () => {

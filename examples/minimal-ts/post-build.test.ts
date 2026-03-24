@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { execSync } from 'node:child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { pathToFileURL, fileURLToPath } from 'url';
@@ -21,6 +22,28 @@ describe('minimal-ts example', () => {
     expect(typeof testing.createMockContext).toBe('function');
     const main = await import('vitek-plugin');
     expect(typeof main.isProduction).toBe('function');
+    const events = await import('vitek-plugin/events');
+    expect(typeof events.createEventBus).toBe('function');
+    const scheduler = await import('vitek-plugin/scheduler');
+    expect(typeof scheduler.defineSchedule).toBe('function');
+    const generators = await import('vitek-plugin/generators');
+    expect(typeof generators.generateCrudFiles).toBe('function');
+    const doctor = await import('vitek-plugin/doctor');
+    expect(typeof doctor.buildDoctorReport).toBe('function');
+    const dispatch = await import('vitek-plugin/dispatch');
+    expect(typeof dispatch.emitIssueSafe).toBe('function');
+    const platform = await import('vitek-plugin/platform');
+    expect(typeof platform.loadPlatformConfig).toBe('function');
+    const observability = await import('vitek-plugin/observability');
+    expect(typeof observability.withSpan).toBe('function');
+  });
+
+  it('vitek contract check passes against committed snapshot', () => {
+    execSync('pnpm exec vitek contract check', {
+      cwd: ROOT,
+      stdio: 'pipe',
+      encoding: 'utf-8',
+    });
   });
 
   it('health route returns ok with ts', async () => {

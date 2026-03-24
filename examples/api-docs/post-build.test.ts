@@ -55,6 +55,9 @@ describe('vitek-plugin build outputs (api-docs)', () => {
     expect(content.info.title).toBeDefined();
     expect(content.paths).toBeDefined();
     expect(typeof content.paths).toBe('object');
+    const pathKeys = Object.keys(content.paths);
+    expect(pathKeys.length).toBeGreaterThan(0);
+    expect(pathKeys.some((k) => k.toLowerCase().includes('health'))).toBe(true);
   });
 
   it('asyncapi.json exists in public or dist', () => {

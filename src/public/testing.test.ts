@@ -35,6 +35,11 @@ describe('createMockContext', () => {
     expect(ctx.clientIp).toBe('127.0.0.1');
   });
 
+  it('merges requestId override', () => {
+    const ctx = createMockContext({ requestId: 'rid-9' });
+    expect(ctx.requestId).toBe('rid-9');
+  });
+
   it('uses custom path when url omitted', () => {
     const ctx = createMockContext({ path: '/api/users' });
     expect(ctx.path).toBe('/api/users');

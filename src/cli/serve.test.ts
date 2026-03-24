@@ -116,6 +116,13 @@ describe('loadProductionConfig', () => {
     expect(typeof result.onServerShutdown).toBe('function');
   });
 
+  it('loads issueDispatcher when exported', async () => {
+    const fixtureDir = path.join(__dirname, 'fixtures', 'serve-config');
+    const result = await loadProductionConfig(fixtureDir);
+    expect(result.issueDispatcher).toBeDefined();
+    expect(typeof result.issueDispatcher!.dispatch).toBe('function');
+  });
+
   it('onServerStart receives context with api, sockets, server', async () => {
     const fixtureDir = path.join(__dirname, 'fixtures', 'serve-config');
     const result = await loadProductionConfig(fixtureDir);

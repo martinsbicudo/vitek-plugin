@@ -57,6 +57,8 @@ your-project/
 
 ## Observability (`features.observability`)
 
+See also [Observability](/guide/observability) (`withSpan`, example repo).
+
 With `"observability": true`:
 
 - **Correlation:** Clients may send `X-Request-Id` (ASCII letters, digits, hyphens, max 128 chars). Invalid or missing values get a new UUID. The same id is echoed as `X-Request-Id` on the response and set on `context.requestId` for route handlers.
@@ -78,6 +80,10 @@ With `"observability": true`:
 
 With `"issueDispatch": true`, runtime error paths emit structured issue events through a dispatcher:
 
+Custom dispatchers can implement `IssueDispatcher` and related types from `vitek-plugin/dispatch` (or `import type { IssueEvent } from 'vitek-plugin'`).
+
+Pass **`issueDispatcher`** into `vitek({ issueDispatcher })` in `vite.config.*` to **replace** the default console / webhook dispatcher while `issueDispatch` stays on. For `vitek-serve`, export `issueDispatcher` from `dist/vitek.config.mjs` (see [Production server](/guide/production-server)). Example: [issue-dispatch](https://github.com/martinsbicudo/vitek-plugin/tree/main/examples/issue-dispatch) buffers events and exposes them via `GET /api/issues` (including `suggestions` when the runtime provides them).
+
 - default dispatcher: console JSON
 - optional outbound webhook via env vars:
   - `VITEK_ISSUE_WEBHOOK_URL`
@@ -86,6 +92,21 @@ With `"issueDispatch": true`, runtime error paths emit structured issue events t
   - `VITEK_ISSUE_WEBHOOK_BACKOFF_MS` (default `150`)
 
 Dispatch is non-blocking for request handling. After retries are exhausted, the event goes to dead-letter handling (logged by runtime).
+
+## Programmatic access (Node)
+
+Scripts and tooling can read the same config the CLI uses:
+
+```ts
+import { loadPlatformConfig, isFeatureEnabled } from 'vitek-plugin/platform';
+
+const config = loadPlatformConfig(process.cwd());
+if (isFeatureEnabled(config, 'observability')) {
+  // ...
+}
+```
+
+Types such as `PlatformConfig` and `FeatureFlags` are also available from the main package entry (`import type { PlatformConfig } from 'vitek-plugin'`).
 
 ## Notes
 

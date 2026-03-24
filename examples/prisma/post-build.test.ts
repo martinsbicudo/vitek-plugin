@@ -52,4 +52,22 @@ describe('vitek-plugin build outputs (prisma)', () => {
     expect(Array.isArray(mod.routes)).toBe(true);
     expect(mod.routes.length).toBeGreaterThan(0);
   });
+
+  it('health handler returns prisma example payload without DB', async () => {
+    const mod = await import(pathToFileURL(path.join(ROOT, 'dist', 'vitek-api.mjs')).href);
+    const route = mod.routes.find((r) => r.pattern === 'health' && r.method === 'get');
+    expect(route).toBeDefined();
+    const handler = typeof route.handler === 'function' ? route.handler : route.handler.default;
+    const result = await handler({
+      params: {},
+      query: {},
+      headers: {},
+      url: '',
+      method: 'get',
+      path: '/api/health',
+    });
+    expect(result.ok).toBe(true);
+    expect(result.service).toBe('vitek-prisma-example');
+    expect(typeof result.timestamp).toBe('string');
+  });
 });
