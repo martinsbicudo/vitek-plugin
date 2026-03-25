@@ -4,6 +4,8 @@ This repository includes multiple complete examples demonstrating different use 
 
 From the repository root, **`pnpm run examples:test`** runs every example’s Vitest suite (with per-example install so `file:../..` stays in sync). Use **`pnpm run examples:build-and-test`** for a full build + test cycle on all examples.
 
+**Showcases** ([`showcases/` on GitHub](https://github.com/martinsbicudo/vitek-plugin/tree/main/showcases)) are larger, story-driven apps that combine several features (e.g. [OpsBoard](https://github.com/martinsbicudo/vitek-plugin/tree/main/showcases/ops-board): React UI, generated client, OpenAPI, admin middleware, contract check). They are not part of `examples:test` by default; see [showcases/README.md](https://github.com/martinsbicudo/vitek-plugin/blob/main/showcases/README.md) and [SHOWCASES-PLAN.md](https://github.com/martinsbicudo/vitek-plugin/blob/main/docs/SHOWCASES-PLAN.md).
+
 ## basic-js
 
 **Pure JavaScript, no frameworks**

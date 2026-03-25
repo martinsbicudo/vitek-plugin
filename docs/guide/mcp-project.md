@@ -125,6 +125,7 @@ Start Claude Desktop from your Vitek project directory (or set `cwd` as per Clau
 
 ## Summary
 
+- **Static docs MCP:** for convention docs and snippets without a running app, see [MCP – Documentation & snippets](/guide/mcp-docs) (`vitek mcp-docs`).
 - **Command:** `vitek mcp` (from the project directory).
 - **Config:** `vitek.mcp.json` (optional).
 - **Resources:** manifest, routes, sockets, openapi, asyncapi.

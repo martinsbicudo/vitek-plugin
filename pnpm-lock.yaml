@@ -73,25 +73,6 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@20.19.28)(jiti@2.6.1)(lightningcss@1.32.0)
 
-  packages/vitek-mcp:
-    dependencies:
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.27.1
-        version: 1.27.1(zod@3.25.76)
-      zod:
-        specifier: ^3.25.76
-        version: 3.25.76
-    devDependencies:
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.28
-      typescript:
-        specifier: ^5.0.0
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.0
-        version: 4.0.18(@types/node@20.19.28)(jiti@2.6.1)(lightningcss@1.32.0)
-
 packages:
 
   '@algolia/abtesting@1.14.2':

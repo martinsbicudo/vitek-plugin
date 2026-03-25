@@ -11,6 +11,11 @@ async function run(): Promise<void> {
     await runMcpProject();
     return;
   }
+  if (cmd === 'mcp-docs') {
+    const { runMcpDocs } = await import('./mcp-docs.js');
+    await runMcpDocs();
+    return;
+  }
   if (cmd === 'contract') {
     const { runContract } = await import('./contract.js');
     await runContract(subCmd, rest);

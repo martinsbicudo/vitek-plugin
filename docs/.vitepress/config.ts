@@ -48,6 +48,7 @@ export default defineConfig({
           { text: 'Plugin API', link: '/guide/plugin-api' },
           { text: 'Introspection API', link: '/guide/introspection' },
           { text: 'MCP - Project API', link: '/guide/mcp-project' },
+          { text: 'MCP - Docs & snippets', link: '/guide/mcp-docs' },
           { text: 'Events and Scheduler', link: '/guide/events-scheduler' },
           { text: 'Data Generators', link: '/guide/data-generators' },
           { text: 'Doctor Score CLI', link: '/guide/doctor' },

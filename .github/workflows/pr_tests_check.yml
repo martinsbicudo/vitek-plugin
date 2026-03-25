@@ -37,9 +37,6 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-      - name: Run vitek-mcp tests
-        run: cd packages/vitek-mcp && pnpm install --frozen-lockfile && pnpm test
-
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
