@@ -77,6 +77,14 @@ pnpm exec vitek contract snapshot
 
 Commit `.vitek/contract/openapi.snapshot.json`. Then `pnpm test` must pass.
 
+## Screenshots (optional)
+
+Suggested captures for READMEs or release notes (no assets are committed by default):
+
+- Main UI with team selector and task list after creating a task.
+- `api-docs.html` showing a generated operation (e.g. `POST /api/tasks`).
+- Admin summary: split view or two shots — **401** without `X-User-Id` vs **200** with the header.
+
 ## Links
 
 - [OpenAPI / Swagger](../../docs/guide/openapi.md)

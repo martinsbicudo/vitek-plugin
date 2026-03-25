@@ -88,5 +88,6 @@ Detalhes variam por projeto; cada showcase documenta os seus scripts.
 ## Ligações
 
 - [Plano completo e matriz de features](../docs/SHOWCASES-PLAN.md)
+- [Showcases no site — índice e *Quick tour*](https://martinsbicudo.github.io/vitek-plugin/showcases.html#quick-tour)
 - [Índice de micro-exemplos](../examples/README.md)
 - [Documentação Vitek](../docs/) · [site publicado](https://martinsbicudo.github.io/vitek-plugin/)

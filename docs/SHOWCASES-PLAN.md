@@ -285,9 +285,9 @@ Legenda: ●●● foco forte, ●● presente, ○ opcional ou ausente.
 
 ### Fase 4 — Polimento
 
-- [ ] Screenshots ou GIFs no README (opcional).
-- [ ] Vídeo curto ou tour na documentação.
-- [ ] Revisão de bundle size (referência `docs/guide/bundle-size.md`).
+- [x] Orientação para **screenshots / GIFs** nos README de cada showcase (capturas sugeridas; binários opcionais para não inflar o repo).
+- [x] **Tour** na documentação do site — secção *Quick tour* em [`docs/showcases.md`](../docs/showcases.md).
+- [x] **Bundle size** — secção no mesmo ficheiro + ligação a [`docs/guide/bundle-size.md`](../docs/guide/bundle-size.md) e comandos de verificação locais.
 
 ---
 
@@ -331,4 +331,4 @@ Um showcase é considerado **pronto** quando:
 
 ---
 
-*Documento de planeamento. Fases 0–3 concluídas no repo; a Fase 4 é polimento opcional.*
+*Documento de planeamento. Fases 0–4 concluídas no repo (Fase 4: tour + orientação de screenshots e bundle size na documentação; mídia binária continua opcional).*

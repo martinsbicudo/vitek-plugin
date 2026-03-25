@@ -77,6 +77,14 @@ pnpm exec vitek contract snapshot
 
 Commit `.vitek/contract/openapi.snapshot.json`.
 
+## Screenshots (optional)
+
+Suggested captures for READMEs or release notes:
+
+- Main UI showing health, metrics, and the internal-issues buttons.
+- Browser devtools **Network** for `GET /api/crash` showing the JSON error body from `onError` (dev).
+- `api-docs.html` with a few operations visible, or a shot of **401** vs **200** on `/api/internal/issues`.
+
 ## Links
 
 - [Configuration](../../docs/guide/configuration.md)

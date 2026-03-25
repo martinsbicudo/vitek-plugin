@@ -77,6 +77,14 @@ pnpm exec vitek contract snapshot
 
 Commit `.vitek/contract/openapi.snapshot.json` and `.vitek/contract/asyncapi.snapshot.json`.
 
+## Screenshots (optional)
+
+Suggested captures for READMEs or release notes:
+
+- Main UI with the stock table and movement form.
+- `api-docs.html` with the **WebSockets** / AsyncAPI tab visible.
+- WebSocket alerts panel after a movement drives quantity **below** minimum.
+
 ## Links
 
 - [OpenAPI / AsyncAPI](../../docs/guide/openapi.md)
