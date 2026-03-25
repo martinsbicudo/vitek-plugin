@@ -6,7 +6,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-SHOWCASES=(ops-board stock-pulse)
+SHOWCASES=(ops-board stock-pulse reliable-api)
 PASSED=0
 FAILED=0
 FAILED_NAMES=()

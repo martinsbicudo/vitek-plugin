@@ -1,0 +1,6 @@
+{
+  "features": {
+    "observability": true,
+    "issueDispatch": true
+  }
+}

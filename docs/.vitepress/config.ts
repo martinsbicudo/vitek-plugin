@@ -19,6 +19,7 @@ export default defineConfig({
       { text: 'Comparison', link: '/comparison' },
       { text: 'API', link: '/api/' },
       { text: 'Examples', link: '/examples' },
+      { text: 'Showcases', link: '/showcases' },
       { text: 'Architecture', link: '/architecture' },
       { text: 'Development', link: '/development' },
       { text: 'Contributing', link: '/contributing' },
@@ -68,6 +69,7 @@ export default defineConfig({
           { text: 'Comparison', link: '/comparison' },
           { text: 'API Reference', link: '/api/' },
           { text: 'Examples', link: '/examples' },
+          { text: 'Showcases', link: '/showcases' },
         ],
       },
       {

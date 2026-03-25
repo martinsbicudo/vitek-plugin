@@ -12,7 +12,7 @@ if [ -f "$REPO_ROOT/package.json" ]; then
   (cd "$REPO_ROOT" && pnpm run build) || exit 1
 fi
 
-SHOWCASES=(ops-board stock-pulse)
+SHOWCASES=(ops-board stock-pulse reliable-api)
 PASSED=0
 FAILED=0
 FAILED_NAMES=()

@@ -4,7 +4,7 @@ This repository includes multiple complete examples demonstrating different use 
 
 From the repository root, **`pnpm run examples:test`** runs every example’s Vitest suite (with per-example install so `file:../..` stays in sync). Use **`pnpm run examples:build-and-test`** for a full build + test cycle on all examples. For **showcases**, use **`pnpm run showcases:test`** or **`pnpm run showcases:build-and-test`** (see `showcases/*.sh`); **`pnpm run check`** runs both examples and showcases build-and-test after the root unit tests.
 
-**Showcases** ([`showcases/` on GitHub](https://github.com/martinsbicudo/vitek-plugin/tree/main/showcases)) are larger, story-driven apps that combine several features — e.g. [OpsBoard](https://github.com/martinsbicudo/vitek-plugin/tree/main/showcases/ops-board) (React, OpenAPI, admin middleware, contract) and [StockPulse](https://github.com/martinsbicudo/vitek-plugin/tree/main/showcases/stock-pulse) (inventory API, WebSocket low-stock alerts, OpenAPI + AsyncAPI contract snapshots). They are not part of `examples:test` by default; see [showcases/README.md](https://github.com/martinsbicudo/vitek-plugin/blob/main/showcases/README.md) and [SHOWCASES-PLAN.md](https://github.com/martinsbicudo/vitek-plugin/blob/main/docs/SHOWCASES-PLAN.md).
+**Showcases** are documented on the site at [Showcases](/showcases) and in the repo under [`showcases/`](https://github.com/martinsbicudo/vitek-plugin/tree/main/showcases) (OpsBoard, StockPulse, ReliableAPI). They are not part of `examples:test`; see [showcases/README.md](https://github.com/martinsbicudo/vitek-plugin/blob/main/showcases/README.md) and [SHOWCASES-PLAN.md](https://github.com/martinsbicudo/vitek-plugin/blob/main/docs/SHOWCASES-PLAN.md).
 
 ## basic-js
 

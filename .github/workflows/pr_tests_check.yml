@@ -108,7 +108,7 @@ jobs:
 
       - name: Build and test showcases
         run: pnpm run showcases:build-and-test
-        timeout-minutes: 8
+        timeout-minutes: 12
 
       - name: Run e2e test
         run: pnpm run test:e2e

@@ -12,9 +12,9 @@ Aplicações **quase reais** que combinam várias capacidades do Vitek numa úni
 |------|------|--------|
 | [`ops-board`](./ops-board/) | OpsBoard — tarefas por equipa, UI + OpenAPI + middleware admin + contract | **disponível** |
 | [`stock-pulse`](./stock-pulse/) | StockPulse — inventário, movimentos REST, alertas WebSocket, OpenAPI + AsyncAPI + contract | **disponível** |
-| `reliable-api` | ReliableAPI — CORS, limites, `onError`, plataforma | não criado (Fase 2–3) |
+| [`reliable-api`](./reliable-api/) | ReliableAPI — CORS estrito, `maxBodySize`, `trustProxy`, `onError`, middleware interno, platform + `withSpan` | **disponível** |
 
-Quando existirem, cada pasta terá o seu próprio `README.md` com história, comandos e links para guias.
+Cada pasta tem o seu `README.md` com história, comandos e links para guias.
 
 ---
 

@@ -262,12 +262,12 @@ Legenda: ●●● foco forte, ●● presente, ○ opcional ou ausente.
 ### Fase 0 — Preparação (sem código de app)
 
 - [x] Criar `showcases/README.md` com índice e critérios (pode extrair secções 2–3 deste plano).
-- [x] Decidir política de CI: **por agora fora de `pnpm run check`**; futuro `showcases:test` / job separado (ver `showcases/README.md`).
+- [x] Política de CI: showcases entram em `pnpm run check` e no workflow de PR via `showcases:build-and-test` (ver `showcases/README.md`).
 - [x] Definir convenção de nome (`kebab-case`), Node/pnpm mínimos, e `file:../..` no monorepo (ver `showcases/README.md`).
 
 ### Fase 1 — Primeiro showcase (recomendado: **OpsBoard**)
 
-- [x] Scaffold Vite + React + TS — ver [`showcases/ops-board`](../showcases/ops-board/).
+- [x] Scaffold Vite + React + TS — ver [`showcases/ops-board` no GitHub](https://github.com/martinsbicudo/vitek-plugin/tree/main/showcases/ops-board).
 - [x] Domínio mínimo + rotas + OpenAPI + testes de comportamento (`post-build.test.ts`).
 - [x] README narrativo + links para guias e `examples/`.
 - [x] Contract snapshot (`.vitek/contract/openapi.snapshot.json`) + `vitek contract check` no `pnpm test`.
@@ -275,13 +275,13 @@ Legenda: ●●● foco forte, ●● presente, ○ opcional ou ausente.
 ### Fase 2 — Segundo showcase (**StockPulse** ou metade de **ReliableAPI**)
 
 - [x] Escolhido **StockPulse** (inventário + WebSockets / AsyncAPI).
-- [x] README + `post-build.test.ts` + snapshots OpenAPI e AsyncAPI em [`showcases/stock-pulse`](../showcases/stock-pulse/).
+- [x] README + `post-build.test.ts` + snapshots OpenAPI e AsyncAPI em [`showcases/stock-pulse` no GitHub](https://github.com/martinsbicudo/vitek-plugin/tree/main/showcases/stock-pulse).
 
 ### Fase 3 — Terceiro showcase e scripts monorepo
 
-- [ ] Completar a matriz.
+- [x] Matriz fechada com **ReliableAPI** — [`showcases/reliable-api` no GitHub](https://github.com/martinsbicudo/vitek-plugin/tree/main/showcases/reliable-api).
 - [x] `showcases/build-all.sh`, `showcases/run-all-tests.sh`, `showcases/build-and-test.sh` + scripts na raiz (`showcases:build`, `showcases:test`, `showcases:build-and-test`) e inclusão em `pnpm run check` e no workflow de PR.
-- [ ] Atualizar documentação do site (`docs/examples.md` ou nova página **Showcases**) — fora do âmbito “não tocar em examples”; é doc do produto.
+- [x] Página **Showcases** no site — [`docs/showcases.md`](../docs/showcases.md) (VitePress: `/showcases`).
 
 ### Fase 4 — Polimento
 
@@ -331,4 +331,4 @@ Um showcase é considerado **pronto** quando:
 
 ---
 
-*Documento de planeamento. Implementação futura: criar `showcases/` na raiz do repositório conforme secção 5 e executar fases 0–4.*
+*Documento de planeamento. Fases 0–3 concluídas no repo; a Fase 4 é polimento opcional.*

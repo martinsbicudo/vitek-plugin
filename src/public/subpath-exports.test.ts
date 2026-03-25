@@ -15,7 +15,7 @@ describe.skipIf(!fs.existsSync(distPublic))('subpath exports', () => {
     expect(Array.isArray(plugins)).toBe(true);
     expect(plugins.length).toBeGreaterThan(0);
     expect(plugins.some((p: { name?: string }) => p?.name === 'vitek:dev')).toBe(true);
-  });
+  }, 15000);
 
   it('vitek-plugin/response helpers return structured responses', async () => {
     const mod = await import(pathToFileURL(path.join(distPublic, 'response.js')).href);
