@@ -106,6 +106,10 @@ jobs:
         run: pnpm run examples:build-and-test
         timeout-minutes: 10
 
+      - name: Build and test showcases
+        run: pnpm run showcases:build-and-test
+        timeout-minutes: 8
+
       - name: Run e2e test
         run: pnpm run test:e2e
         timeout-minutes: 3

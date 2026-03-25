@@ -11,7 +11,7 @@ Aplicações **quase reais** que combinam várias capacidades do Vitek numa úni
 | Slug | Nome | Estado |
 |------|------|--------|
 | [`ops-board`](./ops-board/) | OpsBoard — tarefas por equipa, UI + OpenAPI + middleware admin + contract | **disponível** |
-| `stock-pulse` | StockPulse — inventário + WebSockets / AsyncAPI | não criado (Fase 2) |
+| [`stock-pulse`](./stock-pulse/) | StockPulse — inventário, movimentos REST, alertas WebSocket, OpenAPI + AsyncAPI + contract | **disponível** |
 | `reliable-api` | ReliableAPI — CORS, limites, `onError`, plataforma | não criado (Fase 2–3) |
 
 Quando existirem, cada pasta terá o seu próprio `README.md` com história, comandos e links para guias.
@@ -60,15 +60,17 @@ Quando existirem, cada pasta terá o seu próprio `README.md` com história, com
 
 ## Política de CI
 
-**Decisão (Fase 0):** os showcases **não** entram no script `pnpm run check` da raiz do `vitek-plugin` até existirem scripts dedicados e acordo de manutenção.
+Na **raiz** do repositório:
 
-| Momento | Comportamento |
-|---------|----------------|
-| **Agora** | Nenhum showcase listado no CI; pasta só contém este README até à Fase 1. |
-| **Futuro (Fase 3 do plano)** | Introduzir `showcases/build-all.sh` e `showcases/test-all.sh` (ou `pnpm run showcases:test` na raiz) e, se desejado, um job GitHub Actions **separado** do workflow principal, para não alongar cada PR. |
-| **Alternativa** | Incluir `showcases:test` no `check` apenas quando o número e o tempo de build forem aceitáveis. |
+| Script | O que faz |
+|--------|-----------|
+| `pnpm run showcases:build` | `pnpm i` + `build` em cada showcase listado em `showcases/build-all.sh`. |
+| `pnpm run showcases:test` | `pnpm i` em cada showcase; `build` se `dist/` não existir; depois `pnpm test`. |
+| `pnpm run showcases:build-and-test` | Compila o plugin na raiz, depois o mesmo ciclo completo que `examples/build-and-test.sh` (install + build + test por pasta). |
 
-Quem mantém o repo pode correr showcases manualmente após `pnpm run build` na raiz, seguindo o README de cada projeto quando estes existirem.
+O `pnpm run check` da raiz inclui **`showcases:build-and-test`** a seguir a `examples:build-and-test`. O workflow **PR Tests Check** no GitHub Actions corre o mesmo passo de showcases no job `examples_check`.
+
+Novos showcases: acrescentar o slug ao array `SHOWCASES` em `showcases/build-all.sh`, `showcases/run-all-tests.sh` e `showcases/build-and-test.sh` (igual à lista `EXAMPLES` nos scripts de `examples/`).
 
 ---
 

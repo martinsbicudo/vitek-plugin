@@ -85,7 +85,10 @@
     "examples:build": "bash examples/build-all.sh",
     "examples:test": "bash examples/run-all-tests.sh",
     "examples:build-and-test": "bash examples/build-and-test.sh",
-    "check": "pnpm i && pnpm run build && pnpm test && pnpm run examples:build-and-test && pnpm run test:e2e && pnpm run test:e2e:socket && pnpm run example:bench",
+    "showcases:build": "bash showcases/build-all.sh",
+    "showcases:test": "bash showcases/run-all-tests.sh",
+    "showcases:build-and-test": "bash showcases/build-and-test.sh",
+    "check": "pnpm i && pnpm run build && pnpm test && pnpm run examples:build-and-test && pnpm run showcases:build-and-test && pnpm run test:e2e && pnpm run test:e2e:socket && pnpm run example:bench",
     "changeset": "changeset",
     "release": "pnpm -r run build && pnpm exec changeset publish"
   },

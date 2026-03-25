@@ -24,7 +24,7 @@ Vitek is a Vite plugin that turns a folder of files into an HTTP API.
 
 **Examples:** [examples/](./examples/) — includes `platform-doctor`, `platform-events`, `platform-generate`, `platform-schedule`, `issue-dispatch`, `observability`, `minimal-ts` (contract check), `mcp-project` (with `vitek.platform.json` for MCP writes), `typescript-react`, `api-docs`, `prisma`, `docker`, and more. See the examples README for the full list.
 
-**Showcases:** [showcases/](./showcases/) — near-real apps; first app: [OpsBoard](./showcases/ops-board/) (tasks by team, OpenAPI, admin middleware, contract check). Roadmap: [docs/SHOWCASES-PLAN.md](./docs/SHOWCASES-PLAN.md), index: [showcases/README.md](./showcases/README.md).
+**Showcases:** [showcases/](./showcases/) — near-real apps; [OpsBoard](./showcases/ops-board/) (tasks, OpenAPI, admin middleware, contract) and [StockPulse](./showcases/stock-pulse/) (inventory, REST movements, WebSocket alerts, OpenAPI + AsyncAPI contracts). Roadmap: [docs/SHOWCASES-PLAN.md](./docs/SHOWCASES-PLAN.md), index: [showcases/README.md](./showcases/README.md).
 
 ---
 

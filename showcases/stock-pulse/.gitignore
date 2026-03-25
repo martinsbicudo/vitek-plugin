@@ -1,0 +1,5 @@
+node_modules
+dist
+public/openapi.json
+public/api-docs.html
+public/asyncapi.json

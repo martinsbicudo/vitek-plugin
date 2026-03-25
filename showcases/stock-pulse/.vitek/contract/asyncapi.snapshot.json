@@ -1,0 +1,40 @@
+{
+  "asyncapi": "2.4.0",
+  "info": {
+    "title": "Vitek WebSocket API",
+    "version": "1.0.0",
+    "description": "WebSocket endpoints (auto-generated from socket routes)"
+  },
+  "servers": {
+    "development": {
+      "url": "ws://127.0.0.1",
+      "protocol": "ws",
+      "description": "Development server"
+    }
+  },
+  "channels": {
+    "/api/ws/alerts": {
+      "description": "WebSocket: /api/ws/alerts",
+      "subscribe": {
+        "operationId": "onMessage__api_ws_alerts",
+        "message": {
+          "description": "Incoming message",
+          "payload": {
+            "type": "object",
+            "description": "JSON payload"
+          }
+        }
+      },
+      "publish": {
+        "operationId": "send__api_ws_alerts",
+        "message": {
+          "description": "Outgoing message",
+          "payload": {
+            "type": "object",
+            "description": "JSON payload"
+          }
+        }
+      }
+    }
+  }
+}

@@ -110,12 +110,7 @@ showcases/
     vitek.platform.json     # Opcional
 ```
 
-**Scripts na raiz do monorepo (futuro):**
-
-- `showcases:build` — build de cada pasta em `showcases/*` que tenha `package.json` + script `build`.
-- `showcases:test` — testes por showcase (com instalação isolada semelhante a `examples/run-all-tests.sh`, se necessário).
-
-Estes scripts **não** precisam existir no dia 1 do plano; podem ser fase 2.
+**Scripts na raiz do monorepo:** `showcases:build`, `showcases:test`, `showcases:build-and-test` (ver `showcases/*.sh` e `package.json` da raiz); listas explícitas de slugs como em `examples/`.
 
 ---
 
@@ -279,13 +274,13 @@ Legenda: ●●● foco forte, ●● presente, ○ opcional ou ausente.
 
 ### Fase 2 — Segundo showcase (**StockPulse** ou metade de **ReliableAPI**)
 
-- [ ] Escolher com base em feedback (WS vs ops).
-- [ ] Mesmo rigor de README e testes.
+- [x] Escolhido **StockPulse** (inventário + WebSockets / AsyncAPI).
+- [x] README + `post-build.test.ts` + snapshots OpenAPI e AsyncAPI em [`showcases/stock-pulse`](../showcases/stock-pulse/).
 
 ### Fase 3 — Terceiro showcase e scripts monorepo
 
 - [ ] Completar a matriz.
-- [ ] `showcases/build-all.sh` e `showcases/test-all.sh` (espelho leve de `examples/`).
+- [x] `showcases/build-all.sh`, `showcases/run-all-tests.sh`, `showcases/build-and-test.sh` + scripts na raiz (`showcases:build`, `showcases:test`, `showcases:build-and-test`) e inclusão em `pnpm run check` e no workflow de PR.
 - [ ] Atualizar documentação do site (`docs/examples.md` ou nova página **Showcases**) — fora do âmbito “não tocar em examples”; é doc do produto.
 
 ### Fase 4 — Polimento
@@ -332,7 +327,7 @@ Um showcase é considerado **pronto** quando:
 
 - Guias: `docs/guide/*.md`
 - Índice atual de exemplos: `examples/README.md`
-- Roadmap de plataforma AI: `docs/ROADMAP-AI-PLATFORM.md` (alinhamento opcional de features)
+- Plano de showcases: este documento (alinhamento opcional com features de plataforma nos showcases)
 
 ---
 
