@@ -10,6 +10,10 @@ import { patternToRegex } from '../core/normalize/normalize-path.js';
 import type { ParsedSocket } from '../core/routing/socket-parser.js';
 import { VITEK_SOCKETS_BUNDLE_FILENAME } from '../shared/constants.js';
 
+const ESM_REQUIRE_SHIM =
+  'import { createRequire as __createRequire } from "node:module";\n' +
+  'const require = __createRequire(import.meta.url);\n';
+
 export interface BuildSocketsBundleOptions {
   root: string;
   apiDir: string;
@@ -42,6 +46,13 @@ function generateSocketsEntryContent(sockets: ParsedSocket[], entryDir: string):
   lines.push('export { sockets };');
 
   return lines.join('\n');
+}
+
+function ensureEsmRequireShim(outFile: string): void {
+  if (!fs.existsSync(outFile)) return;
+  const content = fs.readFileSync(outFile, 'utf-8');
+  if (content.includes('__createRequire(import.meta.url)')) return;
+  fs.writeFileSync(outFile, `${ESM_REQUIRE_SHIM}${content}`, 'utf-8');
 }
 
 /**
@@ -91,6 +102,7 @@ export async function buildSocketsBundle(
       outfile: outFile,
       external: ['vitek-plugin'],
     });
+    ensureEsmRequireShim(outFile);
     return outFile;
   } finally {
     try {

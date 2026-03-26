@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { pathToFileURL } from 'url';
 import { buildApiBundle, getApiBundleFilename } from './build-api-bundle.js';
 
 describe('build-api-bundle', () => {
@@ -56,6 +57,7 @@ describe('build-api-bundle', () => {
     expect(content).toContain('routes');
     expect(content).toContain('middlewares');
     expect(content).toContain('export');
+    await expect(import(pathToFileURL(result!).href)).resolves.toBeDefined();
   });
 
   it('builds bundle when route uses alias import', async () => {

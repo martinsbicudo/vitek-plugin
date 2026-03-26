@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { pathToFileURL } from 'url';
 import { buildSocketsBundle, getSocketsBundleFilename } from './build-sockets-bundle.js';
 
 describe('build-sockets-bundle', () => {
@@ -55,5 +56,6 @@ describe('build-sockets-bundle', () => {
     const content = fs.readFileSync(result!, 'utf-8');
     expect(content).toContain('sockets');
     expect(content).toContain('export');
+    await expect(import(pathToFileURL(result!).href)).resolves.toBeDefined();
   });
 });

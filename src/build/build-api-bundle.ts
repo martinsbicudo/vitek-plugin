@@ -11,6 +11,9 @@ import type { ParsedRoute } from '../core/routing/route-parser.js';
 import type { MiddlewareInfo } from '../core/file-system/scan-api-dir.js';
 
 const VITEK_API_BUNDLE_FILENAME = 'vitek-api.mjs';
+const ESM_REQUIRE_SHIM =
+  'import { createRequire as __createRequire } from "node:module";\n' +
+  'const require = __createRequire(import.meta.url);\n';
 
 export interface BuildApiBundleOptions {
   root: string;
@@ -97,6 +100,13 @@ function createAliasPlugin(root: string, alias: Record<string, string>): { name:
   };
 }
 
+function ensureEsmRequireShim(outFile: string): void {
+  if (!fs.existsSync(outFile)) return;
+  const content = fs.readFileSync(outFile, 'utf-8');
+  if (content.includes('__createRequire(import.meta.url)')) return;
+  fs.writeFileSync(outFile, `${ESM_REQUIRE_SHIM}${content}`, 'utf-8');
+}
+
 /**
  * Builds the API bundle and writes it to outDir/vitek-api.mjs
  * Returns the path to the written file, or null if skipped (no apiDir, no routes, or error)
@@ -142,6 +152,7 @@ export async function buildApiBundle(options: BuildApiBundleOptions): Promise<st
       minify: true,
       plugins,
     });
+    ensureEsmRequireShim(outFile);
     return outFile;
   } finally {
     try {
